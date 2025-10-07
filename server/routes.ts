@@ -446,31 +446,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats - requires authentication only
+  // Dashboard stats - role-based analytics aligned with ROLE_PERMISSIONS
   app.get("/api/dashboard-stats", requireAuth, async (req, res) => {
     try {
+      const userRole = (req as any).session.userRole;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const todayOrders = await Order.find({ createdAt: { $gte: today } });
-      const todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
+      const stats: any = {};
+      const permissions: any = ROLE_PERMISSIONS[userRole as keyof typeof ROLE_PERMISSIONS] || {};
       
-      const activeServices = await ServiceVisit.countDocuments({ 
-        status: { $in: ['inquired', 'working', 'waiting'] } 
-      });
+      // Admin sees everything (has permissions for all resources)
+      if (userRole === 'Admin') {
+        const todayOrders = await Order.find({ createdAt: { $gte: today } });
+        stats.todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
+        stats.activeServices = await ServiceVisit.countDocuments({ 
+          status: { $in: ['inquired', 'working', 'waiting'] } 
+        });
+        stats.totalCustomers = await Customer.countDocuments();
+        stats.lowStockProducts = await Product.find({
+          $expr: { $lte: ['$stockQty', '$minStockLevel'] }
+        }).limit(5);
+        stats.totalEmployees = await Employee.countDocuments();
+        stats.totalProducts = await Product.countDocuments();
+      }
       
-      const totalCustomers = await Customer.countDocuments();
+      // Inventory Manager: only products and inventory (per ROLE_PERMISSIONS)
+      else if (userRole === 'Inventory Manager') {
+        if (permissions.products?.includes('read')) {
+          stats.totalProducts = await Product.countDocuments();
+          stats.lowStockProducts = await Product.find({
+            $expr: { $lte: ['$stockQty', '$minStockLevel'] }
+          }).limit(5);
+          stats.totalInventoryValue = await Product.aggregate([
+            { $group: { _id: null, total: { $sum: { $multiply: ['$stockQty', '$unitPrice'] } } } }
+          ]).then(result => result[0]?.total || 0);
+        }
+        if (permissions.inventory?.includes('read')) {
+          stats.recentTransactions = await InventoryTransaction.countDocuments({ 
+            createdAt: { $gte: today } 
+          });
+        }
+      }
       
-      const lowStockProducts = await Product.find({
-        $expr: { $lte: ['$stockQty', '$minStockLevel'] }
-      }).limit(5);
+      // Sales Executive: only customers and orders (per ROLE_PERMISSIONS)
+      else if (userRole === 'Sales Executive') {
+        if (permissions.orders?.includes('read')) {
+          const todayOrders = await Order.find({ createdAt: { $gte: today } });
+          stats.todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
+          stats.activeOrders = await Order.countDocuments({ 
+            status: { $in: ['pending', 'processing'] } 
+          });
+          stats.totalOrders = await Order.countDocuments();
+        }
+        if (permissions.customers?.includes('read')) {
+          stats.totalCustomers = await Customer.countDocuments();
+        }
+      }
       
-      res.json({
-        todaySales,
-        activeServices,
-        totalCustomers,
-        lowStockProducts
-      });
+      // HR Manager: only employees and attendance (per ROLE_PERMISSIONS)
+      else if (userRole === 'HR Manager') {
+        if (permissions.employees?.includes('read')) {
+          stats.totalEmployees = await Employee.countDocuments();
+        }
+        if (permissions.attendance?.includes('read')) {
+          stats.presentToday = await Attendance.countDocuments({ 
+            date: today, 
+            status: 'present' 
+          });
+        }
+        if (permissions.leaves?.includes('read')) {
+          stats.pendingLeaves = await Leave.countDocuments({ status: 'pending' });
+        }
+        if (permissions.tasks?.includes('read')) {
+          stats.activeTasks = await Task.countDocuments({ 
+            status: { $in: ['assigned', 'in-progress'] } 
+          });
+        }
+      }
+      
+      // Service Staff: customers (read only) and orders (read/update) per ROLE_PERMISSIONS
+      else if (userRole === 'Service Staff') {
+        if (permissions.customers?.includes('read')) {
+          stats.totalCustomers = await Customer.countDocuments();
+        }
+        if (permissions.orders?.includes('read')) {
+          const userId = (req as any).session.userId;
+          // Only show their own service visits since they have limited access
+          stats.myActiveOrders = await Order.countDocuments({ 
+            handlerId: userId,
+            status: { $in: ['pending', 'processing'] } 
+          });
+          stats.myCompletedToday = await Order.countDocuments({
+            handlerId: userId,
+            status: 'completed',
+            updatedAt: { $gte: today }
+          });
+        }
+      }
+      
+      res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
     }
