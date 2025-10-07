@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
 import { KPICard } from "@/components/KPICard";
 import { ServiceWorkflowCard } from "@/components/ServiceWorkflowCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,7 @@ interface DashboardStats {
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
@@ -455,13 +457,13 @@ export default function Dashboard() {
                       status={service.status}
                       handler={service.handlerId?.name || 'Unassigned'}
                       startTime={formatDistance(new Date(service.createdAt), new Date(), { addSuffix: true })}
-                      onClick={() => console.log("Service clicked:", service)}
+                      onClick={() => setLocation('/visits')}
                     />
                   ))}
                   {activeServices.length === 0 && (
                     <p className="text-muted-foreground text-center py-4">No active service jobs</p>
                   )}
-                  <Button variant="outline" className="w-full" data-testid="button-view-all-services">
+                  <Button variant="outline" className="w-full" data-testid="button-view-all-services" onClick={() => setLocation('/visits')}>
                     View All Services
                   </Button>
                 </>
