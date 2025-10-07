@@ -9,7 +9,7 @@ export default function Dashboard() {
   const kpiData = [
     {
       title: "Today's Sales",
-      value: "$12,450",
+      value: "₹1,24,500",
       icon: DollarSign,
       trend: { value: 12.5, isPositive: true },
     },
@@ -34,24 +34,24 @@ export default function Dashboard() {
 
   const activeServices = [
     {
-      customerName: "John Smith",
-      vehicleReg: "ABC-1234",
+      customerName: "Rajesh Kumar",
+      vehicleReg: "MH-12-AB-1234",
       status: "working" as const,
-      handler: "Mike Johnson",
+      handler: "Amit Sharma",
       startTime: "2h ago",
     },
     {
-      customerName: "Sarah Williams",
-      vehicleReg: "XYZ-5678",
+      customerName: "Priya Patel",
+      vehicleReg: "DL-8C-XY-5678",
       status: "waiting" as const,
-      handler: "David Lee",
+      handler: "Vikram Singh",
       startTime: "4h ago",
     },
     {
-      customerName: "Robert Brown",
-      vehicleReg: "DEF-9012",
+      customerName: "Ankit Verma",
+      vehicleReg: "KA-03-MN-9012",
       status: "inquired" as const,
-      handler: "Emily Chen",
+      handler: "Sneha Reddy",
       startTime: "30m ago",
     },
   ];

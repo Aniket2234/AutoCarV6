@@ -16,7 +16,7 @@ export default function Reports() {
       title: "Sales Report",
       description: "Daily and monthly sales analysis with trends",
       icon: DollarSign,
-      value: "$45,230",
+      value: "₹4,52,300",
       period: "This Month",
     },
     {

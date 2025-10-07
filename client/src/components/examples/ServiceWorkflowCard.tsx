@@ -4,10 +4,10 @@ export default function ServiceWorkflowCardExample() {
   return (
     <div className="p-6 bg-background max-w-sm">
       <ServiceWorkflowCard
-        customerName="John Smith"
-        vehicleReg="ABC-1234"
+        customerName="Rajesh Kumar"
+        vehicleReg="MH-12-AB-1234"
         status="working"
-        handler="Mike Johnson"
+        handler="Amit Sharma"
         startTime="2h ago"
         onClick={() => console.log("Service card clicked")}
       />

@@ -30,7 +30,7 @@ export function NotificationBell() {
     },
     {
       id: "2",
-      message: "New order received from John Smith - Order #ORD-2024-001",
+      message: "New order received from Rajesh Kumar - Order #ORD-2024-001",
       type: "new_order",
       read: false,
       timestamp: "3 hours ago",

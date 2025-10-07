@@ -5,29 +5,29 @@ export default function DigitalCustomerCardExample() {
     <div className="p-6 bg-background">
       <DigitalCustomerCard
         customer={{
-          name: "John Smith",
-          phone: "+1 234-567-8900",
-          email: "john.smith@email.com",
+          name: "Rajesh Kumar",
+          phone: "+91 98765-43210",
+          email: "rajesh.kumar@email.com",
           vehicle: {
-            regNo: "ABC-1234",
-            make: "Toyota",
-            model: "Camry",
+            regNo: "MH-12-AB-1234",
+            make: "Maruti Suzuki",
+            model: "Swift",
             year: 2020,
           },
         }}
         totalVisits={8}
-        lastHandler="Mike Johnson"
-        currentHandler="Sarah Williams"
+        lastHandler="Amit Sharma"
+        currentHandler="Priya Patel"
         recentVisits={[
           {
-            date: "Jan 15, 2024",
-            handler: "Mike Johnson",
+            date: "15 Jan, 2024",
+            handler: "Amit Sharma",
             status: "Completed",
             parts: ["Engine Oil", "Oil Filter"],
           },
           {
-            date: "Dec 10, 2023",
-            handler: "Sarah Williams",
+            date: "10 Dec, 2023",
+            handler: "Priya Patel",
             status: "Completed",
             parts: ["Brake Pads", "Brake Fluid"],
           },
