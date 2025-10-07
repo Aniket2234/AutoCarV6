@@ -33,6 +33,18 @@ Preferred communication style: Simple, everyday language.
    - HR Manager: Limited to Employees and Attendance modules only
    - Service Staff: Read-only access to Customers, read/update access to Orders
 
+4. **Role-Based Dashboard Analytics**: Implemented role-specific KPIs and analytics (October 7, 2025)
+   - Dashboard now displays only metrics relevant to user's role and permissions
+   - Backend /api/dashboard-stats endpoint filters data based on ROLE_PERMISSIONS
+   - Each role sees customized KPIs:
+     * Admin: Sales, service jobs, stock alerts, customers, employees, products
+     * Inventory Manager: Product count, inventory value, low stock alerts, transaction count
+     * Sales Executive: Sales totals, customer count, active orders, total orders
+     * HR Manager: Employee count, attendance, pending leaves, active tasks
+     * Service Staff: Personal active orders, completed tasks, customer count
+   - Security: All stats strictly aligned with role permissions (no unauthorized data access)
+   - Frontend displays role-appropriate analytics cards and graphs only
+
 ## System Architecture
 
 ### Frontend Architecture
