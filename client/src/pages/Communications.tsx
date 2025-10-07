@@ -11,11 +11,11 @@ import { format } from "date-fns";
 export default function Communications() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: communications = [], isLoading: commLoading, error: commError } = useQuery({
-    queryKey: ["/api/communications"],
+  const { data: communications = [], isLoading: commLoading, error: commError } = useQuery<any[]>({
+    queryKey: ["/api/communication-logs"],
   });
 
-  const { data: feedbacks = [], isLoading: feedbackLoading, error: feedbackError } = useQuery({
+  const { data: feedbacks = [], isLoading: feedbackLoading, error: feedbackError } = useQuery<any[]>({
     queryKey: ["/api/feedbacks"],
   });
 
