@@ -25,7 +25,7 @@ export default function Orders() {
   const { toast } = useToast();
 
   // Form state
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState("walk-in");
   const [items, setItems] = useState<Array<{ productId: string; quantity: string; price: string }>>([
     { productId: "", quantity: "1", price: "" }
   ]);
@@ -68,7 +68,7 @@ export default function Orders() {
   });
 
   const resetForm = () => {
-    setCustomerId("");
+    setCustomerId("walk-in");
     setItems([{ productId: "", quantity: "1", price: "" }]);
     setPaymentStatus("due");
     setDeliveryStatus("pending");
@@ -127,7 +127,7 @@ export default function Orders() {
     }
 
     createOrderMutation.mutate({
-      customerId: customerId || undefined,
+      customerId: customerId === "walk-in" ? undefined : customerId,
       items: orderItems,
       total: calculateTotal(),
       paymentStatus,
@@ -220,7 +220,7 @@ export default function Orders() {
                     <SelectValue placeholder="Select a customer or leave empty for walk-in" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Walk-in Customer</SelectItem>
+                    <SelectItem value="walk-in">Walk-in Customer</SelectItem>
                     {customers.map((customer: any) => (
                       <SelectItem key={customer._id} value={customer._id}>
                         {customer.name} - {customer.phone}
