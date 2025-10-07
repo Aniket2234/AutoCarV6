@@ -1,66 +1,61 @@
+import { useQuery } from "@tanstack/react-query";
 import { KPICard } from "@/components/KPICard";
 import { ServiceWorkflowCard } from "@/components/ServiceWorkflowCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, Package, Users, AlertTriangle, Plus } from "lucide-react";
+import { formatDistance } from "date-fns";
 
 export default function Dashboard() {
-  // todo: remove mock functionality
+  const { data: dashboardStats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useQuery({
+    queryKey: ["/api/dashboard-stats"],
+  });
+
+  const { data: serviceVisits, isLoading: visitsLoading, error: visitsError, refetch: refetchVisits } = useQuery({
+    queryKey: ["/api/service-visits"],
+  });
+
+  const activeServices = serviceVisits?.filter((visit: any) => 
+    ['inquired', 'working', 'waiting'].includes(visit.status)
+  ).slice(0, 3) || [];
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const kpiData = [
     {
       title: "Today's Sales",
-      value: "₹1,24,500",
+      value: dashboardStats ? formatCurrency(dashboardStats.todaySales) : "₹0",
       icon: DollarSign,
       trend: { value: 12.5, isPositive: true },
     },
     {
       title: "Active Service Jobs",
-      value: 8,
+      value: dashboardStats?.activeServices || 0,
       icon: Package,
       trend: { value: 3, isPositive: false },
     },
     {
       title: "Low Stock Items",
-      value: 5,
+      value: dashboardStats?.lowStockProducts?.length || 0,
       icon: AlertTriangle,
     },
     {
-      title: "New Customers",
-      value: 12,
+      title: "Total Customers",
+      value: dashboardStats?.totalCustomers || 0,
       icon: Users,
       trend: { value: 8.2, isPositive: true },
     },
   ];
 
-  const activeServices = [
-    {
-      customerName: "Rajesh Kumar",
-      vehicleReg: "MH-12-AB-1234",
-      status: "working" as const,
-      handler: "Amit Sharma",
-      startTime: "2h ago",
-    },
-    {
-      customerName: "Priya Patel",
-      vehicleReg: "DL-8C-XY-5678",
-      status: "waiting" as const,
-      handler: "Vikram Singh",
-      startTime: "4h ago",
-    },
-    {
-      customerName: "Ankit Verma",
-      vehicleReg: "KA-03-MN-9012",
-      status: "inquired" as const,
-      handler: "Sneha Reddy",
-      startTime: "30m ago",
-    },
-  ];
-
-  const lowStockItems = [
-    { name: "Brake Pads Set", stock: 12, reorderLevel: 20 },
-    { name: "Engine Oil 5W-30", stock: 8, reorderLevel: 15 },
-    { name: "Air Filter", stock: 5, reorderLevel: 10 },
-  ];
+  const showStatsLoading = statsLoading;
+  const showVisitsLoading = visitsLoading && !statsLoading;
 
   return (
     <div className="space-y-6">
@@ -75,11 +70,33 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {kpiData.map((kpi) => (
-          <KPICard key={kpi.title} {...kpi} />
-        ))}
-      </div>
+      {statsError && (
+        <Card className="border-destructive">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <p className="text-sm">Failed to load dashboard statistics</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetchStats()}>Retry</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showStatsLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : !statsError && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {kpiData.map((kpi) => (
+            <KPICard key={kpi.title} {...kpi} />
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -87,16 +104,39 @@ export default function Dashboard() {
             <CardTitle>Active Service Jobs</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activeServices.map((service, index) => (
-              <ServiceWorkflowCard
-                key={index}
-                {...service}
-                onClick={() => console.log("Service clicked:", service)}
-              />
-            ))}
-            <Button variant="outline" className="w-full" data-testid="button-view-all-services">
-              View All Services
-            </Button>
+            {visitsError ? (
+              <div className="text-center py-4">
+                <AlertTriangle className="h-8 w-8 mx-auto text-destructive mb-2" />
+                <p className="text-sm text-muted-foreground mb-3">Failed to load service visits</p>
+                <Button variant="outline" size="sm" onClick={() => refetchVisits()}>Retry</Button>
+              </div>
+            ) : showVisitsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-20" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {activeServices.map((service: any) => (
+                  <ServiceWorkflowCard
+                    key={service._id}
+                    customerName={service.customerId?.name || 'Unknown'}
+                    vehicleReg={service.vehicleReg}
+                    status={service.status}
+                    handler={service.handlerId?.name || 'Unassigned'}
+                    startTime={formatDistance(new Date(service.createdAt), new Date(), { addSuffix: true })}
+                    onClick={() => console.log("Service clicked:", service)}
+                  />
+                ))}
+                {activeServices.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No active service jobs</p>
+                )}
+                <Button variant="outline" className="w-full" data-testid="button-view-all-services">
+                  View All Services
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -108,28 +148,41 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {lowStockItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover-elevate"
-                >
-                  <div>
-                    <p className="font-medium text-sm">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Reorder level: {item.reorderLevel}
-                    </p>
+            {statsError ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Stock data unavailable</p>
+              </div>
+            ) : showStatsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dashboardStats?.lowStockProducts?.map((item: any) => (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border hover-elevate"
+                    data-testid={`low-stock-${item._id}`}
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Reorder level: {item.minStockLevel}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-warning">{item.stockQty}</p>
+                      <p className="text-xs text-muted-foreground">in stock</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-warning">{item.stock}</p>
-                    <p className="text-xs text-muted-foreground">in stock</p>
-                  </div>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full" data-testid="button-view-inventory">
-                View Full Inventory
-              </Button>
-            </div>
+                ))}
+                {(!dashboardStats?.lowStockProducts || dashboardStats.lowStockProducts.length === 0) && (
+                  <p className="text-muted-foreground text-center py-4">No low stock items</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

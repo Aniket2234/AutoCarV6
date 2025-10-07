@@ -1,8 +1,12 @@
-import { DataTable } from "@/components/DataTable";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, User, Car, AlertTriangle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -15,114 +19,169 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
-  // todo: remove mock functionality
-  const customers = [
-    {
-      id: "1",
-      name: "Rajesh Kumar",
-      phone: "+91 98765-43210",
-      email: "rajesh.kumar@email.com",
-      vehicle: "Maruti Swift - MH-12-AB-1234",
-      totalVisits: 8,
-      lastVisit: "15 Jan, 2024",
-      detailedInfo: {
-        vehicle: {
-          regNo: "MH-12-AB-1234",
-          make: "Maruti Suzuki",
-          model: "Swift",
-          year: 2020,
-        },
-        totalVisits: 8,
-        lastHandler: "Amit Sharma",
-        currentHandler: "Priya Patel",
-        recentVisits: [
-          {
-            date: "15 Jan, 2024",
-            handler: "Amit Sharma",
-            status: "Completed",
-            parts: ["Engine Oil", "Oil Filter"],
-          },
-          {
-            date: "10 Dec, 2023",
-            handler: "Priya Patel",
-            status: "Completed",
-            parts: ["Brake Pads", "Brake Fluid"],
-          },
-        ],
-      },
-    },
-    {
-      id: "2",
-      name: "Priya Patel",
-      phone: "+91 98765-43211",
-      email: "priya.patel@email.com",
-      vehicle: "Hyundai i20 - DL-8C-XY-5678",
-      totalVisits: 5,
-      lastVisit: "12 Jan, 2024",
-      detailedInfo: {
-        vehicle: {
-          regNo: "DL-8C-XY-5678",
-          make: "Hyundai",
-          model: "i20",
-          year: 2019,
-        },
-        totalVisits: 5,
-        lastHandler: "Vikram Singh",
-        recentVisits: [
-          {
-            date: "12 Jan, 2024",
-            handler: "Vikram Singh",
-            status: "Completed",
-            parts: ["Air Filter", "Cabin Filter"],
-          },
-        ],
-      },
-    },
-  ];
+  const { data: customers = [], isLoading, error, refetch: refetchCustomers } = useQuery({
+    queryKey: ["/api/customers"],
+  });
+
+  const { data: serviceVisits = [], error: visitsError, refetch: refetchVisits } = useQuery({
+    queryKey: ["/api/service-visits"],
+  });
+
+  const filteredCustomers = customers.filter((customer: any) =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phone.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getCustomerVisits = (customerId: string) => {
+    return serviceVisits.filter((visit: any) => 
+      visit.customerId?._id === customerId || visit.customerId === customerId
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Customers</h1>
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <User className="h-12 w-12 mx-auto text-destructive mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Failed to load customers</h3>
+              <p className="text-muted-foreground mb-4">
+                {(error as Error)?.message || 'An error occurred while fetching customers'}
+              </p>
+              <Button onClick={() => refetchCustomers()}>Retry</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Customers</h1>
-            <p className="text-muted-foreground mt-1">Manage customer profiles and service history</p>
-          </div>
+          <h1 className="text-3xl font-bold">Customers</h1>
           <Button data-testid="button-add-customer">
             <Plus className="h-4 w-4 mr-2" />
             Add Customer
           </Button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, phone, or registration number..."
-            className="pl-10"
+            placeholder="Search customers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            data-testid="input-search-customers"
+            className="pl-10"
+            data-testid="input-search"
           />
         </div>
 
-        <DataTable
-          columns={[
-            { header: "Customer Name", accessor: "name" },
-            { header: "Phone", accessor: "phone" },
-            { header: "Email", accessor: "email" },
-            { header: "Vehicle", accessor: "vehicle" },
-            { header: "Total Visits", accessor: "totalVisits", className: "text-right" },
-            { header: "Last Visit", accessor: "lastVisit", className: "text-right" },
-          ]}
-          data={customers}
-          onRowClick={(row) => setSelectedCustomer(row)}
-        />
+        {visitsError && (
+          <Card className="border-warning mb-4">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  <p className="text-sm">Failed to load service visit history</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetchVisits()}>Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {filteredCustomers.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredCustomers.map((customer: any) => {
+              const visits = visitsError ? [] : getCustomerVisits(customer._id);
+              
+              return (
+                <Card 
+                  key={customer._id} 
+                  className="hover-elevate cursor-pointer" 
+                  onClick={() => setSelectedCustomer(customer)}
+                  data-testid={`card-customer-${customer._id}`}
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{customer.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {customer.vehicles && customer.vehicles.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {customer.vehicles[0].make} {customer.vehicles[0].model}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{customer.vehicles[0].regNo}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total Visits</p>
+                        <p className="text-lg font-bold">{visits.length}</p>
+                      </div>
+                      <Button variant="outline" size="sm" data-testid={`button-view-${customer._id}`}>
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : customers.length > 0 ? (
+          <div className="text-center py-12">
+            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No customers match your search criteria</p>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No customers found. Add your first customer to get started.</p>
+          </div>
+        )}
       </div>
 
       <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Digital Customer Card</DialogTitle>
+            <DialogTitle>Customer Details</DialogTitle>
           </DialogHeader>
           {selectedCustomer && (
             <DigitalCustomerCard
@@ -130,12 +189,17 @@ export default function Customers() {
                 name: selectedCustomer.name,
                 phone: selectedCustomer.phone,
                 email: selectedCustomer.email,
-                vehicle: selectedCustomer.detailedInfo.vehicle,
+                vehicle: selectedCustomer.vehicles?.[0] || {
+                  regNo: 'N/A',
+                  make: 'N/A',
+                  model: 'N/A',
+                  year: 0,
+                },
               }}
-              totalVisits={selectedCustomer.detailedInfo.totalVisits}
-              lastHandler={selectedCustomer.detailedInfo.lastHandler}
-              currentHandler={selectedCustomer.detailedInfo.currentHandler}
-              recentVisits={selectedCustomer.detailedInfo.recentVisits}
+              totalVisits={getCustomerVisits(selectedCustomer._id).length}
+              lastHandler="N/A"
+              currentHandler="N/A"
+              recentVisits={[]}
             />
           )}
         </DialogContent>
