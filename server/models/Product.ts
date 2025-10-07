@@ -23,6 +23,9 @@ const productSchema = new mongoose.Schema({
   },
   variants: [variantSchema],
   images: [String],
+  warehouseLocation: { type: String },
+  barcode: { type: String },
+  supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
 }, { timestamps: true });
 
 productSchema.pre('save', function(next) {

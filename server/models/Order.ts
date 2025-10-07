@@ -19,6 +19,14 @@ const orderSchema = new mongoose.Schema({
   paidAmount: { type: Number, default: 0 },
   salespersonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
   invoiceNumber: { type: String, unique: true },
+  deliveryStatus: { 
+    type: String, 
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending'
+  },
+  shippingAddress: { type: String },
+  trackingNumber: { type: String },
+  deliveryDate: { type: Date },
 }, { timestamps: true });
 
 orderSchema.pre('save', function(next) {

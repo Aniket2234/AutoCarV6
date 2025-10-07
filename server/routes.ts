@@ -8,6 +8,13 @@ import { ServiceVisit } from "./models/ServiceVisit";
 import { Order } from "./models/Order";
 import { InventoryTransaction } from "./models/InventoryTransaction";
 import { Notification } from "./models/Notification";
+import { Supplier } from "./models/Supplier";
+import { PurchaseOrder } from "./models/PurchaseOrder";
+import { Attendance } from "./models/Attendance";
+import { Leave } from "./models/Leave";
+import { Task } from "./models/Task";
+import { CommunicationLog } from "./models/CommunicationLog";
+import { Feedback } from "./models/Feedback";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
@@ -286,6 +293,431 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/suppliers", async (req, res) => {
+    try {
+      const suppliers = await Supplier.find().sort({ createdAt: -1 });
+      res.json(suppliers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch suppliers" });
+    }
+  });
+
+  app.post("/api/suppliers", async (req, res) => {
+    try {
+      const supplier = await Supplier.create(req.body);
+      res.json(supplier);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create supplier" });
+    }
+  });
+
+  app.patch("/api/suppliers/:id", async (req, res) => {
+    try {
+      const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (!supplier) {
+        return res.status(404).json({ error: "Supplier not found" });
+      }
+      res.json(supplier);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update supplier" });
+    }
+  });
+
+  app.delete("/api/suppliers/:id", async (req, res) => {
+    try {
+      const supplier = await Supplier.findByIdAndDelete(req.params.id);
+      if (!supplier) {
+        return res.status(404).json({ error: "Supplier not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete supplier" });
+    }
+  });
+
+  app.get("/api/purchase-orders", async (req, res) => {
+    try {
+      const orders = await PurchaseOrder.find()
+        .populate('supplierId')
+        .populate('createdBy')
+        .sort({ createdAt: -1 });
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch purchase orders" });
+    }
+  });
+
+  app.post("/api/purchase-orders", async (req, res) => {
+    try {
+      const po = await PurchaseOrder.create(req.body);
+      await po.populate('supplierId');
+      res.json(po);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create purchase order" });
+    }
+  });
+
+  app.patch("/api/purchase-orders/:id", async (req, res) => {
+    try {
+      const po = await PurchaseOrder.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .populate('supplierId');
+      if (!po) {
+        return res.status(404).json({ error: "Purchase order not found" });
+      }
+      
+      if (req.body.status === 'received') {
+        for (const item of po.items) {
+          if (item.productId) {
+            await Product.findByIdAndUpdate(
+              item.productId,
+              { $inc: { stockQty: item.quantity } }
+            );
+            
+            await InventoryTransaction.create({
+              productId: item.productId,
+              type: 'IN',
+              quantity: item.quantity,
+              reason: `Purchase Order ${po.poNumber}`,
+            });
+          }
+        }
+        po.actualDeliveryDate = new Date();
+        await po.save();
+      }
+      
+      res.json(po);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update purchase order" });
+    }
+  });
+
+  app.get("/api/attendance", async (req, res) => {
+    try {
+      const { employeeId, startDate, endDate } = req.query;
+      const filter: any = {};
+      
+      if (employeeId) filter.employeeId = employeeId;
+      if (startDate && endDate) {
+        filter.date = { 
+          $gte: new Date(startDate as string), 
+          $lte: new Date(endDate as string) 
+        };
+      }
+      
+      const attendance = await Attendance.find(filter)
+        .populate('employeeId')
+        .sort({ date: -1 });
+      res.json(attendance);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch attendance" });
+    }
+  });
+
+  app.post("/api/attendance", async (req, res) => {
+    try {
+      const attendance = await Attendance.create(req.body);
+      await attendance.populate('employeeId');
+      res.json(attendance);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create attendance record" });
+    }
+  });
+
+  app.patch("/api/attendance/:id", async (req, res) => {
+    try {
+      const attendance = await Attendance.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .populate('employeeId');
+      if (!attendance) {
+        return res.status(404).json({ error: "Attendance record not found" });
+      }
+      res.json(attendance);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update attendance" });
+    }
+  });
+
+  app.get("/api/leaves", async (req, res) => {
+    try {
+      const { employeeId, status } = req.query;
+      const filter: any = {};
+      
+      if (employeeId) filter.employeeId = employeeId;
+      if (status) filter.status = status;
+      
+      const leaves = await Leave.find(filter)
+        .populate('employeeId')
+        .populate('approvedBy')
+        .sort({ createdAt: -1 });
+      res.json(leaves);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch leaves" });
+    }
+  });
+
+  app.post("/api/leaves", async (req, res) => {
+    try {
+      const leave = await Leave.create(req.body);
+      await leave.populate('employeeId');
+      res.json(leave);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create leave request" });
+    }
+  });
+
+  app.patch("/api/leaves/:id", async (req, res) => {
+    try {
+      const leave = await Leave.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .populate('employeeId')
+        .populate('approvedBy');
+      if (!leave) {
+        return res.status(404).json({ error: "Leave request not found" });
+      }
+      res.json(leave);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update leave request" });
+    }
+  });
+
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const { assignedTo, status } = req.query;
+      const filter: any = {};
+      
+      if (assignedTo) filter.assignedTo = assignedTo;
+      if (status) filter.status = status;
+      
+      const tasks = await Task.find(filter)
+        .populate('assignedTo')
+        .populate('assignedBy')
+        .sort({ createdAt: -1 });
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const task = await Task.create(req.body);
+      await task.populate('assignedTo');
+      await task.populate('assignedBy');
+      res.json(task);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create task" });
+    }
+  });
+
+  app.patch("/api/tasks/:id", async (req, res) => {
+    try {
+      const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .populate('assignedTo')
+        .populate('assignedBy');
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update task" });
+    }
+  });
+
+  app.get("/api/communication-logs", async (req, res) => {
+    try {
+      const { customerId } = req.query;
+      const filter: any = {};
+      
+      if (customerId) filter.customerId = customerId;
+      
+      const logs = await CommunicationLog.find(filter)
+        .populate('customerId')
+        .populate('handledBy')
+        .sort({ date: -1 });
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch communication logs" });
+    }
+  });
+
+  app.post("/api/communication-logs", async (req, res) => {
+    try {
+      const log = await CommunicationLog.create(req.body);
+      await log.populate('customerId');
+      await log.populate('handledBy');
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create communication log" });
+    }
+  });
+
+  app.get("/api/feedbacks", async (req, res) => {
+    try {
+      const { customerId, type, status } = req.query;
+      const filter: any = {};
+      
+      if (customerId) filter.customerId = customerId;
+      if (type) filter.type = type;
+      if (status) filter.status = status;
+      
+      const feedbacks = await Feedback.find(filter)
+        .populate('customerId')
+        .populate('assignedTo')
+        .sort({ createdAt: -1 });
+      res.json(feedbacks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch feedbacks" });
+    }
+  });
+
+  app.post("/api/feedbacks", async (req, res) => {
+    try {
+      const feedback = await Feedback.create(req.body);
+      await feedback.populate('customerId');
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create feedback" });
+    }
+  });
+
+  app.patch("/api/feedbacks/:id", async (req, res) => {
+    try {
+      const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .populate('customerId')
+        .populate('assignedTo');
+      if (!feedback) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update feedback" });
+    }
+  });
+
+  app.get("/api/reports/sales", async (req, res) => {
+    try {
+      const { startDate, endDate, period = 'daily' } = req.query;
+      const matchStage: any = {};
+      
+      if (startDate && endDate) {
+        matchStage.createdAt = { 
+          $gte: new Date(startDate as string), 
+          $lte: new Date(endDate as string) 
+        };
+      }
+      
+      const groupFormat = period === 'monthly' 
+        ? { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }
+        : { year: { $year: '$createdAt' }, month: { $month: '$createdAt' }, day: { $dayOfMonth: '$createdAt' } };
+      
+      const salesReport = await Order.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: groupFormat,
+            totalSales: { $sum: '$total' },
+            totalOrders: { $sum: 1 },
+            avgOrderValue: { $avg: '$total' }
+          }
+        },
+        { $sort: { '_id.year': -1, '_id.month': -1, '_id.day': -1 } }
+      ]);
+      
+      res.json(salesReport);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate sales report" });
+    }
+  });
+
+  app.get("/api/reports/inventory", async (req, res) => {
+    try {
+      const lowStockProducts = await Product.find({
+        $expr: { $lte: ['$stockQty', '$minStockLevel'] }
+      }).sort({ stockQty: 1 });
+      
+      const outOfStockProducts = await Product.find({ stockQty: 0 });
+      
+      const totalInventoryValue = await Product.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalValue: { $sum: { $multiply: ['$stockQty', '$sellingPrice'] } },
+            totalItems: { $sum: '$stockQty' }
+          }
+        }
+      ]);
+      
+      res.json({
+        lowStockProducts,
+        outOfStockProducts,
+        totalInventoryValue: totalInventoryValue[0] || { totalValue: 0, totalItems: 0 }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate inventory report" });
+    }
+  });
+
+  app.get("/api/reports/top-products", async (req, res) => {
+    try {
+      const { limit = 10 } = req.query;
+      
+      const topProducts = await Order.aggregate([
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.productId',
+            totalQuantity: { $sum: '$items.quantity' },
+            totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.price'] } },
+            orderCount: { $sum: 1 }
+          }
+        },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: parseInt(limit as string) },
+        {
+          $lookup: {
+            from: 'products',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'product'
+          }
+        },
+        { $unwind: '$product' }
+      ]);
+      
+      res.json(topProducts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate top products report" });
+    }
+  });
+
+  app.get("/api/reports/employee-performance", async (req, res) => {
+    try {
+      const employeeSales = await Order.aggregate([
+        { $match: { salespersonId: { $exists: true } } },
+        {
+          $group: {
+            _id: '$salespersonId',
+            totalSales: { $sum: '$total' },
+            orderCount: { $sum: 1 },
+            avgOrderValue: { $avg: '$total' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'employees',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'employee'
+          }
+        },
+        { $unwind: '$employee' },
+        { $sort: { totalSales: -1 } }
+      ]);
+      
+      res.json(employeeSales);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate employee performance report" });
     }
   });
 
