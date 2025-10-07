@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -13,14 +15,78 @@ import {
 } from "@/components/ui/select";
 import { Plus, Search, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    brand: "",
+    category: "",
+    variant: "",
+    unitPrice: "",
+    mrp: "",
+    sellingPrice: "",
+    stockQty: "",
+    minStockLevel: "",
+    warehouseLocation: ""
+  });
 
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ["/api/products"],
   });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/products', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setIsCreateDialogOpen(false);
+      setFormData({
+        name: "",
+        brand: "",
+        category: "",
+        variant: "",
+        unitPrice: "",
+        mrp: "",
+        sellingPrice: "",
+        stockQty: "",
+        minStockLevel: "",
+        warehouseLocation: ""
+      });
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    createProductMutation.mutate({
+      ...formData,
+      unitPrice: parseFloat(formData.unitPrice),
+      mrp: parseFloat(formData.mrp),
+      sellingPrice: parseFloat(formData.sellingPrice),
+      stockQty: parseInt(formData.stockQty),
+      minStockLevel: parseInt(formData.minStockLevel),
+    });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -89,10 +155,160 @@ export default function Products() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Products & Inventory</h1>
-        <Button data-testid="button-add-product">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-product">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+              <DialogDescription>
+                Add a new product to your inventory
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateProduct} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    data-testid="input-product-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand">Brand *</Label>
+                  <Input
+                    id="brand"
+                    value={formData.brand}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    required
+                    data-testid="input-product-brand"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
+                    placeholder="e.g., Engine Parts, Brakes"
+                    data-testid="input-product-category"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="variant">Variant</Label>
+                  <Input
+                    id="variant"
+                    value={formData.variant}
+                    onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
+                    data-testid="input-product-variant"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="unitPrice">Unit Price *</Label>
+                  <Input
+                    id="unitPrice"
+                    type="number"
+                    step="0.01"
+                    value={formData.unitPrice}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                    required
+                    data-testid="input-product-unitprice"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mrp">MRP *</Label>
+                  <Input
+                    id="mrp"
+                    type="number"
+                    step="0.01"
+                    value={formData.mrp}
+                    onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
+                    required
+                    data-testid="input-product-mrp"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sellingPrice">Selling Price *</Label>
+                  <Input
+                    id="sellingPrice"
+                    type="number"
+                    step="0.01"
+                    value={formData.sellingPrice}
+                    onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+                    required
+                    data-testid="input-product-sellingprice"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stockQty">Stock Quantity *</Label>
+                  <Input
+                    id="stockQty"
+                    type="number"
+                    value={formData.stockQty}
+                    onChange={(e) => setFormData({ ...formData, stockQty: e.target.value })}
+                    required
+                    data-testid="input-product-stockqty"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="minStockLevel">Min Stock Level *</Label>
+                  <Input
+                    id="minStockLevel"
+                    type="number"
+                    value={formData.minStockLevel}
+                    onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
+                    required
+                    data-testid="input-product-minstocklevel"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="warehouseLocation">Warehouse Location</Label>
+                  <Input
+                    id="warehouseLocation"
+                    value={formData.warehouseLocation}
+                    onChange={(e) => setFormData({ ...formData, warehouseLocation: e.target.value })}
+                    data-testid="input-product-warehouse"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  data-testid="button-cancel-product"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createProductMutation.isPending}
+                  data-testid="button-submit-product"
+                >
+                  {createProductMutation.isPending ? 'Creating...' : 'Create Product'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex gap-4 flex-wrap">

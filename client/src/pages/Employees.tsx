@@ -1,20 +1,81 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Search, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+    department: "",
+    salary: "",
+    joiningDate: "",
+  });
 
   const { data: employees = [], isLoading, error, refetch } = useQuery({
     queryKey: ["/api/employees"],
   });
+
+  const createEmployeeMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/employees', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      setIsCreateDialogOpen(false);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        role: "",
+        department: "",
+        salary: "",
+        joiningDate: "",
+      });
+      toast({
+        title: "Success",
+        description: "Employee created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create employee",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    createEmployeeMutation.mutate({
+      name: formData.name,
+      email: formData.email,
+      contact: formData.phone,
+      role: formData.role,
+      department: formData.department,
+      salary: parseFloat(formData.salary),
+      joiningDate: formData.joiningDate,
+      isActive: true,
+    });
+  };
 
   const filteredEmployees = employees.filter((emp: any) =>
     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,10 +128,127 @@ export default function Employees() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Employees</h1>
-        <Button data-testid="button-add-employee">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-employee">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Employee
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Employee</DialogTitle>
+              <DialogDescription>
+                Add a new employee to your team
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateEmployee} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    data-testid="input-employee-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    data-testid="input-employee-email"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone *</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
+                    data-testid="input-employee-phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  <Input
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    required
+                    placeholder="e.g., Mechanic, Manager"
+                    data-testid="input-employee-role"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department *</Label>
+                  <Input
+                    id="department"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    required
+                    placeholder="e.g., Service, Sales"
+                    data-testid="input-employee-department"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salary">Salary *</Label>
+                  <Input
+                    id="salary"
+                    type="number"
+                    step="0.01"
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    required
+                    data-testid="input-employee-salary"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="joiningDate">Joining Date *</Label>
+                <Input
+                  id="joiningDate"
+                  type="date"
+                  value={formData.joiningDate}
+                  onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                  required
+                  data-testid="input-employee-joiningdate"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  data-testid="button-cancel-employee"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createEmployeeMutation.isPending}
+                  data-testid="button-submit-employee"
+                >
+                  {createEmployeeMutation.isPending ? 'Creating...' : 'Create Employee'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="relative max-w-md">
