@@ -13,6 +13,11 @@ import {
   User,
   LogOut,
   Shield,
+  Building2,
+  FileText,
+  CheckSquare,
+  CalendarOff,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -54,11 +59,16 @@ const mainMenuItems: MenuItem[] = [
   { title: "Customers", url: "/customers", icon: Users, permission: { resource: "customers", action: "read" } },
   { title: "Service Visits", url: "/visits", icon: ClipboardList, permission: { resource: "orders", action: "read" } },
   { title: "Orders", url: "/orders", icon: ShoppingCart, permission: { resource: "orders", action: "read" } },
+  { title: "Suppliers", url: "/suppliers", icon: Building2, permission: { resource: "suppliers", action: "read" } },
+  { title: "Purchase Orders", url: "/purchase-orders", icon: FileText, permission: { resource: "purchaseOrders", action: "read" } },
 ];
 
 const managementItems: MenuItem[] = [
   { title: "Employees", url: "/employees", icon: UserCircle, permission: { resource: "employees", action: "read" } },
   { title: "Attendance", url: "/attendance", icon: Calendar, permission: { resource: "attendance", action: "read" } },
+  { title: "Tasks", url: "/tasks", icon: CheckSquare, permission: { resource: "tasks", action: "read" } },
+  { title: "Leaves", url: "/leaves", icon: CalendarOff, permission: { resource: "leaves", action: "read" } },
+  { title: "Communications", url: "/communications", icon: MessageSquare, permission: { resource: "communications", action: "read" } },
   { title: "Reports", url: "/reports", icon: BarChart3, permission: { resource: "reports", action: "read" } },
   { title: "User Management", url: "/users", icon: Shield, permission: { resource: "users", action: "read" } },
 ];

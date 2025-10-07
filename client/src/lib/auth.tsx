@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/auth/me'],
     retry: false,
     refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
   useEffect(() => {
@@ -42,9 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRequest('POST', '/api/auth/login', { email, password });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setUser(data);
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
     },
   });
 

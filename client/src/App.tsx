@@ -23,6 +23,11 @@ import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import RoleSelection from "@/pages/RoleSelection";
 import UserManagement from "@/pages/UserManagement";
+import Suppliers from "@/pages/Suppliers";
+import PurchaseOrders from "@/pages/PurchaseOrders";
+import Tasks from "@/pages/Tasks";
+import Leaves from "@/pages/Leaves";
+import Communications from "@/pages/Communications";
 import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +46,11 @@ const ROUTE_PERMISSIONS: Record<string, { resource: string; action: string } | n
   '/visits': { resource: 'orders', action: 'read' }, // Service visits use orders permission
   '/reports': { resource: 'reports', action: 'read' },
   '/users': { resource: 'users', action: 'read' }, // User management is admin-only
+  '/suppliers': { resource: 'suppliers', action: 'read' },
+  '/purchase-orders': { resource: 'purchaseOrders', action: 'read' },
+  '/tasks': { resource: 'tasks', action: 'read' },
+  '/leaves': { resource: 'leaves', action: 'read' },
+  '/communications': { resource: 'communications', action: 'read' },
 };
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -48,10 +58,13 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      setLocation('/select-role');
+    if (!isLoading && !user && location !== '/login' && location !== '/select-role') {
+      const timer = setTimeout(() => {
+        setLocation('/select-role');
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [user, isLoading, setLocation]);
+  }, [user, isLoading, setLocation, location]);
 
   // Check route permissions after user is loaded
   useEffect(() => {
@@ -122,6 +135,21 @@ function Router() {
       </Route>
       <Route path="/profile">
         {() => <ProtectedRoute component={Profile} />}
+      </Route>
+      <Route path="/suppliers">
+        {() => <ProtectedRoute component={Suppliers} />}
+      </Route>
+      <Route path="/purchase-orders">
+        {() => <ProtectedRoute component={PurchaseOrders} />}
+      </Route>
+      <Route path="/tasks">
+        {() => <ProtectedRoute component={Tasks} />}
+      </Route>
+      <Route path="/leaves">
+        {() => <ProtectedRoute component={Leaves} />}
+      </Route>
+      <Route path="/communications">
+        {() => <ProtectedRoute component={Communications} />}
       </Route>
     </Switch>
   );
