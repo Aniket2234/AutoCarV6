@@ -17,39 +17,12 @@ import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
-import { requireAuth, requireRole, attachUser } from "./middleware";
+import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
   
   app.use(attachUser);
-
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const { email, password, name, role } = req.body;
-      
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ error: "User already exists" });
-      }
-      
-      const user = await createUser(email, password, name, role || 'Service Staff');
-      
-      (req as any).session.userId = user._id.toString();
-      (req as any).session.userRole = user.role;
-      (req as any).session.userName = user.name;
-      (req as any).session.userEmail = user.email;
-      
-      res.json({
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      });
-    } catch (error) {
-      res.status(400).json({ error: "Failed to create user" });
-    }
-  });
 
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -106,6 +79,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User management endpoints (Admin only)
+  app.post("/api/users", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const { email, password, name, role } = req.body;
+      
+      if (!email || !password || !name || !role) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+      
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+      
+      const user = await createUser(email, password, name, role);
+      
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isActive: user.isActive,
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create user" });
+    }
+  });
+
   app.get("/api/users", requireAuth, requireRole('Admin'), async (req, res) => {
     try {
       const users = await User.find().select('-passwordHash').sort({ createdAt: -1 });
@@ -117,10 +118,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/users/:id", requireAuth, requireRole('Admin'), async (req, res) => {
     try {
-      const { role, isActive } = req.body;
+      const { name, role, isActive } = req.body;
       const user = await User.findByIdAndUpdate(
         req.params.id,
-        { role, isActive },
+        { name, role, isActive },
         { new: true }
       ).select('-passwordHash');
       
@@ -134,7 +135,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/products", async (req, res) => {
+  app.delete("/api/users/:id", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const userId = req.params.id;
+      
+      // Prevent admins from deleting themselves
+      if (userId === (req as any).session.userId) {
+        return res.status(400).json({ error: "Cannot delete your own account" });
+      }
+      
+      const user = await User.findByIdAndDelete(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Products endpoints with permission checks
+  app.get("/api/products", requireAuth, requirePermission('products', 'read'), async (req, res) => {
     try {
       const products = await Product.find().sort({ createdAt: -1 });
       res.json(products);
@@ -143,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", requireAuth, requirePermission('products', 'create'), async (req, res) => {
     try {
       const product = await Product.create(req.body);
       res.json(product);
@@ -152,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/products/:id", async (req, res) => {
+  app.patch("/api/products/:id", requireAuth, requirePermission('products', 'update'), async (req, res) => {
     try {
       const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!product) {
@@ -164,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/products/:id", async (req, res) => {
+  app.delete("/api/products/:id", requireAuth, requirePermission('products', 'delete'), async (req, res) => {
     try {
       const product = await Product.findByIdAndDelete(req.params.id);
       if (!product) {
@@ -176,7 +198,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/customers", async (req, res) => {
+  // Customers endpoints with permission checks
+  app.get("/api/customers", requireAuth, requirePermission('customers', 'read'), async (req, res) => {
     try {
       const customers = await Customer.find().sort({ createdAt: -1 });
       res.json(customers);
@@ -185,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/customers", async (req, res) => {
+  app.post("/api/customers", requireAuth, requirePermission('customers', 'create'), async (req, res) => {
     try {
       const customer = await Customer.create(req.body);
       res.json(customer);
@@ -194,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/customers/:id", async (req, res) => {
+  app.patch("/api/customers/:id", requireAuth, requirePermission('customers', 'update'), async (req, res) => {
     try {
       const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!customer) {
@@ -206,7 +229,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/employees", async (req, res) => {
+  app.delete("/api/customers/:id", requireAuth, requirePermission('customers', 'delete'), async (req, res) => {
+    try {
+      const customer = await Customer.findByIdAndDelete(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete customer" });
+    }
+  });
+
+  // Employees endpoints with permission checks
+  app.get("/api/employees", requireAuth, requirePermission('employees', 'read'), async (req, res) => {
     try {
       const employees = await Employee.find().sort({ createdAt: -1 });
       res.json(employees);
@@ -215,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/employees", async (req, res) => {
+  app.post("/api/employees", requireAuth, requirePermission('employees', 'create'), async (req, res) => {
     try {
       const employee = await Employee.create(req.body);
       res.json(employee);
@@ -224,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/employees/:id", async (req, res) => {
+  app.patch("/api/employees/:id", requireAuth, requirePermission('employees', 'update'), async (req, res) => {
     try {
       const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!employee) {
@@ -236,7 +272,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/service-visits", async (req, res) => {
+  app.delete("/api/employees/:id", requireAuth, requirePermission('employees', 'delete'), async (req, res) => {
+    try {
+      const employee = await Employee.findByIdAndDelete(req.params.id);
+      if (!employee) {
+        return res.status(404).json({ error: "Employee not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete employee" });
+    }
+  });
+
+  // Service visits - use 'orders' resource for permissions (Service Staff can read/update)
+  app.get("/api/service-visits", requireAuth, requirePermission('orders', 'read'), async (req, res) => {
     try {
       const visits = await ServiceVisit.find()
         .populate('customerId')
@@ -249,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/service-visits", async (req, res) => {
+  app.post("/api/service-visits", requireAuth, requirePermission('orders', 'create'), async (req, res) => {
     try {
       const visit = await ServiceVisit.create(req.body);
       await visit.populate('customerId');
@@ -260,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/service-visits/:id", async (req, res) => {
+  app.patch("/api/service-visits/:id", requireAuth, requirePermission('orders', 'update'), async (req, res) => {
     try {
       const visit = await ServiceVisit.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
@@ -274,7 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders", async (req, res) => {
+  // Orders endpoints with permission checks
+  app.get("/api/orders", requireAuth, requirePermission('orders', 'read'), async (req, res) => {
     try {
       const orders = await Order.find()
         .populate('customerId')
@@ -287,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/orders", async (req, res) => {
+  app.post("/api/orders", requireAuth, requirePermission('orders', 'create'), async (req, res) => {
     try {
       const order = await Order.create(req.body);
       
@@ -313,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/orders/:id", async (req, res) => {
+  app.patch("/api/orders/:id", requireAuth, requirePermission('orders', 'update'), async (req, res) => {
     try {
       const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
@@ -328,7 +378,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/inventory-transactions", async (req, res) => {
+  app.delete("/api/orders/:id", requireAuth, requirePermission('orders', 'delete'), async (req, res) => {
+    try {
+      const order = await Order.findByIdAndDelete(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete order" });
+    }
+  });
+
+  // Inventory transactions with permission checks
+  app.get("/api/inventory-transactions", requireAuth, requirePermission('inventory', 'read'), async (req, res) => {
     try {
       const transactions = await InventoryTransaction.find()
         .populate('productId')
@@ -340,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/inventory-transactions", async (req, res) => {
+  app.post("/api/inventory-transactions", requireAuth, requirePermission('inventory', 'create'), async (req, res) => {
     try {
       const transaction = await InventoryTransaction.create(req.body);
       
@@ -357,7 +420,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/notifications", async (req, res) => {
+  // Notifications with permission checks
+  app.get("/api/notifications", requireAuth, requirePermission('notifications', 'read'), async (req, res) => {
     try {
       const notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
       res.json(notifications);
@@ -366,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/notifications/:id/read", async (req, res) => {
+  app.patch("/api/notifications/:id/read", requireAuth, requirePermission('notifications', 'update'), async (req, res) => {
     try {
       const notification = await Notification.findByIdAndUpdate(
         req.params.id,
@@ -382,7 +446,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard-stats", async (req, res) => {
+  // Dashboard stats - requires authentication only
+  app.get("/api/dashboard-stats", requireAuth, async (req, res) => {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -411,7 +476,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/suppliers", async (req, res) => {
+  // Suppliers with permission checks
+  app.get("/api/suppliers", requireAuth, requirePermission('suppliers', 'read'), async (req, res) => {
     try {
       const suppliers = await Supplier.find().sort({ createdAt: -1 });
       res.json(suppliers);
@@ -420,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/suppliers", async (req, res) => {
+  app.post("/api/suppliers", requireAuth, requirePermission('suppliers', 'create'), async (req, res) => {
     try {
       const supplier = await Supplier.create(req.body);
       res.json(supplier);
@@ -429,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/suppliers/:id", async (req, res) => {
+  app.patch("/api/suppliers/:id", requireAuth, requirePermission('suppliers', 'update'), async (req, res) => {
     try {
       const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!supplier) {
@@ -441,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/suppliers/:id", async (req, res) => {
+  app.delete("/api/suppliers/:id", requireAuth, requirePermission('suppliers', 'delete'), async (req, res) => {
     try {
       const supplier = await Supplier.findByIdAndDelete(req.params.id);
       if (!supplier) {
@@ -453,7 +519,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/purchase-orders", async (req, res) => {
+  // Purchase orders with permission checks
+  app.get("/api/purchase-orders", requireAuth, requirePermission('purchaseOrders', 'read'), async (req, res) => {
     try {
       const orders = await PurchaseOrder.find()
         .populate('supplierId')
@@ -465,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/purchase-orders", async (req, res) => {
+  app.post("/api/purchase-orders", requireAuth, requirePermission('purchaseOrders', 'create'), async (req, res) => {
     try {
       const po = await PurchaseOrder.create(req.body);
       await po.populate('supplierId');
@@ -475,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/purchase-orders/:id", async (req, res) => {
+  app.patch("/api/purchase-orders/:id", requireAuth, requirePermission('purchaseOrders', 'update'), async (req, res) => {
     try {
       const po = await PurchaseOrder.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('supplierId');
@@ -509,7 +576,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/attendance", async (req, res) => {
+  // Attendance with permission checks
+  app.get("/api/attendance", requireAuth, requirePermission('attendance', 'read'), async (req, res) => {
     try {
       const { employeeId, startDate, endDate } = req.query;
       const filter: any = {};
@@ -531,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/attendance", async (req, res) => {
+  app.post("/api/attendance", requireAuth, requirePermission('attendance', 'create'), async (req, res) => {
     try {
       const attendance = await Attendance.create(req.body);
       await attendance.populate('employeeId');
@@ -541,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/attendance/:id", async (req, res) => {
+  app.patch("/api/attendance/:id", requireAuth, requirePermission('attendance', 'update'), async (req, res) => {
     try {
       const attendance = await Attendance.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('employeeId');
@@ -554,7 +622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/leaves", async (req, res) => {
+  // Leaves with permission checks
+  app.get("/api/leaves", requireAuth, requirePermission('leaves', 'read'), async (req, res) => {
     try {
       const { employeeId, status } = req.query;
       const filter: any = {};
@@ -572,7 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/leaves", async (req, res) => {
+  app.post("/api/leaves", requireAuth, requirePermission('leaves', 'create'), async (req, res) => {
     try {
       const leave = await Leave.create(req.body);
       await leave.populate('employeeId');
@@ -582,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/leaves/:id", async (req, res) => {
+  app.patch("/api/leaves/:id", requireAuth, requirePermission('leaves', 'update'), async (req, res) => {
     try {
       const leave = await Leave.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('employeeId')
@@ -596,7 +665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tasks", async (req, res) => {
+  // Tasks with permission checks
+  app.get("/api/tasks", requireAuth, requirePermission('tasks', 'read'), async (req, res) => {
     try {
       const { assignedTo, status } = req.query;
       const filter: any = {};
@@ -614,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", requireAuth, requirePermission('tasks', 'create'), async (req, res) => {
     try {
       const task = await Task.create(req.body);
       await task.populate('assignedTo');
@@ -625,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/tasks/:id", async (req, res) => {
+  app.patch("/api/tasks/:id", requireAuth, requirePermission('tasks', 'update'), async (req, res) => {
     try {
       const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('assignedTo')
@@ -639,7 +709,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/communication-logs", async (req, res) => {
+  // Communication logs with permission checks
+  app.get("/api/communication-logs", requireAuth, requirePermission('communications', 'read'), async (req, res) => {
     try {
       const { customerId } = req.query;
       const filter: any = {};
@@ -656,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/communication-logs", async (req, res) => {
+  app.post("/api/communication-logs", requireAuth, requirePermission('communications', 'create'), async (req, res) => {
     try {
       const log = await CommunicationLog.create(req.body);
       await log.populate('customerId');
@@ -667,7 +738,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/feedbacks", async (req, res) => {
+  // Feedbacks with permission checks
+  app.get("/api/feedbacks", requireAuth, requirePermission('feedbacks', 'read'), async (req, res) => {
     try {
       const { customerId, type, status } = req.query;
       const filter: any = {};
@@ -686,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/feedbacks", async (req, res) => {
+  app.post("/api/feedbacks", requireAuth, requirePermission('feedbacks', 'create'), async (req, res) => {
     try {
       const feedback = await Feedback.create(req.body);
       await feedback.populate('customerId');
@@ -696,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/feedbacks/:id", async (req, res) => {
+  app.patch("/api/feedbacks/:id", requireAuth, requirePermission('feedbacks', 'update'), async (req, res) => {
     try {
       const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
@@ -710,7 +782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/sales", async (req, res) => {
+  // Reports - Admin and HR Manager can access
+  app.get("/api/reports/sales", requireAuth, requirePermission('reports', 'read'), async (req, res) => {
     try {
       const { startDate, endDate, period = 'daily' } = req.query;
       const matchStage: any = {};
@@ -745,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/inventory", async (req, res) => {
+  app.get("/api/reports/inventory", requireAuth, requirePermission('reports', 'read'), async (req, res) => {
     try {
       const lowStockProducts = await Product.find({
         $expr: { $lte: ['$stockQty', '$minStockLevel'] }
@@ -773,7 +846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/top-products", async (req, res) => {
+  app.get("/api/reports/top-products", requireAuth, requirePermission('reports', 'read'), async (req, res) => {
     try {
       const { limit = 10 } = req.query;
       
@@ -806,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/employee-performance", async (req, res) => {
+  app.get("/api/reports/employee-performance", requireAuth, requirePermission('reports', 'read'), async (req, res) => {
     try {
       const employeeSales = await Order.aggregate([
         { $match: { salespersonId: { $exists: true } } },

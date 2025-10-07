@@ -20,22 +20,56 @@ import Attendance from "@/pages/Attendance";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
-import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
 import RoleSelection from "@/pages/RoleSelection";
+import UserManagement from "@/pages/UserManagement";
 import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Route to resource permission mapping
+const ROUTE_PERMISSIONS: Record<string, { resource: string; action: string } | null> = {
+  '/': null, // Dashboard is accessible to all authenticated users
+  '/profile': null, // Profile is accessible to all authenticated users
+  '/settings': null, // Settings is accessible to all authenticated users
+  '/products': { resource: 'products', action: 'read' },
+  '/inventory': { resource: 'inventory', action: 'read' },
+  '/customers': { resource: 'customers', action: 'read' },
+  '/orders': { resource: 'orders', action: 'read' },
+  '/employees': { resource: 'employees', action: 'read' },
+  '/attendance': { resource: 'attendance', action: 'read' },
+  '/visits': { resource: 'orders', action: 'read' }, // Service visits use orders permission
+  '/reports': { resource: 'reports', action: 'read' },
+  '/users': { resource: 'users', action: 'read' }, // User management is admin-only
+};
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !user) {
       setLocation('/select-role');
     }
   }, [user, isLoading, setLocation]);
+
+  // Check route permissions after user is loaded
+  useEffect(() => {
+    if (user && !isLoading) {
+      const routePermission = ROUTE_PERMISSIONS[location];
+      
+      // If route requires specific permission, check it
+      if (routePermission) {
+        const { resource, action } = routePermission;
+        const hasAccess = user.permissions?.[resource]?.includes(action);
+        
+        if (!hasAccess) {
+          // Redirect to dashboard if user doesn't have permission
+          setLocation('/');
+        }
+      }
+    }
+  }, [user, isLoading, location, setLocation]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -53,9 +87,11 @@ function Router() {
     <Switch>
       <Route path="/select-role" component={RoleSelection} />
       <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
       <Route path="/">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/users">
+        {() => <ProtectedRoute component={UserManagement} />}
       </Route>
       <Route path="/products">
         {() => <ProtectedRoute component={Products} />}
@@ -95,7 +131,7 @@ function AppLayout() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
 
-  if (location === '/select-role' || location === '/login' || location === '/register') {
+  if (location === '/select-role' || location === '/login') {
     return <Router />;
   }
 

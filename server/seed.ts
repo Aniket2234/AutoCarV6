@@ -4,6 +4,8 @@ import { Customer } from './models/Customer';
 import { Employee } from './models/Employee';
 import { ServiceVisit } from './models/ServiceVisit';
 import { Order } from './models/Order';
+import { User } from './models/User';
+import { createUser } from './auth';
 
 async function seed() {
   try {
@@ -15,6 +17,16 @@ async function seed() {
     await Employee.deleteMany({});
     await ServiceVisit.deleteMany({});
     await Order.deleteMany({});
+    await User.deleteMany({});
+
+    // Create users for each role
+    console.log('Creating users...');
+    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin');
+    const inventoryManager = await createUser('inventory@autoshop.com', 'inventory123', 'Inventory Manager', 'Inventory Manager');
+    const salesExecutive = await createUser('sales@autoshop.com', 'sales123', 'Sales Executive', 'Sales Executive');
+    const hrManager = await createUser('hr@autoshop.com', 'hr123', 'HR Manager', 'HR Manager');
+    const serviceStaff = await createUser('service@autoshop.com', 'service123', 'Service Staff', 'Service Staff');
+    console.log('✅ Created 5 users (Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff)');
 
     const employees = await Employee.insertMany([
       {

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { hasPermission } from './auth';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!(req as any).session?.userId) {
@@ -15,6 +16,21 @@ export function requireRole(...allowedRoles: string[]) {
     
     if (!allowedRoles.includes((req as any).session?.userRole || '')) {
       return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    next();
+  };
+}
+
+export function requirePermission(resource: string, action: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!(req as any).session?.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const userRole = (req as any).session?.userRole;
+    if (!hasPermission(userRole, resource, action)) {
+      return res.status(403).json({ error: 'Insufficient permissions for this action' });
     }
     
     next();

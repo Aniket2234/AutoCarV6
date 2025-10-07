@@ -104,15 +104,8 @@ export default function Login() {
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <p className="text-sm text-center text-muted-foreground" data-testid="text-register-link">
-              Don't have an account?{' '}
-              <Link 
-                href={selectedRole ? `/register?role=${encodeURIComponent(selectedRole)}` : '/register'} 
-                className="text-primary hover:underline" 
-                data-testid="link-register"
-              >
-                Register here
-              </Link>
+            <p className="text-sm text-center text-muted-foreground" data-testid="text-info">
+              Contact your administrator for account access
             </p>
           </form>
         </CardContent>
