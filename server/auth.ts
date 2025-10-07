@@ -55,31 +55,18 @@ export const ROLE_PERMISSIONS = {
   'Inventory Manager': {
     products: ['read', 'create', 'update', 'delete'],
     inventory: ['read', 'create', 'update', 'delete'],
-    suppliers: ['read', 'create', 'update', 'delete'],
-    purchaseOrders: ['read', 'create', 'update', 'delete'],
-    notifications: ['read'],
   },
   'Sales Executive': {
-    customers: ['read', 'create', 'update'],
-    orders: ['read', 'create', 'update'],
-    products: ['read'],
-    notifications: ['read'],
-    communications: ['read', 'create'],
+    customers: ['read', 'create', 'update', 'delete'],
+    orders: ['read', 'create', 'update', 'delete'],
   },
   'HR Manager': {
-    employees: ['read', 'create', 'update'],
-    attendance: ['read', 'create', 'update'],
-    leaves: ['read', 'create', 'update'],
-    tasks: ['read', 'create', 'update'],
-    reports: ['read'],
-    notifications: ['read'],
+    employees: ['read', 'create', 'update', 'delete'],
+    attendance: ['read', 'create', 'update', 'delete'],
   },
   'Service Staff': {
     customers: ['read'],
     orders: ['read', 'update'],
-    products: ['read'],
-    tasks: ['read', 'update'],
-    notifications: ['read'],
   },
 };
 
