@@ -78,16 +78,31 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 
-**Current Implementation**
-- Basic user schema defined in Drizzle (PostgreSQL) for authentication foundation
-- User model in MongoDB with role-based access control (Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff)
-- Password hashing with bcryptjs
-- Role enumeration across employee and user models
+**Session-Based Authentication**
+- Express session management with MemoryStore for session persistence
+- Secure HTTP-only cookies for session handling
+- Password hashing with bcryptjs for secure credential storage
+- Login/Register pages with form validation
+- Protected route wrapper for authenticated-only pages
 
-**Planned Features** (indicated by schema presence)
-- JWT-based session management
-- Role-based permissions for feature access
-- User-employee relationship linking
+**User Management**
+- MongoDB User model with email/password authentication
+- User profile page displaying account information and permissions
+- Admin-only user management endpoints
+
+**Role-Based Access Control (RBAC)**
+- Five distinct user roles with granular permissions:
+  - **Admin**: Full access to all modules, user management, and system configuration
+  - **Inventory Manager**: Products, inventory, suppliers, and purchase orders
+  - **Sales Executive**: Customer management, orders, and communication logs
+  - **HR Manager**: Employee management, attendance, leave requests, and tasks
+  - **Service Staff**: View assigned customers, update service status, and complete tasks
+
+**Permission System**
+- Resource-based permissions (read, create, update, delete)
+- Middleware functions for route protection (requireAuth, requireRole)
+- Frontend permission checks via hasPermission utility
+- Role-specific UI rendering based on user permissions
 
 ### External Dependencies
 
