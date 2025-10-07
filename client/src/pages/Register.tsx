@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
+import { ArrowLeft, Package } from 'lucide-react';
 
 export default function Register() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { register } = useAuth();
   const { toast } = useToast();
   const [name, setName] = useState('');
@@ -18,6 +18,14 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Service Staff');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlRole = params.get('role');
+    if (urlRole) {
+      setRole(urlRole);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,9 +53,23 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md" data-testid="card-register">
         <CardHeader>
-          <CardTitle data-testid="text-title">Create Account</CardTitle>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Package className="h-6 w-6 text-primary" />
+              <CardTitle data-testid="text-title">Create Account</CardTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/select-role')}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+          </div>
           <CardDescription data-testid="text-description">
-            Register for AutoShop Manager
+            {role ? `Register as ${role}` : 'Register for AutoParts Pro'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -88,19 +110,13 @@ export default function Register() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role" data-testid="label-role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger data-testid="select-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin" data-testid="option-admin">Admin</SelectItem>
-                  <SelectItem value="Inventory Manager" data-testid="option-inventory">Inventory Manager</SelectItem>
-                  <SelectItem value="Sales Executive" data-testid="option-sales">Sales Executive</SelectItem>
-                  <SelectItem value="HR Manager" data-testid="option-hr">HR Manager</SelectItem>
-                  <SelectItem value="Service Staff" data-testid="option-service">Service Staff</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label data-testid="label-role">Role</Label>
+              <Input
+                value={role}
+                disabled
+                className="bg-muted"
+                data-testid="input-role"
+              />
             </div>
             <Button
               type="submit"
@@ -112,7 +128,11 @@ export default function Register() {
             </Button>
             <p className="text-sm text-center text-muted-foreground" data-testid="text-login-link">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
+              <Link 
+                href={role ? `/login?role=${encodeURIComponent(role)}` : '/login'} 
+                className="text-primary hover:underline" 
+                data-testid="link-login"
+              >
                 Sign in here
               </Link>
             </p>

@@ -22,6 +22,7 @@ import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
+import RoleSelection from "@/pages/RoleSelection";
 import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
   useEffect(() => {
     if (!isLoading && !user) {
-      setLocation('/login');
+      setLocation('/select-role');
     }
   }, [user, isLoading, setLocation]);
 
@@ -50,6 +51,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
+      <Route path="/select-role" component={RoleSelection} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/">
@@ -93,7 +95,7 @@ function AppLayout() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
 
-  if (location === '/login' || location === '/register') {
+  if (location === '/select-role' || location === '/login' || location === '/register') {
     return <Router />;
   }
 

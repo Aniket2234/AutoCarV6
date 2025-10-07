@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
+import { ArrowLeft, Package } from 'lucide-react';
 
 export default function Login() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get('role');
+    if (role) {
+      setSelectedRole(role);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,9 +52,23 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md" data-testid="card-login">
         <CardHeader>
-          <CardTitle data-testid="text-title">AutoShop Manager</CardTitle>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Package className="h-6 w-6 text-primary" />
+              <CardTitle data-testid="text-title">AutoParts Pro</CardTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/select-role')}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+          </div>
           <CardDescription data-testid="text-description">
-            Sign in to access your dashboard
+            {selectedRole ? `Sign in as ${selectedRole}` : 'Sign in to access your dashboard'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,7 +106,11 @@ export default function Login() {
             </Button>
             <p className="text-sm text-center text-muted-foreground" data-testid="text-register-link">
               Don't have an account?{' '}
-              <Link href="/register" className="text-primary hover:underline" data-testid="link-register">
+              <Link 
+                href={selectedRole ? `/register?role=${encodeURIComponent(selectedRole)}` : '/register'} 
+                className="text-primary hover:underline" 
+                data-testid="link-register"
+              >
                 Register here
               </Link>
             </p>
