@@ -15,9 +15,124 @@ import { Leave } from "./models/Leave";
 import { Task } from "./models/Task";
 import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
+import { User } from "./models/User";
+import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
+import { requireAuth, requireRole, attachUser } from "./middleware";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
+  
+  app.use(attachUser);
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, name, role } = req.body;
+      
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+      
+      const user = await createUser(email, password, name, role || 'Service Staff');
+      
+      (req as any).session.userId = user._id.toString();
+      (req as any).session.userRole = user.role;
+      (req as any).session.userName = user.name;
+      (req as any).session.userEmail = user.email;
+      
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      const user = await authenticateUser(email, password);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      (req as any).session.userId = user._id.toString();
+      (req as any).session.userRole = user.role;
+      (req as any).session.userName = user.name;
+      (req as any).session.userEmail = user.email;
+      
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    (req as any).session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const user = await User.findById(userId).select('-passwordHash');
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        permissions: ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || {},
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.get("/api/users", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const users = await User.find().select('-passwordHash').sort({ createdAt: -1 });
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/users/:id", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const { role, isActive } = req.body;
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { role, isActive },
+        { new: true }
+      ).select('-passwordHash');
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update user" });
+    }
+  });
 
   app.get("/api/products", async (req, res) => {
     try {
