@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,14 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [stockFormData, setStockFormData] = useState({
+    quantity: "",
+    type: "IN",
+    reason: "",
+  });
   const { toast } = useToast();
 
   // Form state
@@ -38,7 +47,7 @@ export default function Products() {
     warehouseLocation: ""
   });
 
-  const { data: products = [], isLoading, error, refetch } = useQuery({
+  const { data: products = [], isLoading, error, refetch } = useQuery<any[]>({
     queryKey: ["/api/products"],
   });
 
@@ -76,16 +85,205 @@ export default function Products() {
     },
   });
 
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PATCH', `/api/products/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setIsEditDialogOpen(false);
+      setSelectedProduct(null);
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/inventory-transactions', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory-transactions'] });
+      setIsStockDialogOpen(false);
+      setSelectedProduct(null);
+      setStockFormData({ quantity: "", type: "IN", reason: "" });
+      toast({
+        title: "Success",
+        description: "Stock updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update stock",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const unitPrice = parseFloat(formData.unitPrice);
+    const mrp = parseFloat(formData.mrp);
+    const sellingPrice = parseFloat(formData.sellingPrice);
+    const stockQty = parseInt(formData.stockQty);
+    const minStockLevel = parseInt(formData.minStockLevel);
+    
+    if (!formData.name || !formData.brand || !formData.category) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(unitPrice) || unitPrice <= 0 || isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter valid prices greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(stockQty) || stockQty < 0 || isNaN(minStockLevel) || minStockLevel < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter valid stock quantities",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createProductMutation.mutate({
       ...formData,
-      unitPrice: parseFloat(formData.unitPrice),
-      mrp: parseFloat(formData.mrp),
-      sellingPrice: parseFloat(formData.sellingPrice),
-      stockQty: parseInt(formData.stockQty),
-      minStockLevel: parseInt(formData.minStockLevel),
+      unitPrice,
+      mrp,
+      sellingPrice,
+      stockQty,
+      minStockLevel,
     });
+  };
+
+  const handleEditProduct = (product: any) => {
+    setSelectedProduct(product);
+    setFormData({
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      variant: product.variant,
+      unitPrice: product.unitPrice.toString(),
+      mrp: product.mrp.toString(),
+      sellingPrice: product.sellingPrice.toString(),
+      stockQty: product.stockQty.toString(),
+      minStockLevel: product.minStockLevel.toString(),
+      warehouseLocation: product.warehouseLocation || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const unitPrice = parseFloat(formData.unitPrice);
+    const mrp = parseFloat(formData.mrp);
+    const sellingPrice = parseFloat(formData.sellingPrice);
+    const stockQty = parseInt(formData.stockQty);
+    const minStockLevel = parseInt(formData.minStockLevel);
+    
+    if (!formData.name || !formData.brand || !formData.category) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(unitPrice) || unitPrice <= 0 || isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter valid prices greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(stockQty) || stockQty < 0 || isNaN(minStockLevel) || minStockLevel < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter valid stock quantities",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (selectedProduct) {
+      updateProductMutation.mutate({
+        id: selectedProduct._id,
+        data: {
+          ...formData,
+          unitPrice,
+          mrp,
+          sellingPrice,
+          stockQty,
+          minStockLevel,
+        },
+      });
+    }
+  };
+
+  const handleManageStock = (product: any) => {
+    setSelectedProduct(product);
+    setStockFormData({ quantity: "", type: "IN", reason: "" });
+    setIsStockDialogOpen(true);
+  };
+
+  const handleUpdateStock = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const quantity = parseInt(stockFormData.quantity);
+    
+    if (isNaN(quantity) || quantity <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid quantity greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!stockFormData.reason) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a reason for the stock change",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (selectedProduct) {
+      updateStockMutation.mutate({
+        productId: selectedProduct._id,
+        type: stockFormData.type,
+        quantity,
+        reason: stockFormData.reason,
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -103,7 +301,7 @@ export default function Products() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["all", ...new Set(products.map((p: any) => p.category))];
+  const categories = ["all", ...Array.from(new Set(products.map((p: any) => p.category)))];
 
   const getStatusBadge = (status: string, stock: number) => {
     switch (status) {
@@ -367,10 +565,22 @@ export default function Products() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-${product._id}`}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1" 
+                    onClick={() => handleEditProduct(product)}
+                    data-testid={`button-edit-${product._id}`}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-stock-${product._id}`}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1" 
+                    onClick={() => handleManageStock(product)}
+                    data-testid={`button-stock-${product._id}`}
+                  >
                     Manage Stock
                   </Button>
                 </div>
@@ -389,6 +599,230 @@ export default function Products() {
           <p className="text-muted-foreground">No products found. Add your first product to get started.</p>
         </div>
       )}
+
+      {/* Edit Product Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>
+              Update product information
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProduct} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Product Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  data-testid="input-edit-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-brand">Brand *</Label>
+                <Input
+                  id="edit-brand"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  required
+                  data-testid="input-edit-brand"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Category *</Label>
+                <Input
+                  id="edit-category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  required
+                  data-testid="input-edit-category"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-variant">Variant</Label>
+                <Input
+                  id="edit-variant"
+                  value={formData.variant}
+                  onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
+                  data-testid="input-edit-variant"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-unitPrice">Unit Price *</Label>
+                <Input
+                  id="edit-unitPrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.unitPrice}
+                  onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                  required
+                  data-testid="input-edit-unitprice"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-mrp">MRP *</Label>
+                <Input
+                  id="edit-mrp"
+                  type="number"
+                  step="0.01"
+                  value={formData.mrp}
+                  onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
+                  required
+                  data-testid="input-edit-mrp"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-sellingPrice">Selling Price *</Label>
+                <Input
+                  id="edit-sellingPrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.sellingPrice}
+                  onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+                  required
+                  data-testid="input-edit-sellingprice"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-stockQty">Stock Quantity *</Label>
+                <Input
+                  id="edit-stockQty"
+                  type="number"
+                  value={formData.stockQty}
+                  onChange={(e) => setFormData({ ...formData, stockQty: e.target.value })}
+                  required
+                  data-testid="input-edit-stockqty"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-minStockLevel">Min Stock Level *</Label>
+                <Input
+                  id="edit-minStockLevel"
+                  type="number"
+                  value={formData.minStockLevel}
+                  onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
+                  required
+                  data-testid="input-edit-minstocklevel"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-warehouseLocation">Warehouse Location</Label>
+                <Input
+                  id="edit-warehouseLocation"
+                  value={formData.warehouseLocation}
+                  onChange={(e) => setFormData({ ...formData, warehouseLocation: e.target.value })}
+                  data-testid="input-edit-warehouse"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateProductMutation.isPending}
+                data-testid="button-submit-edit"
+              >
+                {updateProductMutation.isPending ? 'Updating...' : 'Update Product'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Stock Dialog */}
+      <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Stock - {selectedProduct?.name}</DialogTitle>
+            <DialogDescription>
+              Add or remove stock for this product
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateStock} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="stock-type">Transaction Type *</Label>
+              <Select 
+                value={stockFormData.type} 
+                onValueChange={(value) => setStockFormData({ ...stockFormData, type: value })}
+              >
+                <SelectTrigger id="stock-type" data-testid="select-stock-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IN">Stock In (Add)</SelectItem>
+                  <SelectItem value="OUT">Stock Out (Remove)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock-quantity">Quantity *</Label>
+              <Input
+                id="stock-quantity"
+                type="number"
+                min="1"
+                value={stockFormData.quantity}
+                onChange={(e) => setStockFormData({ ...stockFormData, quantity: e.target.value })}
+                required
+                data-testid="input-stock-quantity"
+              />
+              <p className="text-sm text-muted-foreground">
+                Current stock: {selectedProduct?.stockQty}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock-reason">Reason *</Label>
+              <Textarea
+                id="stock-reason"
+                value={stockFormData.reason}
+                onChange={(e) => setStockFormData({ ...stockFormData, reason: e.target.value })}
+                placeholder="E.g., Received from supplier, Damaged goods, etc."
+                required
+                data-testid="textarea-stock-reason"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsStockDialogOpen(false)}
+                data-testid="button-cancel-stock"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateStockMutation.isPending}
+                data-testid="button-submit-stock"
+              >
+                {updateStockMutation.isPending ? 'Updating...' : 'Update Stock'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
