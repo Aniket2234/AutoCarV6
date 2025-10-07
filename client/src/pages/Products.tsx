@@ -182,15 +182,15 @@ export default function Products() {
   const handleEditProduct = (product: any) => {
     setSelectedProduct(product);
     setFormData({
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-      variant: product.variant,
-      unitPrice: product.unitPrice.toString(),
-      mrp: product.mrp.toString(),
-      sellingPrice: product.sellingPrice.toString(),
-      stockQty: product.stockQty.toString(),
-      minStockLevel: product.minStockLevel.toString(),
+      name: product.name || "",
+      brand: product.brand || "",
+      category: product.category || "",
+      variant: product.variant || "",
+      unitPrice: product.unitPrice?.toString() || "",
+      mrp: product.mrp?.toString() || "",
+      sellingPrice: product.sellingPrice?.toString() || "",
+      stockQty: product.stockQty?.toString() || "",
+      minStockLevel: product.minStockLevel?.toString() || "",
       warehouseLocation: product.warehouseLocation || "",
     });
     setIsEditDialogOpen(true);

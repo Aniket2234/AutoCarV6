@@ -84,8 +84,8 @@ export default function PurchaseOrders() {
     if (field === "productId" && value) {
       const product = products.find((p: any) => p._id === value);
       if (product) {
-        newItems[index].productName = product.name;
-        newItems[index].unitPrice = product.unitPrice.toString();
+        newItems[index].productName = product.name || "";
+        newItems[index].unitPrice = product.unitPrice?.toString() || "";
       }
     }
     

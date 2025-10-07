@@ -90,7 +90,7 @@ export default function Orders() {
     
     if (field === "productId" && value) {
       const product = products.find((p: any) => p._id === value);
-      if (product) {
+      if (product && product.sellingPrice) {
         newItems[index].price = product.sellingPrice.toString();
       }
     }
