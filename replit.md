@@ -10,6 +10,29 @@ The application serves multiple user roles including administrators, inventory m
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### October 2025 - Bug Fixes & Role-Based Access Updates
+1. **Login Flow Fix**: Resolved race condition causing redirect to welcome page on first login attempt
+   - Added query cache refresh synchronization
+   - Implemented debounced redirect in ProtectedRoute
+   - Login now works correctly on first attempt
+
+2. **Admin Panel Restoration**: Added missing sections to complete the admin dashboard
+   - Created Suppliers page with search and CRUD operations
+   - Created Purchase Orders page with PO tracking and status management
+   - Created Tasks page with assignment and priority management
+   - Created Leaves page with approval workflow
+   - Created Communications & Feedback page for customer interactions
+   - All pages integrated with proper routing and permission checks
+
+3. **Role-Based Access Control Update**: Refined permissions to match business requirements
+   - Admin: Retains full system access
+   - Inventory Manager: Limited to Products and Inventory modules only
+   - Sales Executive: Limited to Customers and Orders modules only  
+   - HR Manager: Limited to Employees and Attendance modules only
+   - Service Staff: Read-only access to Customers, read/update access to Orders
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -92,11 +115,11 @@ Preferred communication style: Simple, everyday language.
 
 **Role-Based Access Control (RBAC)**
 - Five distinct user roles with granular permissions:
-  - **Admin**: Full access to all modules, user management, and system configuration
-  - **Inventory Manager**: Products, inventory, suppliers, and purchase orders
-  - **Sales Executive**: Customer management, orders, and communication logs
-  - **HR Manager**: Employee management, attendance, leave requests, and tasks
-  - **Service Staff**: View assigned customers, update service status, and complete tasks
+  - **Admin**: Full access to all modules (Products, Inventory, Customers, Orders, Employees, Attendance, Suppliers, Purchase Orders, Tasks, Leaves, Communications, Reports, User Management)
+  - **Inventory Manager**: Products and Inventory only
+  - **Sales Executive**: Customers and Orders only
+  - **HR Manager**: Employees and Attendance only
+  - **Service Staff**: Assigned Customers (read-only) and Service Status (Orders read/update)
 
 **Permission System**
 - Resource-based permissions (read, create, update, delete)
