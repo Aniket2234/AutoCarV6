@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Package } from "lucide-react";
+import { Plus, Search, Package, X, ImagePlus, Barcode } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,18 +33,21 @@ export default function Products() {
   });
   const { toast } = useToast();
 
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
     category: "",
-    variant: "",
-    unitPrice: "",
     mrp: "",
     sellingPrice: "",
+    discount: "",
     stockQty: "",
     minStockLevel: "",
-    warehouseLocation: ""
+    warehouseLocation: "",
+    barcode: "",
+    warranty: "",
+    images: [""],
+    modelCompatibility: [""],
+    variants: [{ size: "", color: "" }],
   });
 
   const { data: products = [], isLoading, error, refetch } = useQuery<any[]>({
@@ -59,18 +62,7 @@ export default function Products() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       setIsCreateDialogOpen(false);
-      setFormData({
-        name: "",
-        brand: "",
-        category: "",
-        variant: "",
-        unitPrice: "",
-        mrp: "",
-        sellingPrice: "",
-        stockQty: "",
-        minStockLevel: "",
-        warehouseLocation: ""
-      });
+      resetForm();
       toast({
         title: "Success",
         description: "Product created successfully",
@@ -133,12 +125,76 @@ export default function Products() {
     },
   });
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      brand: "",
+      category: "",
+      mrp: "",
+      sellingPrice: "",
+      discount: "",
+      stockQty: "",
+      minStockLevel: "",
+      warehouseLocation: "",
+      barcode: "",
+      warranty: "",
+      images: [""],
+      modelCompatibility: [""],
+      variants: [{ size: "", color: "" }],
+    });
+  };
+
+  const addImage = () => {
+    setFormData({ ...formData, images: [...formData.images, ""] });
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = formData.images.filter((_, i) => i !== index);
+    setFormData({ ...formData, images: newImages.length > 0 ? newImages : [""] });
+  };
+
+  const updateImage = (index: number, value: string) => {
+    const newImages = [...formData.images];
+    newImages[index] = value;
+    setFormData({ ...formData, images: newImages });
+  };
+
+  const addModelCompat = () => {
+    setFormData({ ...formData, modelCompatibility: [...formData.modelCompatibility, ""] });
+  };
+
+  const removeModelCompat = (index: number) => {
+    const newModels = formData.modelCompatibility.filter((_, i) => i !== index);
+    setFormData({ ...formData, modelCompatibility: newModels.length > 0 ? newModels : [""] });
+  };
+
+  const updateModelCompat = (index: number, value: string) => {
+    const newModels = [...formData.modelCompatibility];
+    newModels[index] = value;
+    setFormData({ ...formData, modelCompatibility: newModels });
+  };
+
+  const addVariant = () => {
+    setFormData({ ...formData, variants: [...formData.variants, { size: "", color: "" }] });
+  };
+
+  const removeVariant = (index: number) => {
+    const newVariants = formData.variants.filter((_, i) => i !== index);
+    setFormData({ ...formData, variants: newVariants.length > 0 ? newVariants : [{ size: "", color: "" }] });
+  };
+
+  const updateVariant = (index: number, field: 'size' | 'color', value: string) => {
+    const newVariants = [...formData.variants];
+    newVariants[index][field] = value;
+    setFormData({ ...formData, variants: newVariants });
+  };
+
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const unitPrice = parseFloat(formData.unitPrice);
     const mrp = parseFloat(formData.mrp);
     const sellingPrice = parseFloat(formData.sellingPrice);
+    const discount = parseFloat(formData.discount) || 0;
     const stockQty = parseInt(formData.stockQty);
     const minStockLevel = parseInt(formData.minStockLevel);
     
@@ -151,7 +207,7 @@ export default function Products() {
       return;
     }
     
-    if (isNaN(unitPrice) || unitPrice <= 0 || isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
+    if (isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
       toast({
         title: "Validation Error",
         description: "Please enter valid prices greater than 0",
@@ -169,14 +225,24 @@ export default function Products() {
       return;
     }
     
-    createProductMutation.mutate({
-      ...formData,
-      unitPrice,
+    const productData = {
+      name: formData.name,
+      brand: formData.brand,
+      category: formData.category,
       mrp,
       sellingPrice,
+      discount,
       stockQty,
       minStockLevel,
-    });
+      warehouseLocation: formData.warehouseLocation,
+      barcode: formData.barcode,
+      warranty: formData.warranty,
+      images: formData.images.filter(img => img.trim() !== ""),
+      modelCompatibility: formData.modelCompatibility.filter(m => m.trim() !== ""),
+      variants: formData.variants.filter(v => v.size || v.color),
+    };
+    
+    createProductMutation.mutate(productData);
   };
 
   const handleEditProduct = (product: any) => {
@@ -185,13 +251,17 @@ export default function Products() {
       name: product.name || "",
       brand: product.brand || "",
       category: product.category || "",
-      variant: product.variant || "",
-      unitPrice: product.unitPrice?.toString() || "",
       mrp: product.mrp?.toString() || "",
       sellingPrice: product.sellingPrice?.toString() || "",
+      discount: product.discount?.toString() || "0",
       stockQty: product.stockQty?.toString() || "",
       minStockLevel: product.minStockLevel?.toString() || "",
       warehouseLocation: product.warehouseLocation || "",
+      barcode: product.barcode || "",
+      warranty: product.warranty || "",
+      images: (product.images && product.images.length > 0) ? product.images : [""],
+      modelCompatibility: (product.modelCompatibility && product.modelCompatibility.length > 0) ? product.modelCompatibility : [""],
+      variants: (product.variants && product.variants.length > 0) ? product.variants : [{ size: "", color: "" }],
     });
     setIsEditDialogOpen(true);
   };
@@ -199,9 +269,9 @@ export default function Products() {
   const handleUpdateProduct = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const unitPrice = parseFloat(formData.unitPrice);
     const mrp = parseFloat(formData.mrp);
     const sellingPrice = parseFloat(formData.sellingPrice);
+    const discount = parseFloat(formData.discount) || 0;
     const stockQty = parseInt(formData.stockQty);
     const minStockLevel = parseInt(formData.minStockLevel);
     
@@ -214,7 +284,7 @@ export default function Products() {
       return;
     }
     
-    if (isNaN(unitPrice) || unitPrice <= 0 || isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
+    if (isNaN(mrp) || mrp <= 0 || isNaN(sellingPrice) || sellingPrice <= 0) {
       toast({
         title: "Validation Error",
         description: "Please enter valid prices greater than 0",
@@ -233,16 +303,26 @@ export default function Products() {
     }
     
     if (selectedProduct) {
+      const productData = {
+        name: formData.name,
+        brand: formData.brand,
+        category: formData.category,
+        mrp,
+        sellingPrice,
+        discount,
+        stockQty,
+        minStockLevel,
+        warehouseLocation: formData.warehouseLocation,
+        barcode: formData.barcode,
+        warranty: formData.warranty,
+        images: formData.images.filter(img => img.trim() !== ""),
+        modelCompatibility: formData.modelCompatibility.filter(m => m.trim() !== ""),
+        variants: formData.variants.filter(v => v.size || v.color),
+      };
+      
       updateProductMutation.mutate({
         id: selectedProduct._id,
-        data: {
-          ...formData,
-          unitPrice,
-          mrp,
-          sellingPrice,
-          stockQty,
-          minStockLevel,
-        },
+        data: productData,
       });
     }
   };
@@ -294,9 +374,17 @@ export default function Products() {
     }).format(amount);
   };
 
+  const calculateDiscountPercentage = (mrp: number, sellingPrice: number) => {
+    if (mrp > sellingPrice) {
+      return Math.round(((mrp - sellingPrice) / mrp) * 100);
+    }
+    return 0;
+  };
+
   const filteredProducts = products.filter((product: any) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchTerm.toLowerCase());
+      product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.barcode && product.barcode.includes(searchTerm));
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -315,6 +403,288 @@ export default function Products() {
         return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
     }
   };
+
+  const renderProductForm = (isEdit: boolean) => (
+    <form onSubmit={isEdit ? handleUpdateProduct : handleCreateProduct} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Product Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+            data-testid="input-product-name"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brand">Brand *</Label>
+          <Input
+            id="brand"
+            value={formData.brand}
+            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+            required
+            data-testid="input-product-brand"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category *</Label>
+          <Input
+            id="category"
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            required
+            placeholder="e.g., Engine Parts, Brakes"
+            data-testid="input-product-category"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="barcode">Barcode/QR Code</Label>
+          <div className="relative">
+            <Barcode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="barcode"
+              value={formData.barcode}
+              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+              className="pl-10"
+              data-testid="input-product-barcode"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="mrp">MRP *</Label>
+          <Input
+            id="mrp"
+            type="number"
+            step="0.01"
+            value={formData.mrp}
+            onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
+            required
+            data-testid="input-product-mrp"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sellingPrice">Selling Price *</Label>
+          <Input
+            id="sellingPrice"
+            type="number"
+            step="0.01"
+            value={formData.sellingPrice}
+            onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+            required
+            data-testid="input-product-sellingprice"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="discount">Discount %</Label>
+          <Input
+            id="discount"
+            type="number"
+            step="0.01"
+            value={formData.discount}
+            onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+            data-testid="input-product-discount"
+          />
+        </div>
+      </div>
+
+      {formData.mrp && formData.sellingPrice && (
+        <div className="p-3 bg-muted rounded-md">
+          <p className="text-sm">
+            Calculated Discount: <span className="font-semibold">
+              {calculateDiscountPercentage(parseFloat(formData.mrp), parseFloat(formData.sellingPrice))}%
+            </span>
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="stockQty">Stock Quantity *</Label>
+          <Input
+            id="stockQty"
+            type="number"
+            value={formData.stockQty}
+            onChange={(e) => setFormData({ ...formData, stockQty: e.target.value })}
+            required
+            data-testid="input-product-stockqty"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="minStockLevel">Min Stock Level *</Label>
+          <Input
+            id="minStockLevel"
+            type="number"
+            value={formData.minStockLevel}
+            onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
+            required
+            data-testid="input-product-minstocklevel"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="warehouseLocation">Warehouse Location</Label>
+          <Input
+            id="warehouseLocation"
+            value={formData.warehouseLocation}
+            onChange={(e) => setFormData({ ...formData, warehouseLocation: e.target.value })}
+            data-testid="input-product-warehouse"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="warranty">Warranty Information</Label>
+        <Input
+          id="warranty"
+          value={formData.warranty}
+          onChange={(e) => setFormData({ ...formData, warranty: e.target.value })}
+          placeholder="e.g., 1 Year Manufacturer Warranty"
+          data-testid="input-product-warranty"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Product Images</Label>
+        {formData.images.map((image, index) => (
+          <div key={index} className="flex gap-2">
+            <Input
+              value={image}
+              onChange={(e) => updateImage(index, e.target.value)}
+              placeholder="Image URL"
+              data-testid={`input-image-${index}`}
+            />
+            {formData.images.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => removeImage(index)}
+                data-testid={`button-remove-image-${index}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addImage}
+          data-testid="button-add-image"
+        >
+          <ImagePlus className="h-4 w-4 mr-2" />
+          Add Image
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Model Compatibility</Label>
+        {formData.modelCompatibility.map((model, index) => (
+          <div key={index} className="flex gap-2">
+            <Input
+              value={model}
+              onChange={(e) => updateModelCompat(index, e.target.value)}
+              placeholder="Compatible model"
+              data-testid={`input-model-${index}`}
+            />
+            {formData.modelCompatibility.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => removeModelCompat(index)}
+                data-testid={`button-remove-model-${index}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addModelCompat}
+          data-testid="button-add-model"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Model
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Product Variants</Label>
+        {formData.variants.map((variant, index) => (
+          <div key={index} className="flex gap-2">
+            <Input
+              value={variant.size}
+              onChange={(e) => updateVariant(index, 'size', e.target.value)}
+              placeholder="Size"
+              data-testid={`input-variant-size-${index}`}
+            />
+            <Input
+              value={variant.color}
+              onChange={(e) => updateVariant(index, 'color', e.target.value)}
+              placeholder="Color"
+              data-testid={`input-variant-color-${index}`}
+            />
+            {formData.variants.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => removeVariant(index)}
+                data-testid={`button-remove-variant-${index}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addVariant}
+          data-testid="button-add-variant"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Variant
+        </Button>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            isEdit ? setIsEditDialogOpen(false) : setIsCreateDialogOpen(false);
+            if (!isEdit) resetForm();
+          }}
+          data-testid="button-cancel-product"
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isEdit ? updateProductMutation.isPending : createProductMutation.isPending}
+          data-testid="button-submit-product"
+        >
+          {isEdit 
+            ? (updateProductMutation.isPending ? 'Updating...' : 'Update Product')
+            : (createProductMutation.isPending ? 'Creating...' : 'Create Product')
+          }
+        </Button>
+      </div>
+    </form>
+  );
 
   if (isLoading) {
     return (
@@ -360,151 +730,14 @@ export default function Products() {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>
-                Add a new product to your inventory
+                Add a new product with specifications, images, and variants
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    data-testid="input-product-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Brand *</Label>
-                  <Input
-                    id="brand"
-                    value={formData.brand}
-                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    required
-                    data-testid="input-product-brand"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    required
-                    placeholder="e.g., Engine Parts, Brakes"
-                    data-testid="input-product-category"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant">Variant</Label>
-                  <Input
-                    id="variant"
-                    value={formData.variant}
-                    onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
-                    data-testid="input-product-variant"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="unitPrice">Unit Price *</Label>
-                  <Input
-                    id="unitPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.unitPrice}
-                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                    required
-                    data-testid="input-product-unitprice"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mrp">MRP *</Label>
-                  <Input
-                    id="mrp"
-                    type="number"
-                    step="0.01"
-                    value={formData.mrp}
-                    onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
-                    required
-                    data-testid="input-product-mrp"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sellingPrice">Selling Price *</Label>
-                  <Input
-                    id="sellingPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.sellingPrice}
-                    onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
-                    required
-                    data-testid="input-product-sellingprice"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="stockQty">Stock Quantity *</Label>
-                  <Input
-                    id="stockQty"
-                    type="number"
-                    value={formData.stockQty}
-                    onChange={(e) => setFormData({ ...formData, stockQty: e.target.value })}
-                    required
-                    data-testid="input-product-stockqty"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="minStockLevel">Min Stock Level *</Label>
-                  <Input
-                    id="minStockLevel"
-                    type="number"
-                    value={formData.minStockLevel}
-                    onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
-                    required
-                    data-testid="input-product-minstocklevel"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="warehouseLocation">Warehouse Location</Label>
-                  <Input
-                    id="warehouseLocation"
-                    value={formData.warehouseLocation}
-                    onChange={(e) => setFormData({ ...formData, warehouseLocation: e.target.value })}
-                    data-testid="input-product-warehouse"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                  data-testid="button-cancel-product"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createProductMutation.isPending}
-                  data-testid="button-submit-product"
-                >
-                  {createProductMutation.isPending ? 'Creating...' : 'Create Product'}
-                </Button>
-              </div>
-            </form>
+            {renderProductForm(false)}
           </DialogContent>
         </Dialog>
       </div>
@@ -513,7 +746,7 @@ export default function Products() {
         <div className="relative flex-1 min-w-[300px]">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search products..."
+            placeholder="Search products by name, brand, or barcode..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -536,57 +769,102 @@ export default function Products() {
 
       {filteredProducts.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product: any) => (
-            <Card key={product._id} className="hover-elevate" data-testid={`card-product-${product._id}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
+          {filteredProducts.map((product: any) => {
+            const discountPercent = calculateDiscountPercentage(product.mrp, product.sellingPrice);
+            return (
+              <Card key={product._id} className="hover-elevate" data-testid={`card-product-${product._id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{product.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
+                      {product.barcode && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Barcode className="h-3 w-3" />
+                          {product.barcode}
+                        </p>
+                      )}
+                    </div>
+                    <Package className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <Package className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" data-testid={`category-${product._id}`}>{product.category}</Badge>
-                  {getStatusBadge(product.status, product.stockQty)}
-                </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" data-testid={`category-${product._id}`}>{product.category}</Badge>
+                    {getStatusBadge(product.status, product.stockQty)}
+                    {discountPercent > 0 && (
+                      <Badge variant="default" className="bg-green-600">
+                        {discountPercent}% OFF
+                      </Badge>
+                    )}
+                  </div>
 
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-muted-foreground">MRP</p>
-                    <p className="text-sm line-through text-muted-foreground">{formatCurrency(product.mrp)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Selling Price</p>
-                    <p className="text-lg font-bold">{formatCurrency(product.sellingPrice)}</p>
-                  </div>
-                </div>
+                  {product.warranty && (
+                    <p className="text-xs text-muted-foreground">
+                      Warranty: {product.warranty}
+                    </p>
+                  )}
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1" 
-                    onClick={() => handleEditProduct(product)}
-                    data-testid={`button-edit-${product._id}`}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1" 
-                    onClick={() => handleManageStock(product)}
-                    data-testid={`button-stock-${product._id}`}
-                  >
-                    Manage Stock
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {product.modelCompatibility && product.modelCompatibility.length > 0 && (
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Compatible: </span>
+                      <span>{product.modelCompatibility.slice(0, 2).join(', ')}</span>
+                      {product.modelCompatibility.length > 2 && <span> +{product.modelCompatibility.length - 2} more</span>}
+                    </div>
+                  )}
+
+                  {product.variants && product.variants.length > 0 && (
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Variants: </span>
+                      {product.variants.map((v: any, i: number) => (
+                        <Badge key={i} variant="outline" className="mr-1">
+                          {v.size && v.color ? `${v.size}/${v.color}` : v.size || v.color}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground">MRP</p>
+                      <p className="text-sm line-through text-muted-foreground">{formatCurrency(product.mrp)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Selling Price</p>
+                      <p className="text-lg font-bold">{formatCurrency(product.sellingPrice)}</p>
+                    </div>
+                  </div>
+
+                  {product.warehouseLocation && (
+                    <p className="text-xs text-muted-foreground">
+                      Location: {product.warehouseLocation}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1" 
+                      onClick={() => handleEditProduct(product)}
+                      data-testid={`button-edit-${product._id}`}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1" 
+                      onClick={() => handleManageStock(product)}
+                      data-testid={`button-stock-${product._id}`}
+                    >
+                      Manage Stock
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : products.length > 0 ? (
         <div className="text-center py-12">
@@ -600,210 +878,69 @@ export default function Products() {
         </div>
       )}
 
-      {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>
-              Update product information
+              Update product information, specifications, and variants
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleUpdateProduct} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Product Name *</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  data-testid="input-edit-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-brand">Brand *</Label>
-                <Input
-                  id="edit-brand"
-                  value={formData.brand}
-                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                  required
-                  data-testid="input-edit-brand"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-category">Category *</Label>
-                <Input
-                  id="edit-category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  required
-                  data-testid="input-edit-category"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-variant">Variant</Label>
-                <Input
-                  id="edit-variant"
-                  value={formData.variant}
-                  onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
-                  data-testid="input-edit-variant"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-unitPrice">Unit Price *</Label>
-                <Input
-                  id="edit-unitPrice"
-                  type="number"
-                  step="0.01"
-                  value={formData.unitPrice}
-                  onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                  required
-                  data-testid="input-edit-unitprice"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-mrp">MRP *</Label>
-                <Input
-                  id="edit-mrp"
-                  type="number"
-                  step="0.01"
-                  value={formData.mrp}
-                  onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
-                  required
-                  data-testid="input-edit-mrp"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-sellingPrice">Selling Price *</Label>
-                <Input
-                  id="edit-sellingPrice"
-                  type="number"
-                  step="0.01"
-                  value={formData.sellingPrice}
-                  onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
-                  required
-                  data-testid="input-edit-sellingprice"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-stockQty">Stock Quantity *</Label>
-                <Input
-                  id="edit-stockQty"
-                  type="number"
-                  value={formData.stockQty}
-                  onChange={(e) => setFormData({ ...formData, stockQty: e.target.value })}
-                  required
-                  data-testid="input-edit-stockqty"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-minStockLevel">Min Stock Level *</Label>
-                <Input
-                  id="edit-minStockLevel"
-                  type="number"
-                  value={formData.minStockLevel}
-                  onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
-                  required
-                  data-testid="input-edit-minstocklevel"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-warehouseLocation">Warehouse Location</Label>
-                <Input
-                  id="edit-warehouseLocation"
-                  value={formData.warehouseLocation}
-                  onChange={(e) => setFormData({ ...formData, warehouseLocation: e.target.value })}
-                  data-testid="input-edit-warehouse"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-                data-testid="button-cancel-edit"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={updateProductMutation.isPending}
-                data-testid="button-submit-edit"
-              >
-                {updateProductMutation.isPending ? 'Updating...' : 'Update Product'}
-              </Button>
-            </div>
-          </form>
+          {renderProductForm(true)}
         </DialogContent>
       </Dialog>
 
-      {/* Manage Stock Dialog */}
       <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage Stock - {selectedProduct?.name}</DialogTitle>
+            <DialogTitle>Manage Stock</DialogTitle>
             <DialogDescription>
-              Add or remove stock for this product
+              Update inventory for {selectedProduct?.name}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateStock} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="stock-type">Transaction Type *</Label>
-              <Select 
-                value={stockFormData.type} 
+              <Label htmlFor="stock-type">Transaction Type</Label>
+              <Select
+                value={stockFormData.type}
                 onValueChange={(value) => setStockFormData({ ...stockFormData, type: value })}
               >
-                <SelectTrigger id="stock-type" data-testid="select-stock-type">
+                <SelectTrigger data-testid="select-stock-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="IN">Stock In (Add)</SelectItem>
-                  <SelectItem value="OUT">Stock Out (Remove)</SelectItem>
+                  <SelectItem value="IN">Stock In</SelectItem>
+                  <SelectItem value="OUT">Stock Out</SelectItem>
+                  <SelectItem value="ADJUSTMENT">Adjustment</SelectItem>
+                  <SelectItem value="RETURN">Return</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stock-quantity">Quantity *</Label>
+              <Label htmlFor="stock-quantity">Quantity</Label>
               <Input
                 id="stock-quantity"
                 type="number"
-                min="1"
                 value={stockFormData.quantity}
                 onChange={(e) => setStockFormData({ ...stockFormData, quantity: e.target.value })}
                 required
                 data-testid="input-stock-quantity"
               />
-              <p className="text-sm text-muted-foreground">
-                Current stock: {selectedProduct?.stockQty}
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stock-reason">Reason *</Label>
+              <Label htmlFor="stock-reason">Reason</Label>
               <Textarea
                 id="stock-reason"
                 value={stockFormData.reason}
                 onChange={(e) => setStockFormData({ ...stockFormData, reason: e.target.value })}
-                placeholder="E.g., Received from supplier, Damaged goods, etc."
                 required
-                data-testid="textarea-stock-reason"
+                data-testid="input-stock-reason"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
