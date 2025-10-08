@@ -7,6 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -14,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Package, X, ImagePlus, Barcode } from "lucide-react";
+import { Plus, Search, Package, X, ImagePlus, Barcode, Trash2, ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,6 +35,7 @@ export default function Products() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [stockFormData, setStockFormData] = useState({
     quantity: "",
@@ -120,6 +131,29 @@ export default function Products() {
       toast({
         title: "Error",
         description: error.message || "Failed to update stock",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/products/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedProduct(null);
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product",
         variant: "destructive",
       });
     },
@@ -482,27 +516,20 @@ export default function Products() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="discount">Discount %</Label>
+          <Label htmlFor="discount">Discount % (Auto-calculated)</Label>
           <Input
             id="discount"
-            type="number"
-            step="0.01"
-            value={formData.discount}
-            onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+            type="text"
+            value={formData.mrp && formData.sellingPrice ? 
+              `${calculateDiscountPercentage(parseFloat(formData.mrp), parseFloat(formData.sellingPrice))}%` : 
+              '0%'
+            }
+            readOnly
+            className="bg-muted"
             data-testid="input-product-discount"
           />
         </div>
       </div>
-
-      {formData.mrp && formData.sellingPrice && (
-        <div className="p-3 bg-muted rounded-md">
-          <p className="text-sm">
-            Calculated Discount: <span className="font-semibold">
-              {calculateDiscountPercentage(parseFloat(formData.mrp), parseFloat(formData.sellingPrice))}%
-            </span>
-          </p>
-        </div>
-      )}
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
@@ -789,6 +816,27 @@ export default function Products() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {product.images && product.images.length > 0 && product.images[0] ? (
+                    <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
+                      <img 
+                        src={product.images[0]} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded-md flex items-center justify-center">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" data-testid={`category-${product._id}`}>{product.category}</Badge>
                     {getStatusBadge(product.status, product.stockQty)}
@@ -859,6 +907,17 @@ export default function Products() {
                       data-testid={`button-stock-${product._id}`}
                     >
                       Manage Stock
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedProduct(product);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      data-testid={`button-delete-${product._id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -960,6 +1019,31 @@ export default function Products() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedProduct?.name}"? This action cannot be undone and will permanently remove this product from your inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedProduct) {
+                  deleteProductMutation.mutate(selectedProduct._id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
