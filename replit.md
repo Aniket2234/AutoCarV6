@@ -1,237 +1,35 @@
 # AutoShop Manager - Car Parts & Service Management System
 
 ## Overview
-
-AutoShop Manager is a comprehensive full-stack web application designed for auto repair shops to manage their operations efficiently. The system handles car parts inventory, customer relationships, service workflows, employee management, and sales tracking. Built with a modern tech stack, it provides a professional dashboard interface for managing all aspects of an automotive service business.
-
-The application serves multiple user roles including administrators, inventory managers, sales executives, HR managers, and service staff, each with tailored views and permissions for their responsibilities.
+AutoShop Manager is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
-
-## Recent Changes
-
-### October 8, 2025 - Product & Inventory Module Enhancements
-1. **Enhanced Product Management**: Comprehensive upgrade to product catalog with advanced features
-   - **Multiple Product Images**: Array-based image storage with add/remove functionality for unlimited product photos
-   - **Product Specifications**: 
-     * Model compatibility tracking (array of compatible vehicle models)
-     * Warranty information field for product warranty details
-   - **Discount System**: 
-     * Discount percentage field with automatic calculation display
-     * Visual discount badges showing percentage off
-     * MRP vs. Selling Price comparison with strike-through pricing
-   - **Product Variants**: Dynamic variant system supporting:
-     * Size variations
-     * Color variations
-     * Multiple variant combinations per product
-   - **Barcode/QR Integration**: 
-     * Barcode field for product identification
-     * Barcode search functionality in product listing
-     * Quick product lookup via barcode scanner integration
-   - **Enhanced Product Cards**: Display warranty, compatibility, variants, location, and discount information
-
-2. **Advanced Inventory Management**: Complete inventory system overhaul
-   - **Enhanced Transaction System**:
-     * Four transaction types: IN, OUT, RETURN, ADJUSTMENT
-     * Previous stock and new stock tracking for audit trail
-     * Supply details: supplier linkage, batch numbers, unit cost tracking
-     * Warehouse location per transaction
-     * Additional notes field for detailed record-keeping
-   - **Low Stock Alert System**:
-     * Dedicated tab showing products below minimum stock level
-     * Visual alerts with orange warning indicators
-     * Quick restock action from low stock alerts
-     * Real-time monitoring of stock levels
-   - **Product Return Management**:
-     * Complete return workflow with status tracking (pending, approved, rejected, processed)
-     * Return conditions: defective, damaged, wrong item, not as described, other
-     * Refund amount calculation and tracking
-     * Restockable flag for automatic inventory restoration
-     * Customer and order linkage for return traceability
-     * Automatic inventory transaction creation when return is processed
-   - **Purchase Order Integration**:
-     * View and track purchase orders from inventory page
-     * Link inventory transactions to purchase orders
-     * PO status tracking (pending, approved, received, cancelled)
-   - **Enhanced History Logs**:
-     * Comprehensive transaction history with all details
-     * Supplier information in transaction records
-     * Batch number tracking for quality control
-     * User attribution for all inventory movements
-     * Warehouse location tracking per transaction
-
-3. **Backend API Enhancements**:
-   - Created ProductReturn model with full return workflow
-   - Updated InventoryTransaction model with supply details, batch tracking, and return linkage
-   - New endpoints:
-     * `/api/products/low-stock` - Get products below minimum stock
-     * `/api/products/barcode/:barcode` - Search product by barcode
-     * `/api/product-returns` - Full CRUD for product returns
-     * Enhanced `/api/inventory-transactions` with automatic stock calculation
-   - Automatic stock level updates with transaction history preservation
-
-### October 2025 - Bug Fixes & Role-Based Access Updates
-1. **Login Flow Fix**: Resolved race condition causing redirect to welcome page on first login attempt
-   - Added query cache refresh synchronization
-   - Implemented debounced redirect in ProtectedRoute
-   - Login now works correctly on first attempt
-
-2. **Admin Panel Restoration**: Added missing sections to complete the admin dashboard
-   - Created Suppliers page with search and CRUD operations
-   - Created Purchase Orders page with PO tracking and status management
-   - Created Tasks page with assignment and priority management
-   - Created Leaves page with approval workflow
-   - Created Communications & Feedback page for customer interactions
-   - All pages integrated with proper routing and permission checks
-
-3. **Role-Based Access Control Update**: Refined permissions to match business requirements
-   - Admin: Retains full system access
-   - Inventory Manager: Limited to Products and Inventory modules only
-   - Sales Executive: Limited to Customers and Orders modules only  
-   - HR Manager: Limited to Employees and Attendance modules only
-   - Service Staff: Read-only access to Customers, read/update access to Orders
-
-4. **Role-Based Dashboard Analytics**: Implemented role-specific KPIs and analytics (October 7, 2025)
-   - Dashboard now displays only metrics relevant to user's role and permissions
-   - Backend /api/dashboard-stats endpoint filters data based on ROLE_PERMISSIONS
-   - Each role sees customized KPIs:
-     * Admin: Sales, service jobs, stock alerts, customers, employees, products
-     * Inventory Manager: Product count, inventory value, low stock alerts, transaction count
-     * Sales Executive: Sales totals, customer count, active orders, total orders
-     * HR Manager: Employee count, attendance, pending leaves, active tasks
-     * Service Staff: Personal active orders, completed tasks, customer count
-   - Security: All stats strictly aligned with role permissions (no unauthorized data access)
-   - Frontend displays role-appropriate analytics cards and graphs only
 
 ## System Architecture
 
 ### Frontend Architecture
-
-**Framework & Build System**
-- **React with Vite**: Modern SPA architecture using React 18+ with Vite as the build tool for fast development and optimized production builds
-- **TypeScript**: Full type safety across the application with strict mode enabled
-- **Client-side Routing**: Uses Wouter for lightweight, declarative routing without full page reloads
-- **State Management**: TanStack Query (React Query) for server state management with automatic caching, refetching, and optimistic updates
-
-**UI Component System**
-- **Design System**: Shadcn/ui component library with Radix UI primitives for accessible, customizable components
-- **Styling**: Tailwind CSS with custom design tokens following a dark-mode-first professional dashboard aesthetic
-- **Theme System**: Custom theme provider supporting light/dark modes with persistent user preferences
-- **Design Philosophy**: Information-dense, utility-focused interface inspired by Linear, Stripe Dashboard, and Notion
-
-**Key Architectural Patterns**
-- Component composition with reusable UI primitives (Button, Card, Badge, etc.)
-- Custom hooks for cross-cutting concerns (useIsMobile, useToast, useTheme)
-- Data table abstraction with pagination and flexible column configuration
-- Status-based visual indicators with semantic color coding
+The frontend is built with **React (18+)** and **Vite** for a fast SPA experience, utilizing **TypeScript** for type safety and **Wouter** for client-side routing. **TanStack Query** manages server state with caching and optimistic updates. The UI uses **Shadcn/ui** components based on **Radix UI primitives** and styled with **Tailwind CSS**, following a dark-mode-first, information-dense design inspired by professional dashboards. It includes a custom theme provider for light/dark modes and uses custom hooks for shared functionalities.
 
 ### Backend Architecture
+The backend is an **Express.js** RESTful API server, also written in **TypeScript**. It features a middleware-based request processing system for logging, error handling, and JSON parsing. API endpoints follow resource-based patterns for CRUD operations on all major entities.
 
-**Server Framework**
-- **Express.js**: RESTful API server with middleware-based request processing
-- **TypeScript**: Type-safe server implementation
-- **Development Setup**: Custom Vite integration for HMR during development, static file serving in production
-
-**API Design**
-- RESTful endpoints following resource-based URL patterns (`/api/products`, `/api/customers`, etc.)
-- CRUD operations for all major entities (Products, Customers, Employees, Orders, Service Visits)
-- Middleware for request logging, error handling, and JSON parsing
-- Response standardization with consistent error formats
-
-**Database Layer**
-- **MongoDB with Mongoose ODM**: NoSQL database for flexible document storage
-- **Connection Management**: Singleton pattern with connection caching for serverless compatibility
-- **Schema Design**: Mongoose models with validation, hooks, and virtual fields
-- **Data Relationships**: Reference-based relationships using ObjectIds with population support
+### Database Layer
+The primary database is **MongoDB** with **Mongoose ODM** for flexible NoSQL document storage, using a singleton pattern for connection management. Schema designs incorporate validation, hooks, virtual fields, and reference-based relationships. A **PostgreSQL with Drizzle** layer is present for future authentication implementation.
 
 ### Data Models & Schemas
-
-**Core Entities**
-1. **Product**: Car parts inventory with multiple images, model compatibility array, warranty info, pricing with discount, variants (size/color), barcode/QR, stock levels, warehouse location, supplier references
-2. **Customer**: Customer profiles with multiple vehicle registrations, contact information
-3. **Employee**: Staff management with roles, contact details, active status
-4. **ServiceVisit**: Service workflow tracking with status progression (inquired → working → waiting → completed), parts usage, timestamps
-5. **Order**: Sales orders with line items, payment tracking, delivery status, invoice generation
-6. **InventoryTransaction**: Enhanced stock movement logging (IN/OUT/RETURN/ADJUSTMENT) with supplier details, batch numbers, unit cost, previous/new stock tracking, warehouse location, purchase order linkage, and comprehensive notes
-7. **ProductReturn**: Product return management with quantity, condition tracking, refund amounts, restockable flag, status workflow (pending/approved/rejected/processed), customer/order linkage
-8. **Supplier**: Vendor management with product catalogs and payment terms
-9. **PurchaseOrder**: Procurement tracking with auto-generated PO numbers
-10. **Attendance**: Employee time tracking with check-in/out and status
-11. **Leave**: Employee leave management with approval workflows
-12. **Task**: Task assignment system with priority and status tracking
-13. **CommunicationLog**: Customer interaction history across multiple channels
-14. **Feedback**: Customer feedback/complaint management system
-15. **Notification**: Real-time alerts for low stock, new orders, payment dues
-
-**Schema Features**
-- Auto-generated unique identifiers (PO numbers, invoice numbers)
-- Pre-save hooks for status calculations (stock levels, service stage timestamps)
-- Subdocuments for embedded relationships (order items, vehicle details)
-- Enum validations for status fields
-- Timestamp tracking on all entities
+Core entities include Product (with multi-image support, variants, barcode, compatibility, warranty, and detailed inventory tracking), Customer, Employee, ServiceVisit, Order, enhanced InventoryTransaction (tracking IN/OUT/RETURN/ADJUSTMENT, suppliers, batches, unit costs), ProductReturn (with status workflow, refund tracking), Supplier, PurchaseOrder, Attendance, Leave, Task, CommunicationLog, and Feedback. Schemas feature auto-generated IDs, pre-save hooks for status calculations, subdocuments, enum validations, and timestamps.
 
 ### Authentication & Authorization
+The system uses **session-based authentication** with Express sessions and secure HTTP-only cookies. Password hashing is handled by **bcryptjs**. **Role-Based Access Control (RBAC)** defines five distinct roles: Admin, Inventory Manager, Sales Executive, HR Manager, and Service Staff, each with granular permissions (read, create, update, delete) enforced via middleware and frontend checks. Dashboards are role-specific, displaying tailored KPIs and analytics.
 
-**Session-Based Authentication**
-- Express session management with MemoryStore for session persistence
-- Secure HTTP-only cookies for session handling
-- Password hashing with bcryptjs for secure credential storage
-- Login/Register pages with form validation
-- Protected route wrapper for authenticated-only pages
+## External Dependencies
 
-**User Management**
-- MongoDB User model with email/password authentication
-- User profile page displaying account information and permissions
-- Admin-only user management endpoints
-
-**Role-Based Access Control (RBAC)**
-- Five distinct user roles with granular permissions:
-  - **Admin**: Full access to all modules (Products, Inventory, Customers, Orders, Employees, Attendance, Suppliers, Purchase Orders, Tasks, Leaves, Communications, Reports, User Management)
-  - **Inventory Manager**: Products and Inventory only
-  - **Sales Executive**: Customers and Orders only
-  - **HR Manager**: Employees and Attendance only
-  - **Service Staff**: Assigned Customers (read-only) and Service Status (Orders read/update)
-
-**Permission System**
-- Resource-based permissions (read, create, update, delete)
-- Middleware functions for route protection (requireAuth, requireRole)
-- Frontend permission checks via hasPermission utility
-- Role-specific UI rendering based on user permissions
-
-### External Dependencies
-
-**Database**
-- **MongoDB**: Primary database via `@neondatabase/serverless` driver (Note: Despite the package name, this is used with MongoDB connection strings)
-- **Mongoose**: ODM for schema definition, validation, and query building
-- **PostgreSQL with Drizzle**: Secondary database layer defined in schema (currently minimal usage, prepared for future auth implementation)
-
-**UI Component Libraries**
-- **Radix UI**: Comprehensive set of unstyled, accessible component primitives (20+ components including Dialog, Dropdown, Popover, Select, etc.)
-- **Tailwind CSS**: Utility-first CSS framework with custom configuration
-- **Lucide React**: Icon library for consistent iconography
-
-**State & Data Management**
-- **TanStack Query**: Server state management with query invalidation and caching strategies
-- **React Hook Form**: Form state management (planned integration via @hookform/resolvers)
-- **Zod**: Schema validation for forms and API data (via drizzle-zod)
-
-**Date & Time**
-- **date-fns**: Date formatting and manipulation library used throughout the application
-
-**Development Tools**
-- **Vite**: Build tool with development server and HMR
-- **esbuild**: Production bundling for server code
-- **TypeScript**: Type checking across client and server
-- **Replit-specific plugins**: Runtime error modal, cartographer, dev banner for Replit environment
-
-**Deployment & Hosting**
-- Designed for Vercel deployment with serverless compatibility
-- Environment variable configuration for MongoDB connection
-- Separate client and server build outputs
-
-**Third-Party Integrations** (Planned)
-- SMTP email service for notifications (environment variables configured)
-- Biometric attendance devices (module placeholder present)
-- Payment gateway integration (inferred from payment tracking features)
+- **Database**: MongoDB (via Mongoose), PostgreSQL (via Drizzle for future auth)
+- **UI Components**: Radix UI, Shadcn/ui, Tailwind CSS, Lucide React (icons)
+- **State & Data Management**: TanStack Query, React Hook Form (planned), Zod (schema validation)
+- **Date & Time**: date-fns
+- **Development Tools**: Vite, esbuild, TypeScript, Replit-specific plugins
+- **Deployment**: Vercel (serverless compatibility)
+- **Security**: bcryptjs
+- **Planned Integrations**: SMTP email service, Biometric attendance devices, Payment gateways.
