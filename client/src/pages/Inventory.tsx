@@ -27,6 +27,8 @@ export default function Inventory() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [isTransactionDetailOpen, setIsTransactionDetailOpen] = useState(false);
   const { toast } = useToast();
 
   const [transactionFormData, setTransactionFormData] = useState({
@@ -662,27 +664,32 @@ export default function Inventory() {
               { header: "Reason", accessor: "reason" },
               { 
                 header: "Supplier", 
-                accessor: (row) => row.supplierId?.name || "-",
+                accessor: (row) => row.supplierId ? (
+                  <div className="space-y-1">
+                    <div className="font-medium">{row.supplierId.name}</div>
+                    {row.supplierId.contact && (
+                      <div className="text-xs text-muted-foreground">{row.supplierId.contact}</div>
+                    )}
+                    {row.supplierId.email && (
+                      <div className="text-xs text-muted-foreground">{row.supplierId.email}</div>
+                    )}
+                  </div>
+                ) : "-",
               },
               { 
                 header: "Batch", 
                 accessor: (row) => row.batchNumber || "-",
               },
               { 
-                header: "Location", 
-                accessor: (row) => row.warehouseLocation || "-",
-              },
-              { 
                 header: "Date", 
                 accessor: (row) => format(new Date(row.createdAt || row.date), 'MMM dd, yyyy'),
               },
-              { 
-                header: "User", 
-                accessor: (row) => row.userId?.name || "N/A",
-              },
             ]}
             data={filteredTransactions}
-            onRowClick={(row) => console.log("Transaction:", row)}
+            onRowClick={(row) => {
+              setSelectedTransaction(row);
+              setIsTransactionDetailOpen(true);
+            }}
           />
         </TabsContent>
 
@@ -854,6 +861,167 @@ export default function Inventory() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Transaction Detail Dialog */}
+      <Dialog open={isTransactionDetailOpen} onOpenChange={setIsTransactionDetailOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this inventory transaction
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Transaction Info</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Type:</span>
+                        <span>{getTransactionBadge(selectedTransaction.type)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Date:</span>
+                        <span className="text-sm font-medium">
+                          {format(new Date(selectedTransaction.createdAt || selectedTransaction.date), 'PPP')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">User:</span>
+                        <span className="text-sm font-medium">
+                          {selectedTransaction.userId?.name || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Product Info</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Product:</span>
+                        <span className="text-sm font-medium">
+                          {selectedTransaction.productId?.name || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Brand:</span>
+                        <span className="text-sm">
+                          {selectedTransaction.productId?.brand || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Quantity:</span>
+                        <span className="text-sm font-medium">
+                          {selectedTransaction.quantity}
+                        </span>
+                      </div>
+                      {selectedTransaction.previousStock !== undefined && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Stock Change:</span>
+                          <span className="text-sm font-medium">
+                            {selectedTransaction.previousStock} → {selectedTransaction.newStock}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {selectedTransaction.supplierId && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Supplier Details</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Name:</span>
+                          <span className="text-sm font-medium">
+                            {selectedTransaction.supplierId.name}
+                          </span>
+                        </div>
+                        {selectedTransaction.supplierId.contact && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Contact:</span>
+                            <span className="text-sm">
+                              {selectedTransaction.supplierId.contact}
+                            </span>
+                          </div>
+                        )}
+                        {selectedTransaction.supplierId.email && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Email:</span>
+                            <span className="text-sm">
+                              {selectedTransaction.supplierId.email}
+                            </span>
+                          </div>
+                        )}
+                        {selectedTransaction.supplierId.gstNumber && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">GST:</span>
+                            <span className="text-sm">
+                              {selectedTransaction.supplierId.gstNumber}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Additional Details</h3>
+                    <div className="space-y-2">
+                      {selectedTransaction.batchNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Batch Number:</span>
+                          <span className="text-sm font-medium">
+                            {selectedTransaction.batchNumber}
+                          </span>
+                        </div>
+                      )}
+                      {selectedTransaction.unitCost && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Unit Cost:</span>
+                          <span className="text-sm font-medium">
+                            {formatCurrency(selectedTransaction.unitCost)}
+                          </span>
+                        </div>
+                      )}
+                      {selectedTransaction.warehouseLocation && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Location:</span>
+                          <span className="text-sm">
+                            {selectedTransaction.warehouseLocation}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {selectedTransaction.reason && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Reason</h3>
+                  <p className="text-sm bg-muted p-3 rounded-md">
+                    {selectedTransaction.reason}
+                  </p>
+                </div>
+              )}
+
+              {selectedTransaction.notes && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Notes</h3>
+                  <p className="text-sm bg-muted p-3 rounded-md">
+                    {selectedTransaction.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

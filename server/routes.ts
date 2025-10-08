@@ -397,6 +397,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactions = await InventoryTransaction.find()
         .populate('productId')
         .populate('userId')
+        .populate('supplierId')
+        .populate('purchaseOrderId')
         .sort({ date: -1 });
       res.json(transactions);
     } catch (error) {
