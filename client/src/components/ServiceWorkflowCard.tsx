@@ -28,29 +28,27 @@ export function ServiceWorkflowCard({
 
   return (
     <Card className="hover-elevate cursor-pointer" onClick={onClick} data-testid={`service-card-${vehicleReg}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
+      <CardHeader className="pb-3 space-y-2">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-base truncate">{customerName}</CardTitle>
-            <p className="text-sm text-muted-foreground font-mono mt-1">{vehicleReg}</p>
+            <CardTitle className="text-sm font-semibold leading-tight">{customerName}</CardTitle>
+            <p className="text-xs text-muted-foreground font-mono mt-1.5">{vehicleReg}</p>
           </div>
           <StatusBadge type="service" status={status} />
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-muted-foreground">{handler}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {startTime}
-          </div>
+      <CardContent className="pt-0 space-y-2">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground truncate flex-1">{handler}</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{startTime}</span>
         </div>
       </CardContent>
     </Card>

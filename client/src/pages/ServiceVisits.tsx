@@ -243,10 +243,10 @@ export default function ServiceVisits() {
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stages.map((stage) => (
           <Card key={stage.id} data-testid={`card-stage-${stage.id}`}>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
                 {stage.label}
