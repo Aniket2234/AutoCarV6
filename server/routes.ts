@@ -7,6 +7,7 @@ import { Employee } from "./models/Employee";
 import { ServiceVisit } from "./models/ServiceVisit";
 import { Order } from "./models/Order";
 import { InventoryTransaction } from "./models/InventoryTransaction";
+import { ProductReturn } from "./models/ProductReturn";
 import { Notification } from "./models/Notification";
 import { Supplier } from "./models/Supplier";
 import { PurchaseOrder } from "./models/PurchaseOrder";
@@ -405,18 +406,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/inventory-transactions", requireAuth, requirePermission('inventory', 'create'), async (req, res) => {
     try {
-      const transaction = await InventoryTransaction.create(req.body);
+      const product = await Product.findById(req.body.productId);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      const previousStock = product.stockQty;
+      let multiplier = 1;
       
-      const multiplier = req.body.type === 'IN' ? 1 : -1;
+      if (req.body.type === 'IN' || req.body.type === 'RETURN') {
+        multiplier = 1;
+      } else if (req.body.type === 'OUT') {
+        multiplier = -1;
+      } else if (req.body.type === 'ADJUSTMENT') {
+        multiplier = 0; // For adjustments, quantity is absolute
+      }
+      
+      const newStock = req.body.type === 'ADJUSTMENT' 
+        ? req.body.quantity 
+        : previousStock + (multiplier * req.body.quantity);
+      
+      const transactionData = {
+        ...req.body,
+        userId: (req as any).session.userId,
+        previousStock,
+        newStock,
+      };
+      
+      const transaction = await InventoryTransaction.create(transactionData);
+      
       await Product.findByIdAndUpdate(
         req.body.productId,
-        { $inc: { stockQty: multiplier * req.body.quantity } }
+        { stockQty: newStock }
       );
       
-      await transaction.populate('productId');
+      await transaction.populate(['productId', 'userId', 'supplierId', 'purchaseOrderId']);
       res.json(transaction);
     } catch (error) {
       res.status(400).json({ error: "Failed to create transaction" });
+    }
+  });
+
+  // Low stock alerts
+  app.get("/api/products/low-stock", requireAuth, requirePermission('products', 'read'), async (req, res) => {
+    try {
+      const lowStockProducts = await Product.find({
+        $expr: { $lte: ['$stockQty', '$minStockLevel'] }
+      }).sort({ stockQty: 1 });
+      res.json(lowStockProducts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch low stock products" });
+    }
+  });
+
+  // Product search by barcode/QR
+  app.get("/api/products/barcode/:barcode", requireAuth, requirePermission('products', 'read'), async (req, res) => {
+    try {
+      const product = await Product.findOne({ barcode: req.params.barcode });
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
+  // Product returns with permission checks
+  app.get("/api/product-returns", requireAuth, requirePermission('inventory', 'read'), async (req, res) => {
+    try {
+      const returns = await ProductReturn.find()
+        .populate('productId')
+        .populate('customerId')
+        .populate('orderId')
+        .populate('processedBy')
+        .sort({ returnDate: -1 });
+      res.json(returns);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product returns" });
+    }
+  });
+
+  app.post("/api/product-returns", requireAuth, requirePermission('inventory', 'create'), async (req, res) => {
+    try {
+      const returnData = {
+        ...req.body,
+        returnDate: new Date(),
+      };
+      const productReturn = await ProductReturn.create(returnData);
+      await productReturn.populate(['productId', 'customerId', 'orderId']);
+      res.json(productReturn);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create product return" });
+    }
+  });
+
+  app.patch("/api/product-returns/:id", requireAuth, requirePermission('inventory', 'update'), async (req, res) => {
+    try {
+      const { status, refundAmount, restockable, notes } = req.body;
+      const updateData: any = { status, refundAmount, restockable, notes };
+      
+      if (status === 'processed') {
+        updateData.processedBy = (req as any).session.userId;
+        updateData.processedDate = new Date();
+        
+        // If approved and restockable, create inventory transaction
+        if (restockable) {
+          const productReturn = await ProductReturn.findById(req.params.id);
+          if (productReturn) {
+            await InventoryTransaction.create({
+              productId: productReturn.productId,
+              type: 'RETURN',
+              quantity: productReturn.quantity,
+              reason: `Product return: ${productReturn.reason}`,
+              userId: (req as any).session.userId,
+              returnId: productReturn._id,
+              date: new Date(),
+            });
+            
+            await Product.findByIdAndUpdate(
+              productReturn.productId,
+              { $inc: { stockQty: productReturn.quantity } }
+            );
+          }
+        }
+      }
+      
+      const updatedReturn = await ProductReturn.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).populate(['productId', 'customerId', 'orderId', 'processedBy']);
+      
+      if (!updatedReturn) {
+        return res.status(404).json({ error: "Product return not found" });
+      }
+      
+      res.json(updatedReturn);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update product return" });
     }
   });
 
