@@ -243,36 +243,38 @@ export default function ServiceVisits() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stages.map((stage) => (
-          <Card key={stage.id} data-testid={`card-stage-${stage.id}`}>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                {stage.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {servicesByStage[stage.id as keyof typeof servicesByStage].length > 0 ? (
-                servicesByStage[stage.id as keyof typeof servicesByStage].map((service: any) => (
-                  <ServiceWorkflowCard
-                    key={service._id}
-                    customerName={service.customerId?.name || 'Unknown'}
-                    vehicleReg={service.vehicleReg}
-                    status={service.status}
-                    handler={service.handlerId?.name || 'Unassigned'}
-                    startTime={formatDistance(new Date(service.createdAt), new Date(), { addSuffix: true })}
-                    onClick={() => console.log("Service clicked:", service)}
-                  />
-                ))
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-8" data-testid={`empty-${stage.id}`}>
-                  No services in {stage.label.toLowerCase()} stage
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-4 min-w-max">
+          {stages.map((stage) => (
+            <Card key={stage.id} className="w-80 flex-shrink-0" data-testid={`card-stage-${stage.id}`}>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  {stage.label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {servicesByStage[stage.id as keyof typeof servicesByStage].length > 0 ? (
+                  servicesByStage[stage.id as keyof typeof servicesByStage].map((service: any) => (
+                    <ServiceWorkflowCard
+                      key={service._id}
+                      customerName={service.customerId?.name || 'Unknown'}
+                      vehicleReg={service.vehicleReg}
+                      status={service.status}
+                      handler={service.handlerId?.name || 'Unassigned'}
+                      startTime={formatDistance(new Date(service.createdAt), new Date(), { addSuffix: true })}
+                      onClick={() => console.log("Service clicked:", service)}
+                    />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8" data-testid={`empty-${stage.id}`}>
+                    No services in {stage.label.toLowerCase()} stage
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
       
       {totalVisits === 0 && (
