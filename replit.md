@@ -12,6 +12,66 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 8, 2025 - Product & Inventory Module Enhancements
+1. **Enhanced Product Management**: Comprehensive upgrade to product catalog with advanced features
+   - **Multiple Product Images**: Array-based image storage with add/remove functionality for unlimited product photos
+   - **Product Specifications**: 
+     * Model compatibility tracking (array of compatible vehicle models)
+     * Warranty information field for product warranty details
+   - **Discount System**: 
+     * Discount percentage field with automatic calculation display
+     * Visual discount badges showing percentage off
+     * MRP vs. Selling Price comparison with strike-through pricing
+   - **Product Variants**: Dynamic variant system supporting:
+     * Size variations
+     * Color variations
+     * Multiple variant combinations per product
+   - **Barcode/QR Integration**: 
+     * Barcode field for product identification
+     * Barcode search functionality in product listing
+     * Quick product lookup via barcode scanner integration
+   - **Enhanced Product Cards**: Display warranty, compatibility, variants, location, and discount information
+
+2. **Advanced Inventory Management**: Complete inventory system overhaul
+   - **Enhanced Transaction System**:
+     * Four transaction types: IN, OUT, RETURN, ADJUSTMENT
+     * Previous stock and new stock tracking for audit trail
+     * Supply details: supplier linkage, batch numbers, unit cost tracking
+     * Warehouse location per transaction
+     * Additional notes field for detailed record-keeping
+   - **Low Stock Alert System**:
+     * Dedicated tab showing products below minimum stock level
+     * Visual alerts with orange warning indicators
+     * Quick restock action from low stock alerts
+     * Real-time monitoring of stock levels
+   - **Product Return Management**:
+     * Complete return workflow with status tracking (pending, approved, rejected, processed)
+     * Return conditions: defective, damaged, wrong item, not as described, other
+     * Refund amount calculation and tracking
+     * Restockable flag for automatic inventory restoration
+     * Customer and order linkage for return traceability
+     * Automatic inventory transaction creation when return is processed
+   - **Purchase Order Integration**:
+     * View and track purchase orders from inventory page
+     * Link inventory transactions to purchase orders
+     * PO status tracking (pending, approved, received, cancelled)
+   - **Enhanced History Logs**:
+     * Comprehensive transaction history with all details
+     * Supplier information in transaction records
+     * Batch number tracking for quality control
+     * User attribution for all inventory movements
+     * Warehouse location tracking per transaction
+
+3. **Backend API Enhancements**:
+   - Created ProductReturn model with full return workflow
+   - Updated InventoryTransaction model with supply details, batch tracking, and return linkage
+   - New endpoints:
+     * `/api/products/low-stock` - Get products below minimum stock
+     * `/api/products/barcode/:barcode` - Search product by barcode
+     * `/api/product-returns` - Full CRUD for product returns
+     * Enhanced `/api/inventory-transactions` with automatic stock calculation
+   - Automatic stock level updates with transaction history preservation
+
 ### October 2025 - Bug Fixes & Role-Based Access Updates
 1. **Login Flow Fix**: Resolved race condition causing redirect to welcome page on first login attempt
    - Added query cache refresh synchronization
@@ -89,20 +149,21 @@ Preferred communication style: Simple, everyday language.
 ### Data Models & Schemas
 
 **Core Entities**
-1. **Product**: Car parts inventory with variants, pricing, stock levels, warehouse location, supplier references
+1. **Product**: Car parts inventory with multiple images, model compatibility array, warranty info, pricing with discount, variants (size/color), barcode/QR, stock levels, warehouse location, supplier references
 2. **Customer**: Customer profiles with multiple vehicle registrations, contact information
 3. **Employee**: Staff management with roles, contact details, active status
 4. **ServiceVisit**: Service workflow tracking with status progression (inquired → working → waiting → completed), parts usage, timestamps
 5. **Order**: Sales orders with line items, payment tracking, delivery status, invoice generation
-6. **InventoryTransaction**: Stock movement logging (IN/OUT) with reasons and user attribution
-7. **Supplier**: Vendor management with product catalogs and payment terms
-8. **PurchaseOrder**: Procurement tracking with auto-generated PO numbers
-9. **Attendance**: Employee time tracking with check-in/out and status
-10. **Leave**: Employee leave management with approval workflows
-11. **Task**: Task assignment system with priority and status tracking
-12. **CommunicationLog**: Customer interaction history across multiple channels
-13. **Feedback**: Customer feedback/complaint management system
-14. **Notification**: Real-time alerts for low stock, new orders, payment dues
+6. **InventoryTransaction**: Enhanced stock movement logging (IN/OUT/RETURN/ADJUSTMENT) with supplier details, batch numbers, unit cost, previous/new stock tracking, warehouse location, purchase order linkage, and comprehensive notes
+7. **ProductReturn**: Product return management with quantity, condition tracking, refund amounts, restockable flag, status workflow (pending/approved/rejected/processed), customer/order linkage
+8. **Supplier**: Vendor management with product catalogs and payment terms
+9. **PurchaseOrder**: Procurement tracking with auto-generated PO numbers
+10. **Attendance**: Employee time tracking with check-in/out and status
+11. **Leave**: Employee leave management with approval workflows
+12. **Task**: Task assignment system with priority and status tracking
+13. **CommunicationLog**: Customer interaction history across multiple channels
+14. **Feedback**: Customer feedback/complaint management system
+15. **Notification**: Real-time alerts for low stock, new orders, payment dues
 
 **Schema Features**
 - Auto-generated unique identifiers (PO numbers, invoice numbers)
