@@ -576,6 +576,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/notifications/mark-all-read", requireAuth, requirePermission('notifications', 'update'), async (req, res) => {
+    try {
+      await Notification.updateMany({ read: false }, { read: true });
+      res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  app.post("/api/notifications/create-test", requireAuth, requirePermission('notifications', 'create'), async (req, res) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({ error: "Test endpoint only available in development" });
+    }
+    
+    try {
+      const testNotifications = [
+        {
+          message: "Low stock alert: Brake Pads Set (12 units remaining)",
+          type: "low_stock",
+          read: false,
+        },
+        {
+          message: "New order received from Rajesh Kumar - Order #ORD-2024-001",
+          type: "new_order",
+          read: false,
+        },
+        {
+          message: "Payment overdue: Invoice #INV-2024-045 (5 days)",
+          type: "payment_due",
+          read: false,
+        },
+      ];
+      
+      const created = await Notification.insertMany(testNotifications);
+      res.json({ success: true, count: created.length, notifications: created });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create test notifications" });
+    }
+  });
+
   // Dashboard stats - role-based analytics aligned with ROLE_PERMISSIONS
   app.get("/api/dashboard-stats", requireAuth, async (req, res) => {
     try {
