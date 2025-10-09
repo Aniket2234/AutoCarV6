@@ -74,7 +74,7 @@ export function hasPermission(userRole: string, resource: string, action: string
   const permissions = ROLE_PERMISSIONS[userRole as keyof typeof ROLE_PERMISSIONS];
   if (!permissions) return false;
   
-  const resourcePermissions = permissions[resource as keyof typeof permissions];
+  const resourcePermissions = permissions[resource as keyof typeof permissions] as string[] | undefined;
   if (!resourcePermissions) return false;
   
   return resourcePermissions.includes(action);

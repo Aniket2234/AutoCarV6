@@ -2,8 +2,26 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const text = await res.text();
+      // Try to parse as JSON for structured error messages
+      try {
+        const json = JSON.parse(text);
+        if (res.status === 401) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        throw new Error(json.error || json.message || text || res.statusText);
+      } catch {
+        // If not JSON, use the text response
+        if (res.status === 401) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        throw new Error(text || res.statusText);
+      }
+    } catch (error: any) {
+      if (error.message.includes('session has expired')) throw error;
+      throw new Error(`Request failed: ${res.statusText}`);
+    }
   }
 }
 
