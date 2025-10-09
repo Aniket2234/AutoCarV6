@@ -15,9 +15,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistance } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth, hasPermission } from "@/lib/auth";
 
 export default function ServiceVisits() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -29,6 +31,8 @@ export default function ServiceVisits() {
     handlerId: "",
     notes: "",
   });
+
+  const canDelete = hasPermission(user, 'orders', 'delete');
 
   const { data: serviceVisits = [], isLoading, error, refetch } = useQuery<any[]>({
     queryKey: ["/api/service-visits"],
@@ -424,16 +428,18 @@ export default function ServiceVisits() {
                 </Select>
               </div>
 
-              <div className="flex justify-between gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
-                  data-testid="button-delete-service"
-                >
-                  Delete Service
-                </Button>
+              <div className={`flex ${canDelete ? 'justify-between' : 'justify-end'} gap-2 pt-4`}>
+                {canDelete && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
+                    data-testid="button-delete-service"
+                  >
+                    Delete Service
+                  </Button>
+                )}
                 <div className="flex gap-2">
                   <Button
                     type="button"
