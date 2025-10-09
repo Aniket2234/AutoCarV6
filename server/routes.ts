@@ -349,6 +349,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/service-visits/:id", requireAuth, requirePermission('orders', 'delete'), async (req, res) => {
+    try {
+      const visit = await ServiceVisit.findByIdAndDelete(req.params.id);
+      if (!visit) {
+        return res.status(404).json({ error: "Service visit not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete service visit" });
+    }
+  });
+
   // Orders endpoints with permission checks
   app.get("/api/orders", requireAuth, requirePermission('orders', 'read'), async (req, res) => {
     try {

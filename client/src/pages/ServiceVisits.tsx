@@ -20,6 +20,7 @@ export default function ServiceVisits() {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
@@ -73,6 +74,7 @@ export default function ServiceVisits() {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard-stats'] });
       setIsEditDialogOpen(false);
       setSelectedService(null);
+      setSelectedStatus("");
       toast({
         title: "Success",
         description: "Service status updated successfully",
@@ -82,6 +84,31 @@ export default function ServiceVisits() {
       toast({
         title: "Error",
         description: error.message || "Failed to update service status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/service-visits/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-visits'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard-stats'] });
+      setIsEditDialogOpen(false);
+      setSelectedService(null);
+      setSelectedStatus("");
+      toast({
+        title: "Success",
+        description: "Service visit deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service visit",
         variant: "destructive",
       });
     },
@@ -104,15 +131,22 @@ export default function ServiceVisits() {
 
   const handleServiceClick = (service: any) => {
     setSelectedService(service);
+    setSelectedStatus(service.status);
     setIsEditDialogOpen(true);
   };
 
-  const handleStatusUpdate = (newStatus: string) => {
-    if (selectedService) {
+  const handleStatusUpdate = () => {
+    if (selectedService && selectedStatus) {
       updateServiceMutation.mutate({
         id: selectedService._id,
-        status: newStatus,
+        status: selectedStatus,
       });
+    }
+  };
+
+  const handleDeleteService = () => {
+    if (selectedService && confirm('Are you sure you want to delete this service visit? This action cannot be undone.')) {
+      deleteServiceMutation.mutate(selectedService._id);
     }
   };
 
@@ -362,10 +396,9 @@ export default function ServiceVisits() {
               <div className="space-y-2">
                 <Label htmlFor="newStatus">New Status *</Label>
                 <Select 
-                  key={selectedService._id}
-                  defaultValue={selectedService.status}
-                  onValueChange={handleStatusUpdate}
-                  disabled={updateServiceMutation.isPending}
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
+                  disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
                 >
                   <SelectTrigger id="newStatus" data-testid="select-new-status">
                     <SelectValue placeholder="Select new status" />
@@ -379,16 +412,35 @@ export default function ServiceVisits() {
                 </Select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-between gap-2 pt-4">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                  disabled={updateServiceMutation.isPending}
-                  data-testid="button-cancel-edit"
+                  variant="destructive"
+                  onClick={handleDeleteService}
+                  disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
+                  data-testid="button-delete-service"
                 >
-                  Cancel
+                  {deleteServiceMutation.isPending ? 'Deleting...' : 'Delete Service'}
                 </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(false)}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
+                    data-testid="button-cancel-edit"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleStatusUpdate}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending || !selectedStatus}
+                    data-testid="button-update-status"
+                  >
+                    {updateServiceMutation.isPending ? 'Updating...' : 'Update'}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
