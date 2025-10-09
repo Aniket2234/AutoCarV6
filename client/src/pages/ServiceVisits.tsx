@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Wrench } from "lucide-react";
@@ -19,6 +20,7 @@ export default function ServiceVisits() {
   const { toast } = useToast();
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [serviceForm, setServiceForm] = useState({
@@ -136,17 +138,27 @@ export default function ServiceVisits() {
   };
 
   const handleStatusUpdate = () => {
-    if (selectedService && selectedStatus) {
-      updateServiceMutation.mutate({
-        id: selectedService._id,
-        status: selectedStatus,
+    if (!selectedService || !selectedStatus) return;
+    
+    if (selectedStatus === selectedService.status) {
+      toast({
+        title: "No Changes",
+        description: "Status is already set to " + selectedStatus,
+        variant: "default",
       });
+      return;
     }
+    
+    updateServiceMutation.mutate({
+      id: selectedService._id,
+      status: selectedStatus,
+    });
   };
 
   const handleDeleteService = () => {
-    if (selectedService && confirm('Are you sure you want to delete this service visit? This action cannot be undone.')) {
+    if (selectedService) {
       deleteServiceMutation.mutate(selectedService._id);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -416,11 +428,11 @@ export default function ServiceVisits() {
                 <Button
                   type="button"
                   variant="destructive"
-                  onClick={handleDeleteService}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
                   data-testid="button-delete-service"
                 >
-                  {deleteServiceMutation.isPending ? 'Deleting...' : 'Delete Service'}
+                  Delete Service
                 </Button>
                 <div className="flex gap-2">
                   <Button
@@ -446,6 +458,27 @@ export default function ServiceVisits() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Service Visit</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this service visit? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteService}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteServiceMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
