@@ -326,6 +326,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Service visit not found" });
       }
       
+      // Update customer loyalty when visit is completed
+      if (req.body.status === 'completed' && previousVisit?.status !== 'completed' && visit.customerId) {
+        const customer = await Customer.findById(visit.customerId._id);
+        if (customer) {
+          customer.visitCount += 1;
+          customer.totalSpent += visit.totalAmount || 0;
+          customer.calculateLoyaltyTier();
+          await customer.save();
+        }
+      }
+      
       // Notify about service visit status change
       if (req.body.status && previousVisit && req.body.status !== previousVisit.status) {
         const customerName = visit.customerId?.name || 'Unknown Customer';
@@ -354,7 +365,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", requireAuth, requirePermission('orders', 'create'), async (req, res) => {
     try {
-      const order = await Order.create(req.body);
+      // Apply customer loyalty discount if applicable
+      let orderData = req.body;
+      if (req.body.customerId && req.body.customerId !== 'walk-in') {
+        const customer = await Customer.findById(req.body.customerId);
+        if (customer && customer.discountPercentage > 0) {
+          const discount = (orderData.total * customer.discountPercentage) / 100;
+          orderData = {
+            ...orderData,
+            discount: discount,
+            total: orderData.total - discount,
+          };
+        }
+      }
+      
+      const order = await Order.create(orderData);
       
       for (const item of req.body.items) {
         const updatedProduct = await Product.findByIdAndUpdate(
@@ -378,6 +403,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await order.populate('customerId');
       await order.populate('items.productId');
+      
+      // Update customer loyalty points and spending
+      if (order.customerId && order.customerId !== 'walk-in') {
+        const customer = await Customer.findById(order.customerId._id);
+        if (customer) {
+          customer.totalSpent += order.total || 0;
+          customer.calculateLoyaltyTier();
+          await customer.save();
+        }
+      }
       
       // Notify about new order
       const customerName = order.customerId?.name || 'Unknown Customer';

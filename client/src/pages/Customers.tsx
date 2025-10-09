@@ -379,10 +379,17 @@ export default function Customers() {
                         </div>
                       </div>
                     )}
+                    {customer.loyaltyTier && customer.loyaltyTier !== 'Bronze' && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {customer.loyaltyTier} • {customer.discountPercentage}% OFF
+                        </Badge>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center pt-2">
                       <div>
                         <p className="text-xs text-muted-foreground">Total Visits</p>
-                        <p className="text-lg font-bold">{visits.length}</p>
+                        <p className="text-lg font-bold">{customer.visitCount || visits.length}</p>
                       </div>
                       <Button variant="outline" size="sm" data-testid={`button-view-${customer._id}`}>
                         View Details
@@ -423,8 +430,12 @@ export default function Customers() {
                   model: 'N/A',
                   year: 0,
                 },
+                loyaltyTier: selectedCustomer.loyaltyTier,
+                discountPercentage: selectedCustomer.discountPercentage,
+                loyaltyPoints: selectedCustomer.loyaltyPoints,
+                totalSpent: selectedCustomer.totalSpent,
               }}
-              totalVisits={getCustomerVisits(selectedCustomer._id).length}
+              totalVisits={selectedCustomer.visitCount || getCustomerVisits(selectedCustomer._id).length}
               lastHandler="N/A"
               currentHandler="N/A"
               recentVisits={[]}

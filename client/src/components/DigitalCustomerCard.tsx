@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Car, Phone, Mail, User, Calendar, QrCode, Printer } from "lucide-react";
+import { Car, Phone, Mail, User, Calendar, QrCode, Printer, Star, Gift, TrendingUp } from "lucide-react";
 
 interface Visit {
   date: string;
@@ -23,12 +23,31 @@ interface DigitalCustomerCardProps {
       model: string;
       year: number;
     };
+    loyaltyTier?: string;
+    discountPercentage?: number;
+    loyaltyPoints?: number;
+    totalSpent?: number;
   };
   totalVisits: number;
   lastHandler: string;
   currentHandler?: string;
   recentVisits: Visit[];
 }
+
+const getTierColor = (tier: string) => {
+  switch (tier) {
+    case 'Platinum':
+      return 'bg-gradient-to-r from-slate-400 to-slate-600 text-white';
+    case 'Gold':
+      return 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white';
+    case 'Silver':
+      return 'bg-gradient-to-r from-gray-300 to-gray-500 text-white';
+    case 'Bronze':
+      return 'bg-gradient-to-r from-orange-400 to-orange-600 text-white';
+    default:
+      return 'bg-muted';
+  }
+};
 
 export function DigitalCustomerCard({
   customer,
@@ -42,6 +61,11 @@ export function DigitalCustomerCard({
     .map((n) => n[0])
     .join("")
     .toUpperCase();
+
+  const loyaltyTier = customer.loyaltyTier || 'Bronze';
+  const discountPercentage = customer.discountPercentage || 0;
+  const loyaltyPoints = customer.loyaltyPoints || 0;
+  const totalSpent = customer.totalSpent || 0;
 
   return (
     <Card>
@@ -84,14 +108,57 @@ export function DigitalCustomerCard({
             </p>
           </div>
         </div>
+
+        {/* Loyalty Card Section */}
+        <div className={`p-4 rounded-lg ${getTierColor(loyaltyTier)}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              <span className="font-semibold text-lg">{loyaltyTier} Member</span>
+            </div>
+            {discountPercentage > 0 && (
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                {discountPercentage}% OFF
+              </Badge>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <div className="flex items-center gap-1 mb-1 opacity-90">
+                <Gift className="h-3 w-3" />
+                <span className="text-xs">Points</span>
+              </div>
+              <p className="font-bold text-lg">{loyaltyPoints}</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-1 opacity-90">
+                <TrendingUp className="h-3 w-3" />
+                <span className="text-xs">Total Spent</span>
+              </div>
+              <p className="font-bold text-lg">₹{totalSpent.toLocaleString('en-IN')}</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-1 opacity-90">
+                <Calendar className="h-3 w-3" />
+                <span className="text-xs">Visits</span>
+              </div>
+              <p className="font-bold text-lg">{totalVisits}</p>
+            </div>
+          </div>
+
+          {discountPercentage > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/20">
+              <p className="text-xs opacity-90">
+                🎉 Enjoy {discountPercentage}% discount on all services and parts!
+              </p>
+            </div>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Total Visits</p>
-            <p className="text-2xl font-bold">{totalVisits}</p>
-          </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Last Handler</p>
             <p className="text-sm font-medium">{lastHandler}</p>

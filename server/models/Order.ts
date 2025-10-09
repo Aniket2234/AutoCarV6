@@ -11,6 +11,7 @@ const orderSchema = new mongoose.Schema({
   customerName: { type: String },
   items: [orderItemSchema],
   total: { type: Number, required: true },
+  discount: { type: Number, default: 0 },
   paymentStatus: { 
     type: String, 
     enum: ['paid', 'partial', 'due'],
