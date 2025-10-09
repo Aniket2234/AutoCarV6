@@ -18,6 +18,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function ServiceVisits() {
   const { toast } = useToast();
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
@@ -61,6 +63,30 @@ export default function ServiceVisits() {
     },
   });
 
+  const updateServiceMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-visits'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard-stats'] });
+      setIsEditDialogOpen(false);
+      setSelectedService(null);
+      toast({
+        title: "Success",
+        description: "Service status updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update service status",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -74,6 +100,20 @@ export default function ServiceVisits() {
     }
     
     createServiceMutation.mutate(serviceForm);
+  };
+
+  const handleServiceClick = (service: any) => {
+    setSelectedService(service);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleStatusUpdate = (newStatus: string) => {
+    if (selectedService) {
+      updateServiceMutation.mutate({
+        id: selectedService._id,
+        status: newStatus,
+      });
+    }
   };
 
   const servicesByStage = {
@@ -266,7 +306,7 @@ export default function ServiceVisits() {
                       totalAmount={service.totalAmount}
                       partsCount={service.partsUsed?.length || 0}
                       notes={service.notes}
-                      onClick={() => console.log("Service clicked:", service)}
+                      onClick={() => handleServiceClick(service)}
                     />
                   ))
                 ) : (
@@ -286,6 +326,73 @@ export default function ServiceVisits() {
           <p className="text-muted-foreground">No service visits found. Create your first service visit to get started.</p>
         </div>
       )}
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Service Status</DialogTitle>
+            <DialogDescription>
+              Update the status of the service visit to move it through the pipeline
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Customer</Label>
+                <p className="text-sm text-muted-foreground" data-testid="text-edit-customer">
+                  {selectedService.customerId?.name || 'Unknown'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Vehicle Registration</Label>
+                <p className="text-sm text-muted-foreground" data-testid="text-edit-vehicle">
+                  {selectedService.vehicleReg}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Current Status</Label>
+                <p className="text-sm text-muted-foreground capitalize" data-testid="text-edit-current-status">
+                  {selectedService.status}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newStatus">New Status *</Label>
+                <Select 
+                  defaultValue={selectedService.status}
+                  onValueChange={handleStatusUpdate}
+                  disabled={updateServiceMutation.isPending}
+                >
+                  <SelectTrigger id="newStatus" data-testid="select-new-status">
+                    <SelectValue placeholder="Select new status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inquired">Inquired</SelectItem>
+                    <SelectItem value="working">Working</SelectItem>
+                    <SelectItem value="waiting">Waiting</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  disabled={updateServiceMutation.isPending}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
