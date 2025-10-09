@@ -362,6 +362,7 @@ export default function ServiceVisits() {
               <div className="space-y-2">
                 <Label htmlFor="newStatus">New Status *</Label>
                 <Select 
+                  key={selectedService._id}
                   defaultValue={selectedService.status}
                   onValueChange={handleStatusUpdate}
                   disabled={updateServiceMutation.isPending}
