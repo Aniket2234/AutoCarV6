@@ -16,6 +16,7 @@ import { Leave } from "./models/Leave";
 import { Task } from "./models/Task";
 import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
+import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notifyPaymentOverdue, notifyPaymentDue } from "./utils/notifications";
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
@@ -304,6 +305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const visit = await ServiceVisit.create(req.body);
       await visit.populate('customerId');
       await visit.populate('handlerId');
+      
+      // Notify about new service visit
+      const customerName = visit.customerId?.name || 'Unknown Customer';
+      await notifyServiceVisitStatus(visit, customerName, visit.status);
+      
       res.json(visit);
     } catch (error) {
       res.status(400).json({ error: "Failed to create service visit" });
@@ -312,12 +318,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/service-visits/:id", requireAuth, requirePermission('orders', 'update'), async (req, res) => {
     try {
+      const previousVisit = await ServiceVisit.findById(req.params.id).populate('customerId');
       const visit = await ServiceVisit.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
         .populate('handlerId');
       if (!visit) {
         return res.status(404).json({ error: "Service visit not found" });
       }
+      
+      // Notify about service visit status change
+      if (req.body.status && previousVisit && req.body.status !== previousVisit.status) {
+        const customerName = visit.customerId?.name || 'Unknown Customer';
+        await notifyServiceVisitStatus(visit, customerName, req.body.status);
+      }
+      
       res.json(visit);
     } catch (error) {
       res.status(400).json({ error: "Failed to update service visit" });
@@ -343,9 +357,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await Order.create(req.body);
       
       for (const item of req.body.items) {
-        await Product.findByIdAndUpdate(
+        const updatedProduct = await Product.findByIdAndUpdate(
           item.productId,
-          { $inc: { stockQty: -item.quantity } }
+          { $inc: { stockQty: -item.quantity } },
+          { new: true }
         );
         
         await InventoryTransaction.create({
@@ -354,10 +369,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: item.quantity,
           reason: `Order ${order.invoiceNumber}`,
         });
+        
+        // Check for low stock after order
+        if (updatedProduct) {
+          await checkAndNotifyLowStock(updatedProduct);
+        }
       }
       
       await order.populate('customerId');
       await order.populate('items.productId');
+      
+      // Notify about new order
+      const customerName = order.customerId?.name || 'Unknown Customer';
+      await notifyNewOrder(order, customerName);
+      
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Failed to create order" });
@@ -366,6 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/orders/:id", requireAuth, requirePermission('orders', 'update'), async (req, res) => {
     try {
+      const previousOrder = await Order.findById(req.params.id).populate('customerId');
       const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
         .populate('items.productId')
@@ -373,6 +399,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+      
+      // Notify about payment status changes
+      if (req.body.paymentStatus && previousOrder && req.body.paymentStatus !== previousOrder.paymentStatus) {
+        const customerName = order.customerId?.name || 'Unknown Customer';
+        if (req.body.paymentStatus === 'due') {
+          await notifyPaymentDue(order, customerName);
+        }
+      }
+      
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Failed to update order" });
@@ -437,10 +472,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const transaction = await InventoryTransaction.create(transactionData);
       
-      await Product.findByIdAndUpdate(
+      const updatedProduct = await Product.findByIdAndUpdate(
         req.body.productId,
-        { stockQty: newStock }
+        { stockQty: newStock },
+        { new: true }
       );
+      
+      // Check for low stock and create notification
+      if (updatedProduct && (req.body.type === 'OUT' || req.body.type === 'ADJUSTMENT')) {
+        await checkAndNotifyLowStock(updatedProduct);
+      }
       
       await transaction.populate(['productId', 'userId', 'supplierId', 'purchaseOrderId']);
       res.json(transaction);
@@ -613,6 +654,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, count: created.length, notifications: created });
     } catch (error) {
       res.status(400).json({ error: "Failed to create test notifications" });
+    }
+  });
+
+  app.post("/api/notifications/check-overdue-payments", requireAuth, requirePermission('notifications', 'create'), async (req, res) => {
+    try {
+      const overdueThresholdDays = 7; // Consider payments overdue after 7 days
+      const thresholdDate = new Date();
+      thresholdDate.setDate(thresholdDate.getDate() - overdueThresholdDays);
+      
+      // Find orders with payment status 'due' or 'partial' created before threshold date
+      const overdueOrders = await Order.find({
+        paymentStatus: { $in: ['due', 'partial'] },
+        createdAt: { $lt: thresholdDate }
+      }).populate('customerId');
+      
+      let notificationsCreated = 0;
+      
+      for (const order of overdueOrders) {
+        const orderAge = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        const daysOverdue = Math.max(orderAge - overdueThresholdDays, 1);
+        const customerName = order.customerId?.name || order.customerName || 'Unknown Customer';
+        
+        // Check if notification already exists for this order
+        const existingNotification = await Notification.findOne({
+          relatedId: order._id,
+          type: 'payment_due',
+          message: { $regex: 'overdue' }
+        });
+        
+        if (!existingNotification) {
+          await notifyPaymentOverdue(order, customerName, daysOverdue);
+          notificationsCreated++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        checked: overdueOrders.length, 
+        notificationsCreated,
+        message: `Checked ${overdueOrders.length} overdue orders, created ${notificationsCreated} new notifications`
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to check overdue payments" });
     }
   });
 
