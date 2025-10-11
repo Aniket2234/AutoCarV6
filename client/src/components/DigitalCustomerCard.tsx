@@ -23,6 +23,7 @@ interface DigitalCustomerCardProps {
       make: string;
       model: string;
       year: number;
+      photo?: string;
     };
     loyaltyTier?: string;
     discountPercentage?: number;
@@ -107,7 +108,11 @@ export function DigitalCustomerCard({
 
         <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 border-2 border-orange-200 dark:border-orange-800">
           <div className="flex-shrink-0">
-            <img src={carImage} alt="Car" className="h-16 w-16 object-contain" />
+            {customer.vehicle.photo ? (
+              <img src={customer.vehicle.photo} alt="Vehicle" className="h-16 w-16 object-cover rounded-md border-2 border-orange-300 dark:border-orange-700" />
+            ) : (
+              <img src={carImage} alt="Car" className="h-16 w-16 object-contain" />
+            )}
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-orange-900 dark:text-orange-100">
