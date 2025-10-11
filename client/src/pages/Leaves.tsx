@@ -88,7 +88,7 @@ export default function Leaves() {
       {filteredLeaves.length > 0 ? (
         <div className="grid gap-4">
           {filteredLeaves.map((leave: any) => (
-            <Card key={leave._id} className="hover-elevate border-2" data-testid={`card-leave-${leave._id}`}>
+            <Card key={leave._id} className="hover-elevate" data-testid={`card-leave-${leave._id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

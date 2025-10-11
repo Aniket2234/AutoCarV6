@@ -381,7 +381,7 @@ export default function Orders() {
       {filteredOrders.length > 0 ? (
         <div className="space-y-3">
           {filteredOrders.map((order: any) => (
-            <Card key={order._id} className="hover-elevate border-2" data-testid={`card-order-${order._id}`}>
+            <Card key={order._id} className="hover-elevate" data-testid={`card-order-${order._id}`}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

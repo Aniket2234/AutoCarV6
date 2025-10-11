@@ -697,7 +697,7 @@ export default function Inventory() {
           {lowStockProducts.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {lowStockProducts.map((product: any) => (
-                <Card key={product._id} className="border-orange-500/50 border-2" data-testid={`low-stock-${product._id}`}>
+                <Card key={product._id} className="" data-testid={`low-stock-${product._id}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

@@ -265,7 +265,7 @@ export default function Employees() {
       {filteredEmployees.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredEmployees.map((employee: any) => (
-            <Card key={employee._id} className="hover-elevate border-2" data-testid={`card-employee-${employee._id}`}>
+            <Card key={employee._id} className="hover-elevate" data-testid={`card-employee-${employee._id}`}>
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar>
