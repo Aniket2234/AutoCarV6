@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import { ArrowLeft, Package } from 'lucide-react';
+import logoImage from '@assets/image_1760164042662.png';
 
 export default function Login() {
   const [location, setLocation] = useLocation();
@@ -54,8 +55,8 @@ export default function Login() {
         <CardHeader>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Package className="h-6 w-6 text-primary" />
-              <CardTitle data-testid="text-title">AutoParts Pro</CardTitle>
+              <img src={logoImage} alt="Mauli Car World Logo" className="h-8 w-auto" />
+              <CardTitle data-testid="text-title">Mauli Car World</CardTitle>
             </div>
             <Button
               variant="ghost"
