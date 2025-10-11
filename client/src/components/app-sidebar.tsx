@@ -19,6 +19,7 @@ import {
   CalendarOff,
   MessageSquare,
   UserPlus,
+  ListChecks,
 } from "lucide-react";
 import {
   Sidebar,
@@ -56,6 +57,7 @@ interface MenuItem {
 const mainMenuItems: MenuItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Register Customer", url: "/register-customer", icon: UserPlus },
+  { title: "Registration Dashboard", url: "/registration-dashboard", icon: ListChecks },
   { title: "Products", url: "/products", icon: Package, permission: { resource: "products", action: "read" } },
   { title: "Inventory", url: "/inventory", icon: Warehouse, permission: { resource: "inventory", action: "read" } },
   { title: "Customers", url: "/customers", icon: Users, permission: { resource: "customers", action: "read" } },

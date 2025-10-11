@@ -29,6 +29,7 @@ import Tasks from "@/pages/Tasks";
 import Leaves from "@/pages/Leaves";
 import Communications from "@/pages/Communications";
 import CustomerRegistration from "@/pages/CustomerRegistration";
+import CustomerRegistrationDashboard from "@/pages/CustomerRegistrationDashboard";
 import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ const ROUTE_PERMISSIONS: Record<string, { resource: string; action: string } | n
   '/profile': null, // Profile is accessible to all authenticated users
   '/settings': null, // Settings is accessible to all authenticated users
   '/register-customer': null, // Customer registration is accessible to all authenticated users
+  '/registration-dashboard': null, // Registration dashboard is accessible to all authenticated users
   '/products': { resource: 'products', action: 'read' },
   '/inventory': { resource: 'inventory', action: 'read' },
   '/customers': { resource: 'customers', action: 'read' },
@@ -155,6 +157,9 @@ function Router() {
       </Route>
       <Route path="/register-customer">
         {() => <ProtectedRoute component={CustomerRegistration} />}
+      </Route>
+      <Route path="/registration-dashboard">
+        {() => <ProtectedRoute component={CustomerRegistrationDashboard} />}
       </Route>
     </Switch>
   );

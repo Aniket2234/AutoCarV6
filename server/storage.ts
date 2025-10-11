@@ -60,7 +60,19 @@ export class MemStorage implements IStorage {
   // Customer operations
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const id = randomUUID();
-    const stateCode = insertCustomer.state.substring(0, 2).toUpperCase();
+    
+    // State code mapping for Indian states (RTO codes)
+    const stateCodeMap: Record<string, string> = {
+      "Andhra Pradesh": "AP", "Arunachal Pradesh": "AR", "Assam": "AS", "Bihar": "BR",
+      "Chhattisgarh": "CG", "Goa": "GA", "Gujarat": "GJ", "Haryana": "HR",
+      "Himachal Pradesh": "HP", "Jharkhand": "JH", "Karnataka": "KA", "Kerala": "KL",
+      "Madhya Pradesh": "MP", "Maharashtra": "MH", "Manipur": "MN", "Meghalaya": "ML",
+      "Mizoram": "MZ", "Nagaland": "NL", "Odisha": "OD", "Punjab": "PB",
+      "Rajasthan": "RJ", "Sikkim": "SK", "Tamil Nadu": "TN", "Telangana": "TS",
+      "Tripura": "TR", "Uttar Pradesh": "UP", "Uttarakhand": "UK", "West Bengal": "WB"
+    };
+    
+    const stateCode = stateCodeMap[insertCustomer.state] || insertCustomer.state.substring(0, 2).toUpperCase();
     const referenceCode = `CUST-${stateCode}-${String(this.customerCounter).padStart(6, '0')}`;
     this.customerCounter++;
     
