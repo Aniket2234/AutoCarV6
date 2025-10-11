@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'wouter';
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import logoImage from '@assets/image_1760164042662.png';
 
 export default function Login() {
@@ -79,7 +78,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@autoshop.com"
+                placeholder="admin@maulicarworld.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

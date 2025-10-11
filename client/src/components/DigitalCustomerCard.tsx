@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Car, Phone, Mail, User, Calendar, QrCode, Printer, Star, Gift, TrendingUp } from "lucide-react";
+import carImage from "@assets/image_1760164042662.png";
 
 interface Visit {
   date: string;
@@ -104,16 +105,19 @@ export function DigitalCustomerCard({
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-          <Car className="h-5 w-5 text-primary" />
-          <div>
-            <p className="font-medium">
+        <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 border-2 border-orange-200 dark:border-orange-800">
+          <div className="flex-shrink-0">
+            <img src={carImage} alt="Car" className="h-16 w-16 object-contain" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-lg text-orange-900 dark:text-orange-100">
               {customer.vehicle.make} {customer.vehicle.model}
             </p>
-            <p className="text-sm text-muted-foreground font-mono">
+            <p className="text-sm font-semibold text-orange-700 dark:text-orange-300 font-mono">
               {customer.vehicle.regNo} • {customer.vehicle.year}
             </p>
           </div>
+          <Car className="h-6 w-6 text-orange-600 dark:text-orange-400" />
         </div>
 
         {/* Loyalty Card Section */}
