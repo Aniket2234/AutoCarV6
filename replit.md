@@ -6,10 +6,12 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 ## Recent Changes
 **October 11, 2025** - Branding Update:
 - **Logo & Name Change**: Replaced "AutoParts Pro" branding with "Mauli Car World" across all pages
+- **Sidebar/Dashboard Update**: Updated main dashboard sidebar to show "Mauli Car World" with custom MD wings logo
 - **Visual Enhancement**: Updated logo to custom MD wings design with car illustration
 - **Customer Card Enhancement**: Added car logo image to DigitalCustomerCard component with gradient background (orange-yellow theme) and enhanced visibility with border styling
 - **SEO Update**: Updated page title in index.html to "Mauli Car World - Car Parts & Service Management"
 - **Email Placeholder**: Updated login page email placeholder to match new domain (admin@maulicarworld.com)
+- **Theme Default**: Changed default theme from dark to light for first-time visitors (existing users retain their saved preference)
 
 **October 11, 2025** - Migrated customer registration system to MongoDB:
 - **Migration to MongoDB**: Replaced in-memory storage with MongoDB for permanent data persistence
