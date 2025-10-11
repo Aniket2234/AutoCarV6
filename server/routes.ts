@@ -1613,6 +1613,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ error: "Failed to resend OTP" });
     }
   });
+  
+  // Update customer (Admin only)
+  app.patch("/api/registration/customers/:id", requireAuth, requirePermission("customers", "update"), async (req, res) => {
+    try {
+      const customer = await RegistrationCustomer.findById(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Update customer fields
+      const updateData = req.body;
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] !== undefined && key !== '_id' && key !== 'referenceCode') {
+          (customer as any)[key] = updateData[key];
+        }
+      });
+      
+      await customer.save();
+      
+      res.json({
+        id: customer._id.toString(),
+        referenceCode: customer.referenceCode,
+        fullName: customer.fullName,
+        mobileNumber: customer.mobileNumber,
+        alternativeNumber: customer.alternativeNumber,
+        email: customer.email,
+        address: customer.address,
+        city: customer.city,
+        taluka: customer.taluka,
+        district: customer.district,
+        state: customer.state,
+        pinCode: customer.pinCode,
+        isVerified: customer.isVerified,
+        createdAt: customer.createdAt,
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update customer" });
+    }
+  });
+  
+  // Delete customer (Admin only)
+  app.delete("/api/registration/customers/:id", requireAuth, requirePermission("customers", "delete"), async (req, res) => {
+    try {
+      const customer = await RegistrationCustomer.findById(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Delete all vehicles associated with this customer
+      await RegistrationVehicle.deleteMany({ customerId: req.params.id });
+      
+      // Delete the customer
+      await RegistrationCustomer.findByIdAndDelete(req.params.id);
+      
+      res.json({ success: true, message: "Customer and associated vehicles deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete customer" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, CheckCircle, XCircle, Car, User, MapPin, Phone, Mail } from "lucide-react";
+import { Search, CheckCircle, XCircle, Car, User, MapPin, Phone, Mail, Edit, Trash2 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Customer {
   id: string;
@@ -38,12 +52,18 @@ interface Vehicle {
 }
 
 export default function CustomerRegistrationDashboard() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [districtFilter, setDistrictFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [verifiedFilter, setVerifiedFilter] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  
+  const isAdmin = user?.role === 'Admin';
 
   // Fetch all customers
   const { data: customers = [], isLoading } = useQuery<Customer[]>({
@@ -75,6 +95,27 @@ export default function CustomerRegistrationDashboard() {
       return response.json();
     },
     enabled: !!selectedCustomer?.id,
+  });
+  
+  // Delete customer mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return apiRequest("DELETE", `/api/registration/customers/${customerId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/registration/customers"] });
+      toast({
+        title: "Success",
+        description: "Customer deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete customer",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filter customers by search term
@@ -276,17 +317,18 @@ export default function CustomerRegistrationDashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setSelectedCustomer(customer)}
-                              data-testid={`button-view-${customer.id}`}
-                            >
-                              View Details
-                            </Button>
-                          </DialogTrigger>
+                        <div className="flex items-center gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setSelectedCustomer(customer)}
+                                data-testid={`button-view-${customer.id}`}
+                              >
+                                View Details
+                              </Button>
+                            </DialogTrigger>
                           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Customer Details</DialogTitle>
@@ -394,6 +436,52 @@ export default function CustomerRegistrationDashboard() {
                             </div>
                           </DialogContent>
                         </Dialog>
+                        
+                        {isAdmin && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingCustomer(customer);
+                                setEditDialogOpen(true);
+                              }}
+                              data-testid={`button-edit-${customer.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  data-testid={`button-delete-${customer.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the customer "{customer.fullName}" and all associated vehicles. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMutation.mutate(customer.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
