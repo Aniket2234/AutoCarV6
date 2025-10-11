@@ -28,6 +28,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Vehicle Brands
+const VEHICLE_BRANDS = [
+  "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Kia",
+  "Honda", "Toyota", "Ford", "Renault", "Nissan",
+  "Volkswagen", "Skoda", "MG", "Jeep", "Citroen"
+];
+
 interface Customer {
   id: string;
   referenceCode: string;
@@ -68,6 +75,11 @@ const editCustomerSchema = z.object({
   state: z.string().min(1, "State is required"),
   pinCode: z.string().min(6, "Pin code must be 6 digits"),
   isVerified: z.boolean(),
+  vehicleNumber: z.string().optional(),
+  vehicleBrand: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  yearOfPurchase: z.string().optional(),
+  vehiclePhoto: z.string().optional(),
 });
 
 // Customer Card Component
@@ -99,7 +111,7 @@ function CustomerCard({
   const primaryVehicle = vehicles[0];
 
   return (
-    <Card className="overflow-hidden" data-testid={`card-customer-${customer.id}`}>
+    <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700" data-testid={`card-customer-${customer.id}`}>
       <CardContent className="p-0">
         {/* Vehicle Image */}
         {primaryVehicle?.vehiclePhoto && (
@@ -107,7 +119,7 @@ function CustomerCard({
             <img 
               src={primaryVehicle.vehiclePhoto} 
               alt={`${primaryVehicle.vehicleBrand} ${primaryVehicle.vehicleModel}`} 
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               data-testid={`img-vehicle-card-${customer.id}`}
             />
           </div>
@@ -236,6 +248,7 @@ export default function CustomerRegistrationDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   
   const isAdmin = user?.role === 'Admin';
 
@@ -271,6 +284,20 @@ export default function CustomerRegistrationDashboard() {
     enabled: !!selectedCustomer?.id,
   });
   
+  // Fetch editing customer vehicles
+  const { data: editingVehicles = [] } = useQuery<Vehicle[]>({
+    queryKey: ["/api/registration/customers", editingCustomer?.id, "vehicles"],
+    queryFn: async () => {
+      if (!editingCustomer?.id) return [];
+      const response = await fetch(`/api/registration/customers/${editingCustomer.id}/vehicles`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!editingCustomer?.id,
+  });
+
   // Edit form
   const editForm = useForm<z.infer<typeof editCustomerSchema>>({
     resolver: zodResolver(editCustomerSchema),
@@ -286,12 +313,18 @@ export default function CustomerRegistrationDashboard() {
       state: "",
       pinCode: "",
       isVerified: false,
+      vehicleNumber: "",
+      vehicleBrand: "",
+      vehicleModel: "",
+      yearOfPurchase: "",
+      vehiclePhoto: "",
     },
   });
 
-  // Update form when editing customer changes
+  // Update form when editing customer or vehicles change
   useEffect(() => {
     if (editingCustomer) {
+      const primaryVehicle = editingVehicles[0];
       editForm.reset({
         fullName: editingCustomer.fullName,
         mobileNumber: editingCustomer.mobileNumber,
@@ -304,24 +337,60 @@ export default function CustomerRegistrationDashboard() {
         state: editingCustomer.state,
         pinCode: editingCustomer.pinCode,
         isVerified: editingCustomer.isVerified,
+        vehicleNumber: primaryVehicle?.vehicleNumber || "",
+        vehicleBrand: primaryVehicle?.vehicleBrand || "",
+        vehicleModel: primaryVehicle?.vehicleModel || "",
+        yearOfPurchase: primaryVehicle?.yearOfPurchase?.toString() || "",
+        vehiclePhoto: primaryVehicle?.vehiclePhoto || "",
       });
+      setEditingVehicle(primaryVehicle || null);
     }
-  }, [editingCustomer, editForm]);
+  }, [editingCustomer, editingVehicles, editForm]);
 
   // Edit customer mutation
   const editMutation = useMutation({
     mutationFn: async (data: z.infer<typeof editCustomerSchema>) => {
       if (!editingCustomer) throw new Error("No customer selected");
-      return apiRequest("PATCH", `/api/registration/customers/${editingCustomer.id}`, data);
+      
+      const customerData = {
+        fullName: data.fullName,
+        mobileNumber: data.mobileNumber,
+        alternativeNumber: data.alternativeNumber,
+        email: data.email,
+        address: data.address,
+        city: data.city,
+        taluka: data.taluka,
+        district: data.district,
+        state: data.state,
+        pinCode: data.pinCode,
+        isVerified: data.isVerified,
+      };
+      
+      await apiRequest("PATCH", `/api/registration/customers/${editingCustomer.id}`, customerData);
+      
+      if (editingVehicle && data.vehicleNumber) {
+        const vehicleData = {
+          vehicleNumber: data.vehicleNumber,
+          vehicleBrand: data.vehicleBrand,
+          vehicleModel: data.vehicleModel,
+          yearOfPurchase: data.yearOfPurchase ? parseInt(data.yearOfPurchase) : null,
+          vehiclePhoto: data.vehiclePhoto,
+        };
+        
+        await apiRequest("PATCH", `/api/registration/vehicles/${editingVehicle.id}`, vehicleData);
+      }
+      
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/registration/customers"] });
       setEditDialogOpen(false);
       setEditingCustomer(null);
+      setEditingVehicle(null);
       editForm.reset();
       toast({
         title: "Success",
-        description: "Customer updated successfully",
+        description: "Customer and vehicle updated successfully",
       });
     },
     onError: (error: any) => {
@@ -815,6 +884,102 @@ export default function CustomerRegistrationDashboard() {
                   </FormItem>
                 )}
               />
+
+              {editingVehicle && (
+                <>
+                  <div className="border-t pt-4">
+                    <h3 className="flex items-center gap-2 font-semibold mb-4">
+                      <Car className="w-4 h-4" />
+                      Vehicle Information
+                    </h3>
+                  </div>
+
+                  <FormField
+                    control={editForm.control}
+                    name="vehicleNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vehicle Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="MH12AB1234" className="uppercase" data-testid="input-edit-vehicleNumber" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={editForm.control}
+                      name="vehicleBrand"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vehicle Brand</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-edit-vehicleBrand">
+                                <SelectValue placeholder="Select brand" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {VEHICLE_BRANDS.map((brand) => (
+                                <SelectItem key={brand} value={brand}>
+                                  {brand}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={editForm.control}
+                      name="vehicleModel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vehicle Model</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-edit-vehicleModel" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={editForm.control}
+                      name="yearOfPurchase"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Year of Purchase</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" placeholder="2024" data-testid="input-edit-yearOfPurchase" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={editForm.control}
+                      name="vehiclePhoto"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vehicle Photo URL</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="https://..." data-testid="input-edit-vehiclePhoto" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
 
               <FormField
                 control={editForm.control}
