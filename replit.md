@@ -4,6 +4,12 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Registration Dashboard UI Enhancements:
+- **Verification Toggle**: Added isVerified field to admin edit dialog with Switch component allowing admins to verify/unverify customers during editing
+- **Card Layout**: Replaced table view with responsive card layout (1/2/3 columns for mobile/tablet/desktop) displaying vehicle images prominently at top of each card
+- **CustomerCard Component**: Created separate CustomerCard component using proper React hooks architecture (useQuery within component, not in map loop) to fetch and display vehicle data
+- **Enhanced UX**: Cards now show verification badges, customer contact details, vehicle info, and action buttons (view, edit, delete) in an organized, visual format
+
 **October 11, 2025** - Customer Registration Bug Fixes:
 - **Vehicle Photo Display**: Fixed DigitalCustomerCard component to display actual uploaded vehicle photos instead of static placeholder images
 - **Customer Details Dialog**: Added vehicle photo display in customer details dialog showing uploaded vehicle images with proper sizing and styling
