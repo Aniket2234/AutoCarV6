@@ -39,10 +39,10 @@ interface Vehicle {
 
 export default function CustomerRegistrationDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
-  const [districtFilter, setDistrictFilter] = useState("");
-  const [stateFilter, setStateFilter] = useState("");
-  const [verifiedFilter, setVerifiedFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
+  const [verifiedFilter, setVerifiedFilter] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Fetch all customers
@@ -50,10 +50,10 @@ export default function CustomerRegistrationDashboard() {
     queryKey: ["/api/registration/customers", cityFilter, districtFilter, stateFilter, verifiedFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (cityFilter) params.append("city", cityFilter);
-      if (districtFilter) params.append("district", districtFilter);
-      if (stateFilter) params.append("state", stateFilter);
-      if (verifiedFilter) params.append("isVerified", verifiedFilter);
+      if (cityFilter && cityFilter !== "all") params.append("city", cityFilter);
+      if (districtFilter && districtFilter !== "all") params.append("district", districtFilter);
+      if (stateFilter && stateFilter !== "all") params.append("state", stateFilter);
+      if (verifiedFilter && verifiedFilter !== "all") params.append("isVerified", verifiedFilter);
       
       const response = await fetch(`/api/registration/customers?${params.toString()}`, {
         credentials: "include",
@@ -126,7 +126,7 @@ export default function CustomerRegistrationDashboard() {
                 <SelectValue placeholder="Filter by City" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="" data-testid="option-city-all">All Cities</SelectItem>
+                <SelectItem value="all" data-testid="option-city-all">All Cities</SelectItem>
                 {cities.map(city => (
                   <SelectItem key={city} value={city} data-testid={`option-city-${city.toLowerCase().replace(/\s+/g, '-')}`}>{city}</SelectItem>
                 ))}
@@ -138,7 +138,7 @@ export default function CustomerRegistrationDashboard() {
                 <SelectValue placeholder="Filter by District" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="" data-testid="option-district-all">All Districts</SelectItem>
+                <SelectItem value="all" data-testid="option-district-all">All Districts</SelectItem>
                 {districts.map(district => (
                   <SelectItem key={district} value={district} data-testid={`option-district-${district.toLowerCase().replace(/\s+/g, '-')}`}>{district}</SelectItem>
                 ))}
@@ -150,7 +150,7 @@ export default function CustomerRegistrationDashboard() {
                 <SelectValue placeholder="Filter by State" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="" data-testid="option-state-all">All States</SelectItem>
+                <SelectItem value="all" data-testid="option-state-all">All States</SelectItem>
                 {states.map(state => (
                   <SelectItem key={state} value={state} data-testid={`option-state-${state.toLowerCase().replace(/\s+/g, '-')}`}>{state}</SelectItem>
                 ))}
@@ -162,21 +162,21 @@ export default function CustomerRegistrationDashboard() {
                 <SelectValue placeholder="Filter by Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="" data-testid="option-verified-all">All Status</SelectItem>
+                <SelectItem value="all" data-testid="option-verified-all">All Status</SelectItem>
                 <SelectItem value="true" data-testid="option-verified-true">Verified</SelectItem>
                 <SelectItem value="false" data-testid="option-verified-false">Unverified</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {(cityFilter || districtFilter || stateFilter || verifiedFilter || searchTerm) && (
+          {(cityFilter && cityFilter !== "all" || districtFilter && districtFilter !== "all" || stateFilter && stateFilter !== "all" || verifiedFilter && verifiedFilter !== "all" || searchTerm) && (
             <Button 
               variant="outline" 
               onClick={() => {
-                setCityFilter("");
-                setDistrictFilter("");
-                setStateFilter("");
-                setVerifiedFilter("");
+                setCityFilter("all");
+                setDistrictFilter("all");
+                setStateFilter("all");
+                setVerifiedFilter("all");
                 setSearchTerm("");
               }}
               data-testid="button-clear-filters"
