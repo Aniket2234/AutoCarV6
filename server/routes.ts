@@ -20,7 +20,6 @@ import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notif
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
-import { storage } from "./storage";
 import { insertCustomerSchema, insertVehicleSchema } from "@shared/schema";
 import { RegistrationCustomer } from "./models/RegistrationCustomer";
 import { RegistrationVehicle } from "./models/RegistrationVehicle";

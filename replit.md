@@ -4,13 +4,16 @@
 AutoShop Manager is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
-**October 11, 2025** - Implemented comprehensive customer registration system:
-- Created PostgreSQL schema for customers and vehicles using Drizzle ORM
-- Built multi-step customer registration form with OTP verification
-- Developed admin dashboard with advanced filtering (city, district, state, verification status) and customer detail views
-- Implemented reference code generation with proper Indian state RTO codes (CUST-MH-000001 format)
-- Added security features: duplicate vehicle/mobile prevention, input validation, secure OTP verification
-- Stubbed notification system (SMS/WhatsApp/Email) for future integration with external gateways
+**October 11, 2025** - Migrated customer registration system to MongoDB:
+- **Migration to MongoDB**: Replaced in-memory storage with MongoDB for permanent data persistence
+- Created RegistrationCustomer and RegistrationVehicle MongoDB models using Mongoose
+- All registration API routes now use MongoDB for CRUD operations (create, read, update, delete)
+- Fixed Select component errors in CustomerRegistrationDashboard (changed empty values to "all")
+- Reference code generation with proper Indian state RTO codes (CUST-MH-000001 format)
+- Security features: duplicate vehicle/mobile prevention, input validation, secure OTP verification
+- Multi-step registration form with OTP verification workflow
+- Admin dashboard with advanced filtering (city, district, state, verification status)
+- Stubbed notification system (SMS/WhatsApp/Email) for future integration
 - All interactive elements include data-testid attributes for automated testing
 
 ## User Preferences
@@ -30,11 +33,12 @@ The primary database is **MongoDB** with **Mongoose ODM** for flexible NoSQL doc
 ### Data Models & Schemas
 Core entities include Product (with multi-image support, variants, barcode, compatibility, warranty, and detailed inventory tracking), Customer, Employee, ServiceVisit, Order, enhanced InventoryTransaction (tracking IN/OUT/RETURN/ADJUSTMENT, suppliers, batches, unit costs), ProductReturn (with status workflow, refund tracking), Supplier, PurchaseOrder, Attendance, Leave, Task, CommunicationLog, and Feedback. Schemas feature auto-generated IDs, pre-save hooks for status calculations, subdocuments, enum validations, and timestamps.
 
-**New Customer Registration System** (PostgreSQL/Drizzle):
-- **Customer Table**: Comprehensive customer data with fields for personal information (name, mobile, alternative number, email), complete address details (address, city, taluka, district, state, pincode), verification status, OTP management, and auto-generated reference codes following format CUST-{StateCode}-{Counter} (e.g., CUST-MH-000001 for Maharashtra)
-- **Vehicle Table**: Vehicle registration with vehicle number (unique), brand, model, year, and photo upload capability. Linked to customers via foreign key relationship with cascade delete
+**Customer Registration System** (MongoDB/Mongoose):
+- **RegistrationCustomer Collection**: Comprehensive customer data with fields for personal information (fullName, mobileNumber, alternativeNumber, email), complete address details (address, city, taluka, district, state, pinCode), verification status (isVerified), OTP management (otp, otpExpiresAt), and auto-generated reference codes following format CUST-{StateCode}-{Counter} (e.g., CUST-MH-000001 for Maharashtra)
+- **RegistrationVehicle Collection**: Vehicle registration with customerId reference, vehicleNumber (unique constraint via route validation), vehicleBrand, vehicleModel, yearOfPurchase, and vehiclePhoto. Linked to customers via customerId field
 - **Reference Code System**: Uses proper Indian state RTO codes (MH for Maharashtra, GJ for Gujarat, etc.) for location-based customer identification
 - **OTP Verification**: Secure OTP generation (6-digit), storage with expiry timestamps, and verification workflow
+- **MongoDB Storage**: All customer and vehicle data persists to MongoDB collections for permanent storage and retrieval
 
 ### Authentication & Authorization
 The system uses **session-based authentication** with Express sessions and secure HTTP-only cookies. Password hashing is handled by **bcryptjs**. **Role-Based Access Control (RBAC)** defines five distinct roles: Admin, Inventory Manager, Sales Executive, HR Manager, and Service Staff, each with granular permissions (read, create, update, delete) enforced via middleware and frontend checks. Dashboards are role-specific, displaying tailored KPIs and analytics.
