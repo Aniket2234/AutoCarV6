@@ -4,6 +4,15 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Consistent Vehicle Image Border Styling:
+- **Uniform Orange Borders**: All vehicle images now display consistent orange-themed borders (border-orange-300 dark:border-orange-700) throughout the entire application
+- **Border Thickness**: Standardized border-2 for all vehicle image containers for visual consistency
+- **Full Image Display**: All vehicle images use object-contain to display the complete vehicle without cropping
+- **Gradient Backgrounds**: Consistent orange-yellow gradient backgrounds (from-orange-50 to-yellow-50 with dark mode variants) applied to all vehicle image containers
+- **Enhanced Visibility**: Orange borders provide excellent visibility against both light and dark backgrounds
+- **Complete Coverage**: Borders applied to customer card hero images, vehicle thumbnails in details dialog, edit dialog previews, and digital customer cards
+- **Customer Card Styling**: Customer cards with vehicle images now also use orange borders for complete visual consistency
+
 **October 11, 2025** - Vehicle Image Upload Feature:
 - **Image Upload in Edit Dialog**: Added file upload functionality to vehicle photo field in customer edit dialog
 - **Dual Input Support**: Edit dialog now supports both URL input and direct file upload for vehicle photos
