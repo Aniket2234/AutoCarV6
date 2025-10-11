@@ -83,7 +83,7 @@ export default function Dashboard() {
   });
 
   const { data: employees = [] } = useQuery<any[]>({
-    queryKey: ["/api/employees"],
+    queryKey: ["/api/service-handlers"],
     enabled: user?.role === 'Admin' || user?.role === 'Service Staff',
   });
 

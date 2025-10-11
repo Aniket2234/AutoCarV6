@@ -43,7 +43,7 @@ export default function ServiceVisits() {
   });
 
   const { data: employees = [] } = useQuery<any[]>({
-    queryKey: ["/api/employees"],
+    queryKey: ["/api/service-handlers"],
   });
 
   const createServiceMutation = useMutation({
