@@ -1,9 +1,16 @@
-# AutoShop Manager - Car Parts & Service Management System
+# Mauli Car World - Car Parts & Service Management System
 
 ## Overview
-AutoShop Manager is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
+Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Branding Update:
+- **Logo & Name Change**: Replaced "AutoParts Pro" branding with "Mauli Car World" across all pages
+- **Visual Enhancement**: Updated logo to custom MD wings design with car illustration
+- **Customer Card Enhancement**: Added car logo image to DigitalCustomerCard component with gradient background (orange-yellow theme) and enhanced visibility with border styling
+- **SEO Update**: Updated page title in index.html to "Mauli Car World - Car Parts & Service Management"
+- **Email Placeholder**: Updated login page email placeholder to match new domain (admin@maulicarworld.com)
+
 **October 11, 2025** - Migrated customer registration system to MongoDB:
 - **Migration to MongoDB**: Replaced in-memory storage with MongoDB for permanent data persistence
 - Created RegistrationCustomer and RegistrationVehicle MongoDB models using Mongoose
