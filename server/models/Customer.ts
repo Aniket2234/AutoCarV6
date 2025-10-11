@@ -5,6 +5,7 @@ const vehicleSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
+  photo: { type: String },
 }, { _id: false });
 
 const customerSchema = new mongoose.Schema({
@@ -12,6 +13,11 @@ const customerSchema = new mongoose.Schema({
   phone: { type: String, required: true, unique: true },
   email: { type: String },
   vehicles: [vehicleSchema],
+  referralSource: { 
+    type: String, 
+    enum: ['Instagram', 'Facebook', 'WhatsApp', 'Reference', 'Website', 'Walk-in', 'Other'],
+  },
+  referredBy: { type: String },
   loyaltyPoints: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
   visitCount: { type: Number, default: 0 },
