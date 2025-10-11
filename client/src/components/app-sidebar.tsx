@@ -21,6 +21,7 @@ import {
   UserPlus,
   ListChecks,
 } from "lucide-react";
+import logoImage from "@assets/image_1760164042662.png";
 import {
   Sidebar,
   SidebarContent,
@@ -111,11 +112,9 @@ export function AppSidebar() {
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-10 w-10 rounded-md bg-primary text-primary-foreground">
-            <Package className="h-6 w-6" />
-          </div>
+          <img src={logoImage} alt="Mauli Car World Logo" className="h-10 w-auto" />
           <div>
-            <h2 className="text-lg font-semibold">AutoShop</h2>
+            <h2 className="text-lg font-semibold">Mauli Car World</h2>
             <p className="text-xs text-muted-foreground">Manager v1.0</p>
           </div>
         </div>
