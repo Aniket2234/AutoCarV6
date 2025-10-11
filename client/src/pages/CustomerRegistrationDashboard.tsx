@@ -949,35 +949,70 @@ export default function CustomerRegistrationDashboard() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={editForm.control}
-                      name="yearOfPurchase"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Year of Purchase</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" placeholder="2024" data-testid="input-edit-yearOfPurchase" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={editForm.control}
+                    name="yearOfPurchase"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year of Purchase</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="2024" data-testid="input-edit-yearOfPurchase" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={editForm.control}
-                      name="vehiclePhoto"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Vehicle Photo URL</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="https://..." data-testid="input-edit-vehiclePhoto" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={editForm.control}
+                    name="vehiclePhoto"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vehicle Photo</FormLabel>
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input {...field} placeholder="https://... or upload below" data-testid="input-edit-vehiclePhoto" />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('vehicle-photo-upload-edit')?.click()}
+                              data-testid="button-upload-vehicle-photo"
+                            >
+                              Upload
+                            </Button>
+                          </div>
+                          <input
+                            id="vehicle-photo-upload-edit"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  field.onChange(reader.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          {field.value && (
+                            <div className="relative w-full h-32 border rounded-md overflow-hidden bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
+                              <img
+                                src={field.value}
+                                alt="Vehicle preview"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </>
               )}
 
