@@ -32,6 +32,7 @@ interface DigitalCustomerCardProps {
   lastHandler: string;
   currentHandler?: string;
   recentVisits: Visit[];
+  hidePhone?: boolean;
 }
 
 const getTierColor = (tier: string) => {
@@ -55,6 +56,7 @@ export function DigitalCustomerCard({
   lastHandler,
   currentHandler,
   recentVisits,
+  hidePhone = false,
 }: DigitalCustomerCardProps) {
   const initials = customer.name
     .split(" ")
@@ -66,6 +68,11 @@ export function DigitalCustomerCard({
   const discountPercentage = customer.discountPercentage || 0;
   const loyaltyPoints = customer.loyaltyPoints || 0;
   const totalSpent = customer.totalSpent || 0;
+
+  const maskPhone = (phone: string) => {
+    if (!phone || phone.length < 4) return "••••••";
+    return "••••••" + phone.slice(-4);
+  };
 
   return (
     <Card>
@@ -82,7 +89,7 @@ export function DigitalCustomerCard({
               <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Phone className="h-3 w-3" />
-                  {customer.phone}
+                  {hidePhone ? maskPhone(customer.phone) : customer.phone}
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-3 w-3" />
