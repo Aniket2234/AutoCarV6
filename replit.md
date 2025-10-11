@@ -4,6 +4,11 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Customer Registration Bug Fixes:
+- **Vehicle Photo Display**: Fixed DigitalCustomerCard component to display actual uploaded vehicle photos instead of static placeholder images
+- **Customer Details Dialog**: Added vehicle photo display in customer details dialog showing uploaded vehicle images with proper sizing and styling
+- **Admin Edit Functionality**: Implemented complete edit dialog for admin users to update customer information with form validation, proper error handling, and automatic data refresh after updates
+
 **October 11, 2025** - Branding Update:
 - **Logo & Name Change**: Replaced "AutoParts Pro" branding with "Mauli Car World" across all pages
 - **Sidebar/Dashboard Update**: Updated main dashboard sidebar to show "Mauli Car World" with custom MD wings logo
