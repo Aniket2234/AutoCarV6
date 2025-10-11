@@ -799,7 +799,7 @@ export default function Products() {
           {filteredProducts.map((product: any) => {
             const discountPercent = calculateDiscountPercentage(product.mrp, product.sellingPrice);
             return (
-              <Card key={product._id} className="hover-elevate" data-testid={`card-product-${product._id}`}>
+              <Card key={product._id} className="hover-elevate border-2" data-testid={`card-product-${product._id}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

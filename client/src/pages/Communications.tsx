@@ -103,7 +103,7 @@ export default function Communications() {
           <h2 className="text-xl font-semibold mb-4">Communication Logs</h2>
           <div className="grid gap-4">
             {filteredComms.map((comm: any) => (
-              <Card key={comm._id} className="hover-elevate" data-testid={`card-comm-${comm._id}`}>
+              <Card key={comm._id} className="hover-elevate border-2" data-testid={`card-comm-${comm._id}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -140,7 +140,7 @@ export default function Communications() {
           <h2 className="text-xl font-semibold mb-4">Customer Feedback</h2>
           <div className="grid gap-4">
             {filteredFeedbacks.map((feedback: any) => (
-              <Card key={feedback._id} className="hover-elevate" data-testid={`card-feedback-${feedback._id}`}>
+              <Card key={feedback._id} className="hover-elevate border-2" data-testid={`card-feedback-${feedback._id}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

@@ -228,7 +228,7 @@ export default function Suppliers() {
       {filteredSuppliers.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredSuppliers.map((supplier: any) => (
-            <Card key={supplier._id} className="hover-elevate" data-testid={`card-supplier-${supplier._id}`}>
+            <Card key={supplier._id} className="hover-elevate border-2" data-testid={`card-supplier-${supplier._id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

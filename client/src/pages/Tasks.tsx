@@ -100,7 +100,7 @@ export default function Tasks() {
       {filteredTasks.length > 0 ? (
         <div className="grid gap-4">
           {filteredTasks.map((task: any) => (
-            <Card key={task._id} className="hover-elevate" data-testid={`card-task-${task._id}`}>
+            <Card key={task._id} className="hover-elevate border-2" data-testid={`card-task-${task._id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

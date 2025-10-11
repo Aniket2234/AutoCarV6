@@ -336,7 +336,7 @@ export default function ServiceVisits() {
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-6 min-w-max">
           {stages.map((stage) => (
-            <Card key={stage.id} className="w-96 flex-shrink-0" data-testid={`card-stage-${stage.id}`}>
+            <Card key={stage.id} className="w-96 flex-shrink-0 border-2" data-testid={`card-stage-${stage.id}`}>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />

@@ -4,6 +4,13 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Universal Card Border Styling:
+- **Global Card Borders**: Updated Card component to apply thick orange borders (`border-2 border-orange-300 dark:border-orange-700`) to ALL cards throughout the application
+- **Consistent Thickness**: All cards now have 2px border thickness for better visibility and visual hierarchy
+- **Orange Theme**: Cards across all modules (Dashboard, Products, Inventory, Customers, Service Visits, Orders, Employees, etc.) now use orange borders matching the customer registration cards
+- **Light & Dark Mode**: Border styling works perfectly in both themes with appropriate color variants
+- **Component-Level Change**: Modified the base Card component (`client/src/components/ui/card.tsx`) so all cards automatically inherit the thick orange border without individual page modifications
+
 **October 11, 2025** - Consistent Vehicle Image Border Styling:
 - **Uniform Orange Borders**: All vehicle images now display consistent orange-themed borders (border-orange-300 dark:border-orange-700) throughout the entire application
 - **Border Thickness**: Standardized border-2 for all vehicle image containers for visual consistency
