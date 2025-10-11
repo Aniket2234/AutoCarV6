@@ -20,6 +20,8 @@ import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notif
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
+import { storage } from "./storage";
+import { insertCustomerSchema, insertVehicleSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
@@ -1295,6 +1297,205 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(employeeSales);
     } catch (error) {
       res.status(500).json({ error: "Failed to generate employee performance report" });
+    }
+  });
+
+  // New Customer Registration System Routes
+  // Customer registration with OTP verification
+  app.post("/api/registration/customers", async (req, res) => {
+    try {
+      const validatedData = insertCustomerSchema.parse(req.body);
+      
+      // Check if mobile number already exists
+      const existing = await storage.getCustomerByMobile(validatedData.mobileNumber);
+      if (existing) {
+        return res.status(400).json({ error: "Mobile number already registered" });
+      }
+      
+      const customer = await storage.createCustomer(validatedData);
+      
+      // Generate and store OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await storage.updateCustomerOTP(customer.id, otp, otpExpiresAt);
+      
+      // TODO: Send OTP via SMS/WhatsApp (implement with actual gateway)
+      console.log(`OTP for ${customer.mobileNumber}: ${otp}`);
+      
+      res.json({ 
+        customerId: customer.id,
+        message: "OTP sent successfully",
+        // In development, return OTP for testing
+        ...(process.env.NODE_ENV === 'development' && { otp })
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to register customer" });
+    }
+  });
+  
+  // Verify OTP
+  app.post("/api/registration/verify-otp", async (req, res) => {
+    try {
+      const { customerId, otp } = req.body;
+      
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      if (!customer.otp || !customer.otpExpiresAt) {
+        return res.status(400).json({ error: "No OTP found for this customer" });
+      }
+      
+      if (new Date() > customer.otpExpiresAt) {
+        return res.status(400).json({ error: "OTP has expired" });
+      }
+      
+      if (customer.otp !== otp) {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+      
+      await storage.verifyCustomer(customerId);
+      const verifiedCustomer = await storage.getCustomer(customerId);
+      
+      res.json({ 
+        success: true,
+        customer: verifiedCustomer,
+        message: "Customer verified successfully"
+      });
+    } catch (error) {
+      res.status(400).json({ error: "OTP verification failed" });
+    }
+  });
+  
+  // Add vehicle to customer
+  app.post("/api/registration/vehicles", async (req, res) => {
+    try {
+      const validatedData = insertVehicleSchema.parse(req.body);
+      
+      // Check if customer exists
+      const customer = await storage.getCustomer(validatedData.customerId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Check if vehicle number already exists
+      const existing = await storage.getVehicleByNumber(validatedData.vehicleNumber);
+      if (existing) {
+        return res.status(400).json({ error: "Vehicle number already registered" });
+      }
+      
+      const vehicle = await storage.createVehicle(validatedData);
+      
+      // TODO: Send confirmation notification (SMS/WhatsApp/Email)
+      const message = `Dear ${customer.fullName}, your car ${vehicle.vehicleBrand} ${vehicle.vehicleModel} (${vehicle.vehicleNumber}) has been registered successfully. Your Reference ID: ${customer.referenceCode}`;
+      console.log(message);
+      
+      res.json({ 
+        vehicle,
+        customer,
+        message: "Vehicle registered successfully"
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to register vehicle" });
+    }
+  });
+  
+  // Get customer with vehicles
+  app.get("/api/registration/customers/:id", async (req, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      const vehicles = await storage.getVehiclesByCustomerId(req.params.id);
+      
+      res.json({ customer, vehicles });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer" });
+    }
+  });
+  
+  // Get all registered customers with filtering
+  app.get("/api/registration/customers", async (req, res) => {
+    try {
+      const { city, district, state, isVerified } = req.query;
+      const filters: any = {};
+      
+      if (city) filters.city = city as string;
+      if (district) filters.district = district as string;
+      if (state) filters.state = state as string;
+      if (isVerified !== undefined) filters.isVerified = isVerified === 'true';
+      
+      const customers = await storage.getAllCustomers(filters);
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+  
+  // Get vehicles by customer
+  app.get("/api/registration/customers/:id/vehicles", async (req, res) => {
+    try {
+      const vehicles = await storage.getVehiclesByCustomerId(req.params.id);
+      res.json(vehicles);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vehicles" });
+    }
+  });
+  
+  // Update vehicle
+  app.patch("/api/registration/vehicles/:id", async (req, res) => {
+    try {
+      const vehicle = await storage.updateVehicle(req.params.id, req.body);
+      if (!vehicle) {
+        return res.status(404).json({ error: "Vehicle not found" });
+      }
+      res.json(vehicle);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update vehicle" });
+    }
+  });
+  
+  // Delete vehicle
+  app.delete("/api/registration/vehicles/:id", async (req, res) => {
+    try {
+      await storage.deleteVehicle(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete vehicle" });
+    }
+  });
+  
+  // Resend OTP
+  app.post("/api/registration/resend-otp", async (req, res) => {
+    try {
+      const { customerId } = req.body;
+      
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      if (customer.isVerified) {
+        return res.status(400).json({ error: "Customer already verified" });
+      }
+      
+      // Generate new OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await storage.updateCustomerOTP(customerId, otp, otpExpiresAt);
+      
+      // TODO: Send OTP via SMS/WhatsApp
+      console.log(`New OTP for ${customer.mobileNumber}: ${otp}`);
+      
+      res.json({ 
+        message: "OTP resent successfully",
+        ...(process.env.NODE_ENV === 'development' && { otp })
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to resend OTP" });
     }
   });
 
