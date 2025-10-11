@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, CheckCircle, XCircle, Car, User, MapPin, Phone, Mail, Edit, Trash2 } from "lucide-react";
@@ -66,7 +67,163 @@ const editCustomerSchema = z.object({
   district: z.string().min(1, "District is required"),
   state: z.string().min(1, "State is required"),
   pinCode: z.string().min(6, "Pin code must be 6 digits"),
+  isVerified: z.boolean(),
 });
+
+// Customer Card Component
+function CustomerCard({ 
+  customer, 
+  isAdmin, 
+  onEdit, 
+  onDelete,
+  onViewDetails 
+}: { 
+  customer: Customer; 
+  isAdmin: boolean; 
+  onEdit: (customer: Customer) => void;
+  onDelete: (customerId: string) => void;
+  onViewDetails: (customer: Customer) => void;
+}) {
+  // Fetch vehicles for this customer
+  const { data: vehicles = [] } = useQuery<Vehicle[]>({
+    queryKey: ["/api/registration/customers", customer.id, "vehicles"],
+    queryFn: async () => {
+      const response = await fetch(`/api/registration/customers/${customer.id}/vehicles`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  const primaryVehicle = vehicles[0];
+
+  return (
+    <Card className="overflow-hidden" data-testid={`card-customer-${customer.id}`}>
+      <CardContent className="p-0">
+        {/* Vehicle Image */}
+        {primaryVehicle?.vehiclePhoto && (
+          <div className="w-full h-48 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 flex items-center justify-center">
+            <img 
+              src={primaryVehicle.vehiclePhoto} 
+              alt={`${primaryVehicle.vehicleBrand} ${primaryVehicle.vehicleModel}`} 
+              className="h-full w-full object-cover"
+              data-testid={`img-vehicle-card-${customer.id}`}
+            />
+          </div>
+        )}
+        
+        {/* Customer Details */}
+        <div className="p-4 space-y-3">
+          {/* Header with name and status */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-lg" data-testid={`text-name-${customer.id}`}>
+                {customer.fullName}
+              </h3>
+              <p className="text-xs text-muted-foreground font-mono" data-testid={`text-ref-${customer.id}`}>
+                {customer.referenceCode}
+              </p>
+            </div>
+            {customer.isVerified ? (
+              <Badge className="bg-green-600" data-testid={`badge-verified-${customer.id}`}>
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Verified
+              </Badge>
+            ) : (
+              <Badge variant="secondary" data-testid={`badge-pending-${customer.id}`}>
+                <XCircle className="w-3 h-3 mr-1" />
+                Pending
+              </Badge>
+            )}
+          </div>
+
+          {/* Vehicle Info */}
+          {primaryVehicle && (
+            <div className="flex items-center gap-2 text-sm">
+              <Car className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">
+                {primaryVehicle.vehicleBrand} {primaryVehicle.vehicleModel}
+              </span>
+              <span className="text-muted-foreground">• {primaryVehicle.vehicleNumber}</span>
+            </div>
+          )}
+
+          {/* Contact Info */}
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-muted-foreground" />
+              <span data-testid={`text-mobile-${customer.id}`}>{customer.mobileNumber}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              <span className="truncate" data-testid={`text-email-${customer.id}`}>{customer.email}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span data-testid={`text-location-${customer.id}`}>{customer.city}, {customer.state}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => onViewDetails(customer)}
+              data-testid={`button-view-${customer.id}`}
+            >
+              View Details
+            </Button>
+            
+            {isAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(customer)}
+                  data-testid={`button-edit-${customer.id}`}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid={`button-delete-${customer.id}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the customer "{customer.fullName}" and all associated vehicles. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(customer.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function CustomerRegistrationDashboard() {
   const { user } = useAuth();
@@ -128,6 +285,7 @@ export default function CustomerRegistrationDashboard() {
       district: "",
       state: "",
       pinCode: "",
+      isVerified: false,
     },
   });
 
@@ -145,6 +303,7 @@ export default function CustomerRegistrationDashboard() {
         district: editingCustomer.district,
         state: editingCustomer.state,
         pinCode: editingCustomer.pinCode,
+        isVerified: editingCustomer.isVerified,
       });
     }
   }, [editingCustomer, editForm]);
@@ -339,247 +498,165 @@ export default function CustomerRegistrationDashboard() {
         </Card>
       </div>
 
-      {/* Customers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Registered Customers</CardTitle>
-          <CardDescription>
-            {filteredCustomers.length} customers found
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading customers...</div>
-          ) : filteredCustomers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+      {/* Customers Cards */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">Registered Customers</h2>
+            <p className="text-muted-foreground">{filteredCustomers.length} customers found</p>
+          </div>
+        </div>
+        
+        {isLoading ? (
+          <div className="text-center py-8">Loading customers...</div>
+        ) : filteredCustomers.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8 text-muted-foreground">
               No customers found matching your criteria
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Reference Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Mobile</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                      <TableCell className="font-mono" data-testid={`text-ref-${customer.id}`}>
-                        {customer.referenceCode}
-                      </TableCell>
-                      <TableCell data-testid={`text-name-${customer.id}`}>{customer.fullName}</TableCell>
-                      <TableCell data-testid={`text-mobile-${customer.id}`}>{customer.mobileNumber}</TableCell>
-                      <TableCell data-testid={`text-email-${customer.id}`}>{customer.email}</TableCell>
-                      <TableCell data-testid={`text-location-${customer.id}`}>
-                        {customer.city}, {customer.state}
-                      </TableCell>
-                      <TableCell>
-                        {customer.isVerified ? (
-                          <Badge className="bg-green-600" data-testid={`badge-verified-${customer.id}`}>
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" data-testid={`badge-pending-${customer.id}`}>
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Pending
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => setSelectedCustomer(customer)}
-                                data-testid={`button-view-${customer.id}`}
-                              >
-                                View Details
-                              </Button>
-                            </DialogTrigger>
-                          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Customer Details</DialogTitle>
-                              <DialogDescription>
-                                Reference ID: {customer.referenceCode}
-                              </DialogDescription>
-                            </DialogHeader>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredCustomers.map((customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                isAdmin={isAdmin}
+                onEdit={(customer) => {
+                  setEditingCustomer(customer);
+                  setEditDialogOpen(true);
+                }}
+                onDelete={(customerId) => deleteMutation.mutate(customerId)}
+                onViewDetails={(customer) => setSelectedCustomer(customer)}
+              />
+            ))}
+          </div>
+        )}
 
-                            <div className="space-y-6">
-                              {/* Customer Information */}
+        {/* Customer Details Dialog */}
+        <Dialog open={!!selectedCustomer} onOpenChange={(open) => !open && setSelectedCustomer(null)}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Customer Details</DialogTitle>
+              <DialogDescription>
+                Reference ID: {selectedCustomer?.referenceCode}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedCustomer && (
+              <div className="space-y-6">
+                {/* Customer Information */}
+                <div>
+                  <h3 className="flex items-center gap-2 font-semibold mb-3">
+                    <User className="w-4 h-4" />
+                    Customer Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span>
+                      <p className="font-medium">{selectedCustomer.fullName}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Email:</span>
+                      <p className="font-medium">{selectedCustomer.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Mobile:</span>
+                      <p className="font-medium">{selectedCustomer.mobileNumber}</p>
+                    </div>
+                    {selectedCustomer.alternativeNumber && (
+                      <div>
+                        <span className="text-muted-foreground">Alt. Number:</span>
+                        <p className="font-medium">{selectedCustomer.alternativeNumber}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div>
+                  <h3 className="flex items-center gap-2 font-semibold mb-3">
+                    <MapPin className="w-4 h-4" />
+                    Address Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Address:</span>
+                      <p className="font-medium">{selectedCustomer.address}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">City/Village:</span>
+                      <p className="font-medium">{selectedCustomer.city}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Taluka:</span>
+                      <p className="font-medium">{selectedCustomer.taluka}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">District:</span>
+                      <p className="font-medium">{selectedCustomer.district}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">State:</span>
+                      <p className="font-medium">{selectedCustomer.state}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Pin Code:</span>
+                      <p className="font-medium">{selectedCustomer.pinCode}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vehicle Information */}
+                <div>
+                  <h3 className="flex items-center gap-2 font-semibold mb-3">
+                    <Car className="w-4 h-4" />
+                    Registered Vehicles ({customerVehicles.length})
+                  </h3>
+                  {customerVehicles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No vehicles registered yet</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {customerVehicles.map((vehicle) => (
+                        <div key={vehicle.id} className="p-3 border rounded-lg">
+                          <div className="flex gap-4">
+                            {vehicle.vehiclePhoto && (
+                              <div className="flex-shrink-0">
+                                <img 
+                                  src={vehicle.vehiclePhoto} 
+                                  alt={`${vehicle.vehicleBrand} ${vehicle.vehicleModel}`} 
+                                  className="w-24 h-24 object-cover rounded-md border"
+                                  data-testid={`img-vehicle-${vehicle.id}`}
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
                               <div>
-                                <h3 className="flex items-center gap-2 font-semibold mb-3">
-                                  <User className="w-4 h-4" />
-                                  Customer Information
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                  <div>
-                                    <span className="text-muted-foreground">Name:</span>
-                                    <p className="font-medium">{customer.fullName}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Email:</span>
-                                    <p className="font-medium">{customer.email}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Mobile:</span>
-                                    <p className="font-medium">{customer.mobileNumber}</p>
-                                  </div>
-                                  {customer.alternativeNumber && (
-                                    <div>
-                                      <span className="text-muted-foreground">Alt. Number:</span>
-                                      <p className="font-medium">{customer.alternativeNumber}</p>
-                                    </div>
-                                  )}
+                                <span className="text-muted-foreground">Number:</span>
+                                <p className="font-medium">{vehicle.vehicleNumber}</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Brand & Model:</span>
+                                <p className="font-medium">{vehicle.vehicleBrand} {vehicle.vehicleModel}</p>
+                              </div>
+                              {vehicle.yearOfPurchase && (
+                                <div>
+                                  <span className="text-muted-foreground">Year:</span>
+                                  <p className="font-medium">{vehicle.yearOfPurchase}</p>
                                 </div>
-                              </div>
-
-                              {/* Address Information */}
-                              <div>
-                                <h3 className="flex items-center gap-2 font-semibold mb-3">
-                                  <MapPin className="w-4 h-4" />
-                                  Address Information
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                  <div className="col-span-2">
-                                    <span className="text-muted-foreground">Address:</span>
-                                    <p className="font-medium">{customer.address}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">City/Village:</span>
-                                    <p className="font-medium">{customer.city}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Taluka:</span>
-                                    <p className="font-medium">{customer.taluka}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">District:</span>
-                                    <p className="font-medium">{customer.district}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">State:</span>
-                                    <p className="font-medium">{customer.state}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Pin Code:</span>
-                                    <p className="font-medium">{customer.pinCode}</p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Vehicle Information */}
-                              <div>
-                                <h3 className="flex items-center gap-2 font-semibold mb-3">
-                                  <Car className="w-4 h-4" />
-                                  Registered Vehicles ({customerVehicles.length})
-                                </h3>
-                                {customerVehicles.length === 0 ? (
-                                  <p className="text-sm text-muted-foreground">No vehicles registered yet</p>
-                                ) : (
-                                  <div className="space-y-3">
-                                    {customerVehicles.map((vehicle) => (
-                                      <div key={vehicle.id} className="p-3 border rounded-lg">
-                                        <div className="flex gap-4">
-                                          {vehicle.vehiclePhoto && (
-                                            <div className="flex-shrink-0">
-                                              <img 
-                                                src={vehicle.vehiclePhoto} 
-                                                alt={`${vehicle.vehicleBrand} ${vehicle.vehicleModel}`} 
-                                                className="w-24 h-24 object-cover rounded-md border"
-                                                data-testid={`img-vehicle-${vehicle.id}`}
-                                              />
-                                            </div>
-                                          )}
-                                          <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
-                                            <div>
-                                              <span className="text-muted-foreground">Number:</span>
-                                              <p className="font-medium">{vehicle.vehicleNumber}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Brand & Model:</span>
-                                              <p className="font-medium">{vehicle.vehicleBrand} {vehicle.vehicleModel}</p>
-                                            </div>
-                                            {vehicle.yearOfPurchase && (
-                                              <div>
-                                                <span className="text-muted-foreground">Year:</span>
-                                                <p className="font-medium">{vehicle.yearOfPurchase}</p>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                        
-                        {isAdmin && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingCustomer(customer);
-                                setEditDialogOpen(true);
-                              }}
-                              data-testid={`button-edit-${customer.id}`}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  data-testid={`button-delete-${customer.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete the customer "{customer.fullName}" and all associated vehicles. This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteMutation.mutate(customer.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
+                          </div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Edit Customer Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -735,6 +812,28 @@ export default function CustomerRegistrationDashboard() {
                       <Input {...field} data-testid="input-edit-pinCode" />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="isVerified"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Verification Status</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Mark this customer as verified
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="switch-edit-isVerified"
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />
