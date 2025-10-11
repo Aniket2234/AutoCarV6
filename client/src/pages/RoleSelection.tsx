@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Warehouse, ShoppingCart, Users, Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoImage from '@assets/image_1760164042662.png';
 
 interface RoleOption {
   id: string;
@@ -60,8 +61,8 @@ export default function RoleSelection() {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Package className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold" data-testid="text-title">AutoParts Pro</h1>
+            <img src={logoImage} alt="Mauli Car World Logo" className="h-16 w-auto" />
+            <h1 className="text-4xl font-bold" data-testid="text-title">Mauli Car World</h1>
           </div>
           <p className="text-lg text-muted-foreground" data-testid="text-subtitle">
             Select your role to access the system
