@@ -111,15 +111,15 @@ function CustomerCard({
   const primaryVehicle = vehicles[0];
 
   return (
-    <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700" data-testid={`card-customer-${customer.id}`}>
+    <Card className="overflow-hidden border-2 border-orange-300 dark:border-orange-700" data-testid={`card-customer-${customer.id}`}>
       <CardContent className="p-0">
         {/* Vehicle Image */}
         {primaryVehicle?.vehiclePhoto && (
-          <div className="w-full h-48 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 flex items-center justify-center">
+          <div className="w-full h-48 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 flex items-center justify-center border-2 border-orange-300 dark:border-orange-700">
             <img 
               src={primaryVehicle.vehiclePhoto} 
               alt={`${primaryVehicle.vehicleBrand} ${primaryVehicle.vehicleModel}`} 
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain p-2"
               data-testid={`img-vehicle-card-${customer.id}`}
             />
           </div>
@@ -694,7 +694,7 @@ export default function CustomerRegistrationDashboard() {
                                 <img 
                                   src={vehicle.vehiclePhoto} 
                                   alt={`${vehicle.vehicleBrand} ${vehicle.vehicleModel}`} 
-                                  className="w-24 h-24 object-cover rounded-md border"
+                                  className="w-24 h-24 object-contain rounded-md border-2 border-orange-300 dark:border-orange-700 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 p-1"
                                   data-testid={`img-vehicle-${vehicle.id}`}
                                 />
                               </div>
@@ -1000,11 +1000,11 @@ export default function CustomerRegistrationDashboard() {
                             }}
                           />
                           {field.value && (
-                            <div className="relative w-full h-32 border rounded-md overflow-hidden bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
+                            <div className="relative w-full h-32 border-2 border-orange-300 dark:border-orange-700 rounded-md overflow-hidden bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
                               <img
                                 src={field.value}
                                 alt="Vehicle preview"
-                                className="w-full h-full object-contain"
+                                className="w-full h-full object-contain p-2"
                               />
                             </div>
                           )}

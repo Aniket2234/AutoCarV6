@@ -106,12 +106,12 @@ export function DigitalCustomerCard({
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 border-2 border-orange-200 dark:border-orange-800">
+        <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 border-2 border-orange-300 dark:border-orange-700">
           <div className="flex-shrink-0">
             {customer.vehicle.photo ? (
-              <img src={customer.vehicle.photo} alt="Vehicle" className="h-16 w-16 object-cover rounded-md border-2 border-orange-300 dark:border-orange-700" />
+              <img src={customer.vehicle.photo} alt="Vehicle" className="h-16 w-16 object-contain rounded-md border-2 border-orange-300 dark:border-orange-700 bg-white/50 dark:bg-black/20 p-1" />
             ) : (
-              <img src={carImage} alt="Car" className="h-16 w-16 object-contain" />
+              <img src={carImage} alt="Car" className="h-16 w-16 object-contain rounded-md border-2 border-orange-300 dark:border-orange-700 bg-white/50 dark:bg-black/20 p-1" />
             )}
           </div>
           <div className="flex-1">
