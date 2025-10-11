@@ -4,7 +4,16 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 11, 2025** - Vehicle Image Upload Feature:
+- **Image Upload in Edit Dialog**: Added file upload functionality to vehicle photo field in customer edit dialog
+- **Dual Input Support**: Edit dialog now supports both URL input and direct file upload for vehicle photos
+- **Image Preview**: Real-time preview of uploaded images with same styling as vehicle cards (object-contain with gradient background)
+- **Base64 Encoding**: Uploaded images are automatically converted to base64 data URLs for storage in database
+
 **October 11, 2025** - Registration Dashboard UI Enhancements:
+- **Complete Edit Dialog**: All vehicle fields (number, brand, model, year, photo) now available in admin edit dialog
+- **Image Display Fix**: Changed vehicle images from object-cover to object-contain to display full image without cropping
+- **Card Visibility**: Added dark borders (border-2) to customer cards for better visibility against white background
 - **Verification Toggle**: Added isVerified field to admin edit dialog with Switch component allowing admins to verify/unverify customers during editing
 - **Card Layout**: Replaced table view with responsive card layout (1/2/3 columns for mobile/tablet/desktop) displaying vehicle images prominently at top of each card
 - **CustomerCard Component**: Created separate CustomerCard component using proper React hooks architecture (useQuery within component, not in map loop) to fetch and display vehicle data
