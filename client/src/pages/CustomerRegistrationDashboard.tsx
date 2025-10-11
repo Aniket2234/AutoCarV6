@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,10 @@ import { Search, CheckCircle, XCircle, Car, User, MapPin, Phone, Mail, Edit, Tra
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +54,19 @@ interface Vehicle {
   vehiclePhoto: string;
   createdAt: Date;
 }
+
+const editCustomerSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
+  alternativeNumber: z.string().optional(),
+  email: z.string().email("Invalid email address"),
+  address: z.string().min(1, "Address is required"),
+  city: z.string().min(1, "City/Village is required"),
+  taluka: z.string().min(1, "Taluka is required"),
+  district: z.string().min(1, "District is required"),
+  state: z.string().min(1, "State is required"),
+  pinCode: z.string().min(6, "Pin code must be 6 digits"),
+});
 
 export default function CustomerRegistrationDashboard() {
   const { user } = useAuth();
@@ -97,6 +114,66 @@ export default function CustomerRegistrationDashboard() {
     enabled: !!selectedCustomer?.id,
   });
   
+  // Edit form
+  const editForm = useForm<z.infer<typeof editCustomerSchema>>({
+    resolver: zodResolver(editCustomerSchema),
+    defaultValues: {
+      fullName: "",
+      mobileNumber: "",
+      alternativeNumber: "",
+      email: "",
+      address: "",
+      city: "",
+      taluka: "",
+      district: "",
+      state: "",
+      pinCode: "",
+    },
+  });
+
+  // Update form when editing customer changes
+  useEffect(() => {
+    if (editingCustomer) {
+      editForm.reset({
+        fullName: editingCustomer.fullName,
+        mobileNumber: editingCustomer.mobileNumber,
+        alternativeNumber: editingCustomer.alternativeNumber || "",
+        email: editingCustomer.email,
+        address: editingCustomer.address,
+        city: editingCustomer.city,
+        taluka: editingCustomer.taluka,
+        district: editingCustomer.district,
+        state: editingCustomer.state,
+        pinCode: editingCustomer.pinCode,
+      });
+    }
+  }, [editingCustomer, editForm]);
+
+  // Edit customer mutation
+  const editMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof editCustomerSchema>) => {
+      if (!editingCustomer) throw new Error("No customer selected");
+      return apiRequest("PATCH", `/api/registration/customers/${editingCustomer.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/registration/customers"] });
+      setEditDialogOpen(false);
+      setEditingCustomer(null);
+      editForm.reset();
+      toast({
+        title: "Success",
+        description: "Customer updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update customer",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete customer mutation
   const deleteMutation = useMutation({
     mutationFn: async (customerId: string) => {
@@ -503,6 +580,190 @@ export default function CustomerRegistrationDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Customer Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogDescription>
+              Update customer information
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => editMutation.mutate(data))} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-fullName" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="mobileNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-mobileNumber" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="alternativeNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Alternative Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-alternativeNumber" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} data-testid="input-edit-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-address" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City/Village</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-city" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="taluka"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taluka</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-taluka" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="district"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>District</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-district" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-state" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="pinCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pin Code</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-pinCode" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditDialogOpen(false);
+                    setEditingCustomer(null);
+                    editForm.reset();
+                  }}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editMutation.isPending}
+                  data-testid="button-submit-edit"
+                >
+                  {editMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
