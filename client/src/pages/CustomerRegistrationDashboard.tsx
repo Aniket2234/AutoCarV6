@@ -412,21 +412,33 @@ export default function CustomerRegistrationDashboard() {
                                   <div className="space-y-3">
                                     {customerVehicles.map((vehicle) => (
                                       <div key={vehicle.id} className="p-3 border rounded-lg">
-                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                          <div>
-                                            <span className="text-muted-foreground">Number:</span>
-                                            <p className="font-medium">{vehicle.vehicleNumber}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Brand & Model:</span>
-                                            <p className="font-medium">{vehicle.vehicleBrand} {vehicle.vehicleModel}</p>
-                                          </div>
-                                          {vehicle.yearOfPurchase && (
-                                            <div>
-                                              <span className="text-muted-foreground">Year:</span>
-                                              <p className="font-medium">{vehicle.yearOfPurchase}</p>
+                                        <div className="flex gap-4">
+                                          {vehicle.vehiclePhoto && (
+                                            <div className="flex-shrink-0">
+                                              <img 
+                                                src={vehicle.vehiclePhoto} 
+                                                alt={`${vehicle.vehicleBrand} ${vehicle.vehicleModel}`} 
+                                                className="w-24 h-24 object-cover rounded-md border"
+                                                data-testid={`img-vehicle-${vehicle.id}`}
+                                              />
                                             </div>
                                           )}
+                                          <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                              <span className="text-muted-foreground">Number:</span>
+                                              <p className="font-medium">{vehicle.vehicleNumber}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-muted-foreground">Brand & Model:</span>
+                                              <p className="font-medium">{vehicle.vehicleBrand} {vehicle.vehicleModel}</p>
+                                            </div>
+                                            {vehicle.yearOfPurchase && (
+                                              <div>
+                                                <span className="text-muted-foreground">Year:</span>
+                                                <p className="font-medium">{vehicle.yearOfPurchase}</p>
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
