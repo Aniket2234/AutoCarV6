@@ -4,6 +4,11 @@
 Mauli Car World is a comprehensive full-stack web application for auto repair shops. It efficiently manages car parts inventory, customer relationships, service workflows, employee management, and sales tracking. The system supports multiple user roles (administrators, inventory managers, sales executives, HR managers, and service staff) with tailored views and permissions, providing a professional dashboard for all automotive service business operations. The business vision is to streamline operations for auto repair shops, enhancing efficiency and customer satisfaction, with market potential in small to medium-sized repair businesses.
 
 ## Recent Changes
+**October 13, 2025** - New Features Implementation:
+- **Service Visit Before/After Images**: Added beforeImages and afterImages arrays to ServiceVisit MongoDB model for documenting vehicle condition. Service visit dialog now includes image upload with live preview, delete functionality, and strict validation (PNG/JPEG/GIF/WebP formats, 5MB limit per image, proper base64 encoding). Images persist via PATCH route with comprehensive validation.
+- **Vehicle Registration Enhancement**: Added isNew boolean and chassisNumber fields to RegistrationVehicle model. Registration form now includes "Vehicle Condition" dropdown (New/Used) with conditional chassis number field (required for new vehicles only). Zod schema validation with refinement ensures data integrity, boolean coercion before MongoDB persistence.
+- **OTP Login Verification**: Implemented two-step authentication: credentials entry followed by OTP verification. Currently uses dummy OTP (123456) for development, displayed in toast notification and form. Proper state management, error handling, and loading states throughout the flow. Production-ready structure awaiting real OTP delivery integration.
+
 **October 11, 2025** - Universal Card Border Styling:
 - **Global Card Borders**: Updated Card component to apply thick orange borders (`border-2 border-orange-300 dark:border-orange-700`) to ALL cards throughout the application
 - **Consistent Thickness**: All cards now have 2px border thickness for better visibility and visual hierarchy
