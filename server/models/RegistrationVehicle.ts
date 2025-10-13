@@ -7,6 +7,8 @@ const registrationVehicleSchema = new mongoose.Schema({
   vehicleModel: { type: String, required: true },
   yearOfPurchase: { type: Number, default: null },
   vehiclePhoto: { type: String, required: true },
+  isNew: { type: Boolean, default: false },
+  chassisNumber: { type: String, default: null },
 }, { timestamps: true });
 
 export const RegistrationVehicle = mongoose.models.RegistrationVehicle || mongoose.model('RegistrationVehicle', registrationVehicleSchema);

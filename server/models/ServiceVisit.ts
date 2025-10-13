@@ -22,6 +22,8 @@ const serviceVisitSchema = new mongoose.Schema({
     completed: Date,
   },
   totalAmount: { type: Number, default: 0 },
+  beforeImages: [{ type: String }],
+  afterImages: [{ type: String }],
 }, { timestamps: true });
 
 serviceVisitSchema.pre('save', function(next) {
