@@ -50,6 +50,16 @@ const vehicleFormSchema = z.object({
   vehicleModel: z.string().min(1, "Vehicle model is required"),
   yearOfPurchase: z.string().optional(),
   vehiclePhoto: z.string().min(1, "Vehicle photo is required"),
+  isNew: z.string().min(1, "Please select vehicle condition"),
+  chassisNumber: z.string().optional(),
+}).refine((data) => {
+  if (data.isNew === "true" && !data.chassisNumber) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Chassis number is required for new vehicles",
+  path: ["chassisNumber"],
 });
 
 type CustomerFormData = z.infer<typeof customerFormSchema>;
@@ -88,6 +98,8 @@ export default function CustomerRegistration() {
       vehicleModel: "",
       yearOfPurchase: "",
       vehiclePhoto: "",
+      isNew: "",
+      chassisNumber: "",
     },
   });
 
@@ -145,6 +157,8 @@ export default function CustomerRegistration() {
         ...data,
         customerId,
         yearOfPurchase: data.yearOfPurchase ? parseInt(data.yearOfPurchase) : undefined,
+        isNew: data.isNew === "true",
+        chassisNumber: data.isNew === "true" ? data.chassisNumber : undefined,
       });
       return await response.json();
     },
@@ -504,7 +518,45 @@ export default function CustomerRegistration() {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={vehicleForm.control}
+                      name="isNew"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vehicle Condition *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-vehicle-condition">
+                                <SelectValue placeholder="Select condition" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="true">New Vehicle</SelectItem>
+                              <SelectItem value="false">Used Vehicle</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
+
+                  {vehicleForm.watch("isNew") === "true" && (
+                    <FormField
+                      control={vehicleForm.control}
+                      name="chassisNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chassis Number *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Enter chassis number" className="uppercase" data-testid="input-chassis-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={vehicleForm.control}

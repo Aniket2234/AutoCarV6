@@ -25,6 +25,8 @@ export default function ServiceVisits() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [beforeImages, setBeforeImages] = useState<string[]>([]);
+  const [afterImages, setAfterImages] = useState<string[]>([]);
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
@@ -71,8 +73,8 @@ export default function ServiceVisits() {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status });
+    mutationFn: async ({ id, status, beforeImages, afterImages }: { id: string; status: string; beforeImages?: string[]; afterImages?: string[] }) => {
+      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status, beforeImages, afterImages });
       return response.json();
     },
     onSuccess: () => {
@@ -138,16 +140,20 @@ export default function ServiceVisits() {
   const handleServiceClick = (service: any) => {
     setSelectedService(service);
     setSelectedStatus(service.status);
+    setBeforeImages(service.beforeImages || []);
+    setAfterImages(service.afterImages || []);
     setIsEditDialogOpen(true);
   };
 
   const handleStatusUpdate = () => {
     if (!selectedService || !selectedStatus) return;
     
-    if (selectedStatus === selectedService.status) {
+    if (selectedStatus === selectedService.status && 
+        JSON.stringify(beforeImages) === JSON.stringify(selectedService.beforeImages || []) &&
+        JSON.stringify(afterImages) === JSON.stringify(selectedService.afterImages || [])) {
       toast({
         title: "No Changes",
-        description: "Status is already set to " + selectedStatus,
+        description: "No changes detected",
         variant: "default",
       });
       return;
@@ -156,7 +162,31 @@ export default function ServiceVisits() {
     updateServiceMutation.mutate({
       id: selectedService._id,
       status: selectedStatus,
+      beforeImages,
+      afterImages,
     });
+  };
+
+  const handleBeforeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBeforeImages([...beforeImages, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAfterImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAfterImages([...afterImages, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDeleteService = () => {
@@ -426,6 +456,60 @@ export default function ServiceVisits() {
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Before Service Images</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleBeforeImageUpload}
+                  data-testid="input-before-image"
+                />
+                {beforeImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {beforeImages.map((img, idx) => (
+                      <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
+                        <img src={img} alt={`Before ${idx + 1}`} className="w-full h-20 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={() => setBeforeImages(beforeImages.filter((_, i) => i !== idx))}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          data-testid={`button-remove-before-${idx}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>After Service Images</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleAfterImageUpload}
+                  data-testid="input-after-image"
+                />
+                {afterImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {afterImages.map((img, idx) => (
+                      <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
+                        <img src={img} alt={`After ${idx + 1}`} className="w-full h-20 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={() => setAfterImages(afterImages.filter((_, i) => i !== idx))}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          data-testid={`button-remove-after-${idx}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className={`flex ${canDelete ? 'justify-between' : 'justify-end'} gap-2 pt-4`}>
