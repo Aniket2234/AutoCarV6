@@ -21,7 +21,7 @@ export const insertVehicleSchema = z.object({
   customModel: z.string().optional(),
   yearOfPurchase: z.number().optional(),
   vehiclePhoto: z.string().min(1, "Vehicle photo is required"),
-  isNew: z.boolean().optional(),
+  isNewVehicle: z.boolean().optional(),
   chassisNumber: z.string().optional(),
   selectedParts: z.array(z.string()).optional(),
 });

@@ -65,11 +65,11 @@ const vehicleFormSchema = z.object({
   customModel: z.string().optional(),
   yearOfPurchase: z.string().optional(),
   vehiclePhoto: z.string().min(1, "Vehicle photo is required"),
-  isNew: z.string().min(1, "Please select vehicle condition"),
+  isNewVehicle: z.string().min(1, "Please select vehicle condition"),
   chassisNumber: z.string().optional(),
   selectedParts: z.array(z.string()).default([]),
 }).refine((data) => {
-  if (data.isNew === "true" && !data.chassisNumber) {
+  if (data.isNewVehicle === "true" && !data.chassisNumber) {
     return false;
   }
   return true;
@@ -77,7 +77,7 @@ const vehicleFormSchema = z.object({
   message: "Chassis number is required for new vehicles",
   path: ["chassisNumber"],
 }).refine((data) => {
-  if (data.isNew === "false" && !data.vehicleNumber) {
+  if (data.isNewVehicle === "false" && !data.vehicleNumber) {
     return false;
   }
   return true;
@@ -136,7 +136,7 @@ export default function CustomerRegistration() {
       customModel: "",
       yearOfPurchase: "",
       vehiclePhoto: "",
-      isNew: "",
+      isNewVehicle: "",
       chassisNumber: "",
       selectedParts: [],
     },
@@ -198,8 +198,8 @@ export default function CustomerRegistration() {
         vehicleNumber: data.vehicleNumber || undefined,
         customModel: data.vehicleModel === "Other" ? data.customModel : undefined,
         yearOfPurchase: data.yearOfPurchase ? parseInt(data.yearOfPurchase) : undefined,
-        isNew: data.isNew === "true",
-        chassisNumber: data.isNew === "true" ? data.chassisNumber : undefined,
+        isNewVehicle: data.isNewVehicle === "true",
+        chassisNumber: data.isNewVehicle === "true" ? data.chassisNumber : undefined,
         selectedParts: data.selectedParts || [],
       });
       return await response.json();
@@ -522,7 +522,7 @@ export default function CustomerRegistration() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={vehicleForm.control}
-                      name="isNew"
+                      name="isNewVehicle"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Vehicle Condition *</FormLabel>
@@ -542,7 +542,7 @@ export default function CustomerRegistration() {
                       )}
                     />
 
-                    {vehicleForm.watch("isNew") === "false" && (
+                    {vehicleForm.watch("isNewVehicle") === "false" && (
                       <FormField
                         control={vehicleForm.control}
                         name="vehicleNumber"
@@ -662,7 +662,7 @@ export default function CustomerRegistration() {
                     />
                   </div>
 
-                  {vehicleForm.watch("isNew") === "true" && (
+                  {vehicleForm.watch("isNewVehicle") === "true" && (
                     <FormField
                       control={vehicleForm.control}
                       name="chassisNumber"

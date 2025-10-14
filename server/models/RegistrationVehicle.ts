@@ -8,7 +8,7 @@ const registrationVehicleSchema = new mongoose.Schema({
   customModel: { type: String, default: null },
   yearOfPurchase: { type: Number, default: null },
   vehiclePhoto: { type: String, required: true },
-  isNew: { type: Boolean, default: false },
+  isNewVehicle: { type: Boolean, default: false },
   chassisNumber: { type: String, default: null },
   selectedParts: { type: [String], default: [] },
 }, { timestamps: true });
