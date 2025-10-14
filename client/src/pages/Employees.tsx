@@ -16,6 +16,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -63,6 +66,50 @@ export default function Employees() {
     },
   });
 
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PATCH', `/api/employees/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      setIsEditDialogOpen(false);
+      setSelectedEmployee(null);
+      toast({
+        title: "Success",
+        description: "Employee updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update employee",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/employees/${id}`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      toast({
+        title: "Success",
+        description: "Employee deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete employee",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateEmployee = (e: React.FormEvent) => {
     e.preventDefault();
     createEmployeeMutation.mutate({
@@ -75,6 +122,48 @@ export default function Employees() {
       joiningDate: formData.joiningDate,
       isActive: true,
     });
+  };
+
+  const handleEditEmployee = (employee: any) => {
+    setSelectedEmployee(employee);
+    setFormData({
+      name: employee.name,
+      email: employee.email || "",
+      phone: employee.contact,
+      role: employee.role,
+      department: employee.department,
+      salary: employee.salary.toString(),
+      joiningDate: employee.joiningDate.split('T')[0],
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmployee) return;
+    updateEmployeeMutation.mutate({
+      id: selectedEmployee._id,
+      data: {
+        name: formData.name,
+        email: formData.email,
+        contact: formData.phone,
+        role: formData.role,
+        department: formData.department,
+        salary: parseFloat(formData.salary),
+        joiningDate: formData.joiningDate,
+      },
+    });
+  };
+
+  const handleViewEmployee = (employee: any) => {
+    setSelectedEmployee(employee);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleDeleteEmployee = (id: string) => {
+    if (confirm('Are you sure you want to delete this employee?')) {
+      deleteEmployeeMutation.mutate(id);
+    }
   };
 
   const filteredEmployees = employees.filter((emp: any) =>
@@ -298,10 +387,10 @@ export default function Employees() {
                   <p className="text-sm">{format(new Date(employee.joiningDate), 'dd MMM, yyyy')}</p>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-${employee._id}`}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditEmployee(employee)} data-testid={`button-edit-${employee._id}`}>
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-view-${employee._id}`}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewEmployee(employee)} data-testid={`button-view-${employee._id}`}>
                     View Details
                   </Button>
                 </div>
@@ -320,6 +409,170 @@ export default function Employees() {
           <p className="text-muted-foreground">No employees found. Add your first employee to get started.</p>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogDescription>
+              Update employee information
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateEmployee} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone *</Label>
+                <Input
+                  id="edit-phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role *</Label>
+                <Input
+                  id="edit-role"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Department *</Label>
+                <Input
+                  id="edit-department"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-salary">Salary *</Label>
+                <Input
+                  id="edit-salary"
+                  type="number"
+                  step="0.01"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-joiningDate">Joining Date *</Label>
+              <Input
+                id="edit-joiningDate"
+                type="date"
+                value={formData.joiningDate}
+                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateEmployeeMutation.isPending}>
+                {updateEmployeeMutation.isPending ? 'Updating...' : 'Update Employee'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Employee Details</DialogTitle>
+          </DialogHeader>
+          {selectedEmployee && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="text-2xl">{getInitials(selectedEmployee.name)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedEmployee.name}</h3>
+                  <p className="text-muted-foreground">{selectedEmployee.role}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Department</p>
+                  <p className="text-sm font-medium">{selectedEmployee.department}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Contact</p>
+                  <p className="text-sm font-medium">{selectedEmployee.contact}</p>
+                </div>
+                {selectedEmployee.email && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm font-medium">{selectedEmployee.email}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Salary</p>
+                  <p className="text-sm font-medium">₹{selectedEmployee.salary.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Joining Date</p>
+                  <p className="text-sm font-medium">{format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  {selectedEmployee.isActive ? (
+                    <Badge variant="default">Active</Badge>
+                  ) : (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button variant="destructive" onClick={() => {
+                  setIsViewDialogOpen(false);
+                  handleDeleteEmployee(selectedEmployee._id);
+                }}>
+                  Delete Employee
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

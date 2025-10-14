@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { connectDB } from "./db";
 import { Product } from "./models/Product";
-import { Customer } from "./models/Customer";
 import { Employee } from "./models/Employee";
 import { ServiceVisit } from "./models/ServiceVisit";
 import { Order } from "./models/Order";
@@ -20,7 +19,7 @@ import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notif
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
-import { insertCustomerSchema, insertVehicleSchema } from "@shared/schema";
+import { insertCustomerSchema, insertVehicleSchema } from "./schemas";
 import { RegistrationCustomer } from "./models/RegistrationCustomer";
 import { RegistrationVehicle } from "./models/RegistrationVehicle";
 
@@ -203,49 +202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customers endpoints with permission checks
-  app.get("/api/customers", requireAuth, requirePermission('customers', 'read'), async (req, res) => {
-    try {
-      const customers = await Customer.find().sort({ createdAt: -1 });
-      res.json(customers);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customers" });
-    }
-  });
-
-  app.post("/api/customers", requireAuth, requirePermission('customers', 'create'), async (req, res) => {
-    try {
-      const customer = await Customer.create(req.body);
-      res.json(customer);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to create customer" });
-    }
-  });
-
-  app.patch("/api/customers/:id", requireAuth, requirePermission('customers', 'update'), async (req, res) => {
-    try {
-      const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!customer) {
-        return res.status(404).json({ error: "Customer not found" });
-      }
-      res.json(customer);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to update customer" });
-    }
-  });
-
-  app.delete("/api/customers/:id", requireAuth, requirePermission('customers', 'delete'), async (req, res) => {
-    try {
-      const customer = await Customer.findByIdAndDelete(req.params.id);
-      if (!customer) {
-        return res.status(404).json({ error: "Customer not found" });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      res.status(400).json({ error: "Failed to delete customer" });
-    }
-  });
-
   // Employees endpoints with permission checks
   app.get("/api/employees", requireAuth, requirePermission('employees', 'read'), async (req, res) => {
     try {
@@ -423,20 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", requireAuth, requirePermission('orders', 'create'), async (req, res) => {
     try {
-      // Apply customer loyalty discount if applicable
-      let orderData = req.body;
-      if (req.body.customerId && req.body.customerId !== 'walk-in') {
-        const customer = await Customer.findById(req.body.customerId);
-        if (customer && customer.discountPercentage > 0) {
-          const discount = (orderData.total * customer.discountPercentage) / 100;
-          orderData = {
-            ...orderData,
-            discount: discount,
-            total: orderData.total - discount,
-          };
-        }
-      }
-      
+      const orderData = req.body;
       const order = await Order.create(orderData);
       
       for (const item of req.body.items) {
@@ -461,16 +404,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await order.populate('customerId');
       await order.populate('items.productId');
-      
-      // Update customer loyalty points and spending
-      if (order.customerId && order.customerId !== 'walk-in') {
-        const customer = await Customer.findById(order.customerId._id);
-        if (customer) {
-          customer.totalSpent += order.total || 0;
-          customer.calculateLoyaltyTier();
-          await customer.save();
-        }
-      }
       
       // Notify about new order
       const customerName = order.customerId?.name || 'Unknown Customer';

@@ -61,7 +61,6 @@ const mainMenuItems: MenuItem[] = [
   { title: "Registration Dashboard", url: "/registration-dashboard", icon: ListChecks },
   { title: "Products", url: "/products", icon: Package, permission: { resource: "products", action: "read" } },
   { title: "Inventory", url: "/inventory", icon: Warehouse, permission: { resource: "inventory", action: "read" } },
-  { title: "Customers", url: "/customers", icon: Users, permission: { resource: "customers", action: "read" } },
   { title: "Service Visits", url: "/visits", icon: ClipboardList, permission: { resource: "orders", action: "read" } },
   { title: "Orders", url: "/orders", icon: ShoppingCart, permission: { resource: "orders", action: "read" } },
   { title: "Suppliers", url: "/suppliers", icon: Building2, permission: { resource: "suppliers", action: "read" } },

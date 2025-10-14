@@ -1,6 +1,6 @@
 import { connectDB } from './db';
 import { Product } from './models/Product';
-import { Customer } from './models/Customer';
+// Customer model removed - using RegistrationCustomer instead
 import { Employee } from './models/Employee';
 import { ServiceVisit } from './models/ServiceVisit';
 import { Order } from './models/Order';
@@ -13,7 +13,6 @@ async function seed() {
     console.log('🌱 Starting database seed...');
 
     await Product.deleteMany({});
-    await Customer.deleteMany({});
     await Employee.deleteMany({});
     await ServiceVisit.deleteMany({});
     await Order.deleteMany({});
@@ -149,78 +148,12 @@ async function seed() {
     ]);
     console.log(`✅ Created ${products.length} products`);
 
-    const customers = await Customer.insertMany([
-      {
-        name: 'Rajesh Kumar',
-        phone: '+91 98765-43210',
-        email: 'rajesh.kumar@email.com',
-        vehicles: [
-          {
-            regNo: 'MH-12-AB-1234',
-            make: 'Maruti Suzuki',
-            model: 'Swift',
-            year: 2020,
-          },
-        ],
-      },
-      {
-        name: 'Priya Patel',
-        phone: '+91 98765-43211',
-        email: 'priya.patel@email.com',
-        vehicles: [
-          {
-            regNo: 'DL-8C-XY-5678',
-            make: 'Hyundai',
-            model: 'i20',
-            year: 2019,
-          },
-        ],
-      },
-      {
-        name: 'Ankit Verma',
-        phone: '+91 98765-43212',
-        email: 'ankit.verma@email.com',
-        vehicles: [
-          {
-            regNo: 'KA-03-MN-9012',
-            make: 'Honda',
-            model: 'City',
-            year: 2021,
-          },
-        ],
-      },
-      {
-        name: 'Meera Iyer',
-        phone: '+91 98765-43213',
-        email: 'meera.iyer@email.com',
-        vehicles: [
-          {
-            regNo: 'TN-09-GH-3456',
-            make: 'Maruti Suzuki',
-            model: 'Baleno',
-            year: 2022,
-          },
-        ],
-      },
-      {
-        name: 'Suresh Menon',
-        phone: '+91 98765-43214',
-        email: 'suresh.menon@email.com',
-        vehicles: [
-          {
-            regNo: 'KL-07-JK-7890',
-            make: 'Hyundai',
-            model: 'Creta',
-            year: 2021,
-          },
-        ],
-      },
-    ]);
-    console.log(`✅ Created ${customers.length} customers`);
+    // Customer model removed - using RegistrationCustomer instead
+    console.log('✅ Skipped legacy customer seeding (use Customer Registration Dashboard)');
 
     const serviceVisits = await ServiceVisit.insertMany([
       {
-        customerId: customers[0]._id,
+        customerId: null,
         vehicleReg: 'MH-12-AB-1234',
         status: 'working',
         handlerId: employees[0]._id,
@@ -235,7 +168,7 @@ async function seed() {
         totalAmount: products[0].sellingPrice,
       },
       {
-        customerId: customers[1]._id,
+        customerId: null,
         vehicleReg: 'DL-8C-XY-5678',
         status: 'waiting',
         handlerId: employees[1]._id,
@@ -244,7 +177,7 @@ async function seed() {
         totalAmount: 0,
       },
       {
-        customerId: customers[2]._id,
+        customerId: null,
         vehicleReg: 'KA-03-MN-9012',
         status: 'inquired',
         handlerId: employees[0]._id,
@@ -256,8 +189,8 @@ async function seed() {
     console.log(`✅ Created ${serviceVisits.length} service visits`);
 
     const order1 = await Order.create({
-      customerId: customers[0]._id,
-      customerName: customers[0].name,
+      customerId: null,
+      customerName: 'Walk-in Customer',
       items: [
         {
           productId: products[0]._id,

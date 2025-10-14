@@ -37,7 +37,7 @@ export default function Orders() {
   });
 
   const { data: customers = [] } = useQuery<any[]>({
-    queryKey: ["/api/customers"],
+    queryKey: ["/api/registration/customers"],
   });
 
   const { data: products = [] } = useQuery<any[]>({

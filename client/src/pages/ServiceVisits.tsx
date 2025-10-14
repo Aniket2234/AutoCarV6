@@ -42,7 +42,7 @@ export default function ServiceVisits() {
   });
 
   const { data: customers = [], isLoading: isLoadingCustomers, error: customersError } = useQuery<any[]>({
-    queryKey: ["/api/customers"],
+    queryKey: ["/api/registration/customers"],
   });
 
   const { data: employees = [] } = useQuery<any[]>({
