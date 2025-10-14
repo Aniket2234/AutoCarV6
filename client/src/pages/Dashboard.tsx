@@ -324,8 +324,8 @@ export default function Dashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       {customers.map((customer: any) => (
-                        <SelectItem key={customer._id} value={customer._id}>
-                          {customer.name} - {customer.phone}
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.fullName} - {customer.mobileNumber}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -11,7 +11,9 @@ Preferred communication style: Simple, everyday language.
 - **Database Cleanup**: All employees, customers, and service visits were cleared from MongoDB for fresh testing
 - **Employee Schema Enhancement**: Added `department` and `salary` fields to the Employee model to match UI requirements
 - **TypeScript Improvements**: Added proper Employee interface with type safety throughout the Employees.tsx component
-- **Bug Fixes**: Fixed critical null-reference errors in edit functionality for employees with missing salary/department data
+- **Bug Fixes**: 
+  - Fixed critical null-reference errors in edit functionality for employees with missing salary/department data
+  - Fixed React warning about missing keys in Dashboard customer list by using correct field names (`id` instead of `_id`, `fullName` instead of `name`, `mobileNumber` instead of `phone`)
 - **Test Data**: Added sample employee (John Doe - Service Staff), customer (Rajesh Kumar), and service visit for verification
 
 ## System Architecture
