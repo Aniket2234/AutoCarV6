@@ -36,3 +36,20 @@ The system has been seeded with the following default user accounts:
 For development purposes, the OTP is always: **123456**
 
 This will be displayed on the screen after you enter your credentials.
+
+## Activity Tracking
+
+All activities performed by users are now tracked and visible to admins in the Recent Activity feed, including:
+- Login/Logout
+- Creating, updating, or deleting employees
+- Creating, updating, or deleting products
+- Creating orders
+- Creating service visits
+- Creating suppliers and purchase orders
+- And more...
+
+Each activity shows:
+- User name with role-colored badge (Admin = purple, HR Manager = orange, etc.)
+- Action performed with color-coded badge (create = green, update = blue, delete = red, login = purple)
+- Description of what was done
+- Time elapsed since the activity

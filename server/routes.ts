@@ -370,6 +370,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerName = visit.customerId?.name || 'Unknown Customer';
       await notifyServiceVisitStatus(visit, customerName, visit.status);
       
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'service_visit',
+        resourceId: visit._id.toString(),
+        description: `Created service visit for ${visit.vehicleReg}`,
+        details: { status: visit.status, customerName },
+        ipAddress: req.ip,
+      });
+      
       res.json(visit);
     } catch (error) {
       res.status(400).json({ error: "Failed to create service visit" });
@@ -433,6 +445,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await notifyServiceVisitStatus(visit, customerName, req.body.status);
       }
       
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'service_visit',
+        resourceId: visit._id.toString(),
+        description: `Updated service visit for ${visit.vehicleReg}`,
+        details: { status: visit.status },
+        ipAddress: req.ip,
+      });
+      
       res.json(visit);
     } catch (error) {
       res.status(400).json({ error: "Failed to update service visit" });
@@ -445,6 +469,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!visit) {
         return res.status(404).json({ error: "Service visit not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'service_visit',
+        resourceId: visit._id.toString(),
+        description: `Deleted service visit for ${visit.vehicleReg}`,
+        ipAddress: req.ip,
+      });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete service visit" });
@@ -944,6 +980,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/suppliers", requireAuth, requirePermission('suppliers', 'create'), async (req, res) => {
     try {
       const supplier = await Supplier.create(req.body);
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'supplier',
+        resourceId: supplier._id.toString(),
+        description: `Created supplier: ${supplier.name}`,
+        details: { contact: supplier.contact },
+        ipAddress: req.ip,
+      });
+      
       res.json(supplier);
     } catch (error) {
       res.status(400).json({ error: "Failed to create supplier" });
@@ -956,6 +1005,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!supplier) {
         return res.status(404).json({ error: "Supplier not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'supplier',
+        resourceId: supplier._id.toString(),
+        description: `Updated supplier: ${supplier.name}`,
+        ipAddress: req.ip,
+      });
+      
       res.json(supplier);
     } catch (error) {
       res.status(400).json({ error: "Failed to update supplier" });
@@ -968,6 +1029,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!supplier) {
         return res.status(404).json({ error: "Supplier not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'supplier',
+        resourceId: supplier._id.toString(),
+        description: `Deleted supplier: ${supplier.name}`,
+        ipAddress: req.ip,
+      });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete supplier" });
@@ -991,6 +1064,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const po = await PurchaseOrder.create(req.body);
       await po.populate('supplierId');
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'purchase_order',
+        resourceId: po._id.toString(),
+        description: `Created purchase order ${po.poNumber}`,
+        details: { supplier: po.supplierId?.name, total: po.totalAmount },
+        ipAddress: req.ip,
+      });
+      
       res.json(po);
     } catch (error) {
       res.status(400).json({ error: "Failed to create purchase order" });
@@ -1024,6 +1110,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         po.actualDeliveryDate = new Date();
         await po.save();
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'purchase_order',
+        resourceId: po._id.toString(),
+        description: `Updated purchase order ${po.poNumber}`,
+        details: { status: po.status },
+        ipAddress: req.ip,
+      });
       
       res.json(po);
     } catch (error) {

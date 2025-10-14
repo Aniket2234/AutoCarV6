@@ -7,20 +7,17 @@ async function throwIfResNotOk(res: Response) {
       // Try to parse as JSON for structured error messages
       try {
         const json = JSON.parse(text);
-        if (res.status === 401) {
-          throw new Error('Your session has expired. Please log in again.');
-        }
         throw new Error(json.error || json.message || text || res.statusText);
-      } catch {
-        // If not JSON, use the text response
-        if (res.status === 401) {
-          throw new Error('Your session has expired. Please log in again.');
+      } catch (error: any) {
+        // If parsing failed, check if it's a known error message
+        if (error.message && !error.message.startsWith('Unexpected token')) {
+          throw error;
         }
+        // If not JSON, use the text response
         throw new Error(text || res.statusText);
       }
     } catch (error: any) {
-      if (error.message.includes('session has expired')) throw error;
-      throw new Error(`Request failed: ${res.statusText}`);
+      throw error;
     }
   }
 }
