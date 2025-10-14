@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const serviceVisitSchema = new mongoose.Schema({
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'RegistrationCustomer', required: true },
   vehicleReg: { type: String, required: true },
   status: { 
     type: String, 
