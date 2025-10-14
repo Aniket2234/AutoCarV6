@@ -286,8 +286,8 @@ export default function ServiceVisits() {
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((customer: any) => (
-                      <SelectItem key={customer._id} value={customer._id}>
-                        {customer.name} - {customer.phone}
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.fullName} - {customer.mobileNumber}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -340,10 +340,10 @@ export default function ServiceVisits() {
                     <SelectValue placeholder="Select initial status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="inquired">Inquired</SelectItem>
-                    <SelectItem value="working">Working</SelectItem>
-                    <SelectItem value="waiting">Waiting</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem key="inquired" value="inquired">Inquired</SelectItem>
+                    <SelectItem key="working" value="working">Working</SelectItem>
+                    <SelectItem key="waiting" value="waiting">Waiting</SelectItem>
+                    <SelectItem key="completed" value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -482,10 +482,10 @@ export default function ServiceVisits() {
                     <SelectValue placeholder="Select new status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="inquired">Inquired</SelectItem>
-                    <SelectItem value="working">Working</SelectItem>
-                    <SelectItem value="waiting">Waiting</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem key="inquired" value="inquired">Inquired</SelectItem>
+                    <SelectItem key="working" value="working">Working</SelectItem>
+                    <SelectItem key="waiting" value="waiting">Waiting</SelectItem>
+                    <SelectItem key="completed" value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
