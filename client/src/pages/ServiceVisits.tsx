@@ -32,6 +32,7 @@ export default function ServiceVisits() {
     vehicleReg: "",
     handlerId: "",
     notes: "",
+    status: "inquired",
   });
 
   const canDelete = hasPermission(user, 'orders', 'delete');
@@ -40,7 +41,7 @@ export default function ServiceVisits() {
     queryKey: ["/api/service-visits"],
   });
 
-  const { data: customers = [] } = useQuery<any[]>({
+  const { data: customers = [], isLoading: isLoadingCustomers, error: customersError } = useQuery<any[]>({
     queryKey: ["/api/customers"],
   });
 
@@ -57,7 +58,7 @@ export default function ServiceVisits() {
       queryClient.invalidateQueries({ queryKey: ['/api/service-visits'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard-stats'] });
       setIsServiceDialogOpen(false);
-      setServiceForm({ customerId: "", vehicleReg: "", handlerId: "", notes: "" });
+      setServiceForm({ customerId: "", vehicleReg: "", handlerId: "", notes: "", status: "inquired" });
       toast({
         title: "Success",
         description: "Service visit created successfully",
@@ -270,9 +271,18 @@ export default function ServiceVisits() {
                   value={serviceForm.customerId} 
                   onValueChange={(value) => setServiceForm({ ...serviceForm, customerId: value })}
                   required
+                  disabled={isLoadingCustomers}
                 >
                   <SelectTrigger id="customer" data-testid="select-customer">
-                    <SelectValue placeholder="Select a customer" />
+                    <SelectValue placeholder={
+                      isLoadingCustomers 
+                        ? "Loading customers..." 
+                        : customersError 
+                        ? "Error loading customers" 
+                        : customers.length === 0 
+                        ? "No customers available" 
+                        : "Select a customer"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((customer: any) => (
@@ -282,6 +292,9 @@ export default function ServiceVisits() {
                     ))}
                   </SelectContent>
                 </Select>
+                {customersError && (
+                  <p className="text-sm text-destructive">Failed to load customers. Please try again.</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -312,6 +325,25 @@ export default function ServiceVisits() {
                         {employee.name} - {employee.role}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Service Status *</Label>
+                <Select 
+                  value={serviceForm.status} 
+                  onValueChange={(value) => setServiceForm({ ...serviceForm, status: value })}
+                  required
+                >
+                  <SelectTrigger id="status" data-testid="select-status">
+                    <SelectValue placeholder="Select initial status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inquired">Inquired</SelectItem>
+                    <SelectItem value="working">Working</SelectItem>
+                    <SelectItem value="waiting">Waiting</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
