@@ -570,6 +570,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      const customerName = order.customerId?.name || 'Unknown Customer';
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'order',
+        resourceId: order._id.toString(),
+        description: `Updated order ${order.invoiceNumber} for ${customerName}`,
+        details: { paymentStatus: order.paymentStatus, deliveryStatus: order.deliveryStatus },
+        ipAddress: req.ip,
+      });
+      
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Failed to update order" });
@@ -578,10 +591,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/orders/:id", requireAuth, requirePermission('orders', 'delete'), async (req, res) => {
     try {
-      const order = await Order.findByIdAndDelete(req.params.id);
+      const order = await Order.findById(req.params.id).populate('customerId');
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+      
+      await Order.findByIdAndDelete(req.params.id);
+      
+      const customerName = order.customerId?.name || 'Unknown Customer';
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'order',
+        resourceId: order._id.toString(),
+        description: `Deleted order ${order.invoiceNumber} for ${customerName}`,
+        ipAddress: req.ip,
+      });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete order" });
