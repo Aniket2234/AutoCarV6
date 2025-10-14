@@ -7,6 +7,11 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 14, 2025)
+### Image Upload Enhancement
+- **Increased Payload Limit**: Increased Express body parser limit from 100KB to 50MB to support larger image uploads
+- **Applies to**: Vehicle photos, service visit before/after images, product images, and all other image uploads throughout the application
+- **Fixed**: "PayloadTooLargeError" that was preventing larger images from being uploaded
+
 ### Customer Referral Tracking Feature
 - **Referral Source Field**: Added a new `referralSource` field to the customer registration form to track where customers heard about the business (Facebook, Instagram, WhatsApp, Google Search, Friend/Family Referral, Billboard/Hoarding, Newspaper/Magazine, Radio/TV, Direct Visit, Other)
 - **Database Schema Update**: Updated `RegistrationCustomer` MongoDB model to include optional `referralSource` field
