@@ -8,9 +8,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle2, Car, User, MapPin } from "lucide-react";
+import { getAllBrandNames, getModelsByBrand, getPartsByBrandAndModel } from "@shared/vehicleData";
 
 // States in India - predefined list
 const INDIAN_STATES = [
@@ -22,12 +24,8 @@ const INDIAN_STATES = [
   "Uttar Pradesh", "Uttarakhand", "West Bengal"
 ];
 
-// Vehicle Brands
-const VEHICLE_BRANDS = [
-  "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Kia",
-  "Honda", "Toyota", "Ford", "Renault", "Nissan",
-  "Volkswagen", "Skoda", "MG", "Jeep", "Citroen"
-];
+// Vehicle Brands from shared data
+const VEHICLE_BRANDS = getAllBrandNames();
 
 // Customer form schema
 const customerFormSchema = z.object({
@@ -45,13 +43,15 @@ const customerFormSchema = z.object({
 
 // Vehicle form schema
 const vehicleFormSchema = z.object({
-  vehicleNumber: z.string().min(1, "Vehicle number is required"),
+  vehicleNumber: z.string().optional(),
   vehicleBrand: z.string().min(1, "Vehicle brand is required"),
   vehicleModel: z.string().min(1, "Vehicle model is required"),
+  customModel: z.string().optional(),
   yearOfPurchase: z.string().optional(),
   vehiclePhoto: z.string().min(1, "Vehicle photo is required"),
   isNew: z.string().min(1, "Please select vehicle condition"),
   chassisNumber: z.string().optional(),
+  selectedParts: z.array(z.string()).default([]),
 }).refine((data) => {
   if (data.isNew === "true" && !data.chassisNumber) {
     return false;
@@ -60,6 +60,22 @@ const vehicleFormSchema = z.object({
 }, {
   message: "Chassis number is required for new vehicles",
   path: ["chassisNumber"],
+}).refine((data) => {
+  if (data.isNew === "false" && !data.vehicleNumber) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Vehicle number is required for used vehicles",
+  path: ["vehicleNumber"],
+}).refine((data) => {
+  if (data.vehicleModel === "Other" && !data.customModel) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please specify the model name",
+  path: ["customModel"],
 });
 
 type CustomerFormData = z.infer<typeof customerFormSchema>;
@@ -73,6 +89,10 @@ export default function CustomerRegistration() {
   const [otpInput, setOtpInput] = useState("");
   const [customerData, setCustomerData] = useState<any>(null);
   const [vehicleData, setVehicleData] = useState<any>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [availableParts, setAvailableParts] = useState<any[]>([]);
 
   const customerForm = useForm<CustomerFormData>({
     resolver: zodResolver(customerFormSchema),
@@ -96,10 +116,12 @@ export default function CustomerRegistration() {
       vehicleNumber: "",
       vehicleBrand: "",
       vehicleModel: "",
+      customModel: "",
       yearOfPurchase: "",
       vehiclePhoto: "",
       isNew: "",
       chassisNumber: "",
+      selectedParts: [],
     },
   });
 
@@ -156,9 +178,12 @@ export default function CustomerRegistration() {
       const response = await apiRequest("POST", "/api/registration/vehicles", {
         ...data,
         customerId,
+        vehicleNumber: data.vehicleNumber || undefined,
+        customModel: data.vehicleModel === "Other" ? data.customModel : undefined,
         yearOfPurchase: data.yearOfPurchase ? parseInt(data.yearOfPurchase) : undefined,
         isNew: data.isNew === "true",
         chassisNumber: data.isNew === "true" ? data.chassisNumber : undefined,
+        selectedParts: data.selectedParts || [],
       });
       return await response.json();
     },
@@ -454,17 +479,41 @@ export default function CustomerRegistration() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={vehicleForm.control}
-                      name="vehicleNumber"
+                      name="isNew"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vehicle Number *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="MH12AB1234" className="uppercase" data-testid="input-vehicle-number" />
-                          </FormControl>
+                          <FormLabel>Vehicle Condition *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-vehicle-condition">
+                                <SelectValue placeholder="Select condition" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="true">New Vehicle</SelectItem>
+                              <SelectItem value="false">Used Vehicle</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {vehicleForm.watch("isNew") === "false" && (
+                      <FormField
+                        control={vehicleForm.control}
+                        name="vehicleNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Vehicle Number *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="MH12AB1234" className="uppercase" data-testid="input-vehicle-number" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={vehicleForm.control}
@@ -472,7 +521,19 @@ export default function CustomerRegistration() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Vehicle Brand *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedBrand(value);
+                              const models = getModelsByBrand(value);
+                              setAvailableModels(models.map(m => m.name));
+                              vehicleForm.setValue("vehicleModel", "");
+                              vehicleForm.setValue("selectedParts", []);
+                              setSelectedModel("");
+                              setAvailableParts([]);
+                            }} 
+                            defaultValue={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-vehicle-brand">
                                 <SelectValue placeholder="Select brand" />
@@ -497,13 +558,51 @@ export default function CustomerRegistration() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Vehicle Model *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="e.g., Innova Crysta" data-testid="input-vehicle-model" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedModel(value);
+                              if (value !== "Other") {
+                                const parts = getPartsByBrandAndModel(selectedBrand, value);
+                                setAvailableParts(parts);
+                              }
+                            }} 
+                            defaultValue={field.value}
+                            disabled={!selectedBrand}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-vehicle-model">
+                                <SelectValue placeholder={selectedBrand ? "Select model" : "Select brand first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {availableModels.map((model) => (
+                                <SelectItem key={model} value={model}>
+                                  {model}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {vehicleForm.watch("vehicleModel") === "Other" && (
+                      <FormField
+                        control={vehicleForm.control}
+                        name="customModel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Specify Model Name *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Enter model name" data-testid="input-custom-model" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={vehicleForm.control}
@@ -514,28 +613,6 @@ export default function CustomerRegistration() {
                           <FormControl>
                             <Input {...field} placeholder="2023" type="number" data-testid="input-year" />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={vehicleForm.control}
-                      name="isNew"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Vehicle Condition *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-vehicle-condition">
-                                <SelectValue placeholder="Select condition" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="true">New Vehicle</SelectItem>
-                              <SelectItem value="false">Used Vehicle</SelectItem>
-                            </SelectContent>
-                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -552,6 +629,63 @@ export default function CustomerRegistration() {
                           <FormControl>
                             <Input {...field} placeholder="Enter chassis number" className="uppercase" data-testid="input-chassis-number" />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {selectedModel && selectedModel !== "Other" && availableParts.length > 0 && (
+                    <FormField
+                      control={vehicleForm.control}
+                      name="selectedParts"
+                      render={() => (
+                        <FormItem>
+                          <div className="mb-4">
+                            <FormLabel className="text-base">Parts Needed for Service/Replacement</FormLabel>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              Select all parts that need service or replacement
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto border rounded-lg p-4">
+                            {availableParts.map((part) => (
+                              <FormField
+                                key={part.id}
+                                control={vehicleForm.control}
+                                name="selectedParts"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={part.id}
+                                      className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(part.id)}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([...field.value, part.id])
+                                              : field.onChange(
+                                                  field.value?.filter(
+                                                    (value) => value !== part.id
+                                                  )
+                                                );
+                                          }}
+                                          data-testid={`checkbox-part-${part.id}`}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="text-sm font-normal cursor-pointer">
+                                        {part.name}
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                                          {part.category}
+                                        </span>
+                                      </FormLabel>
+                                    </FormItem>
+                                  );
+                                }}
+                              />
+                            ))}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
