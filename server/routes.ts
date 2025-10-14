@@ -1447,16 +1447,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Customer not found" });
       }
       
-      // Check if vehicle number already exists
-      const existing = await RegistrationVehicle.findOne({ vehicleNumber: validatedData.vehicleNumber });
-      if (existing) {
-        return res.status(400).json({ error: "Vehicle number already registered" });
+      // Check if vehicle number already exists (only if vehicle number is provided)
+      if (validatedData.vehicleNumber) {
+        const existing = await RegistrationVehicle.findOne({ vehicleNumber: validatedData.vehicleNumber });
+        if (existing) {
+          return res.status(400).json({ error: "Vehicle number already registered" });
+        }
       }
       
       const vehicle = await RegistrationVehicle.create(validatedData);
       
       // TODO: Send confirmation notification (SMS/WhatsApp/Email)
-      const message = `Dear ${customer.fullName}, your car ${vehicle.vehicleBrand} ${vehicle.vehicleModel} (${vehicle.vehicleNumber}) has been registered successfully. Your Reference ID: ${customer.referenceCode}`;
+      const vehicleInfo = vehicle.vehicleNumber ? `(${vehicle.vehicleNumber})` : `(${vehicle.chassisNumber || 'New Vehicle'})`;
+      const message = `Dear ${customer.fullName}, your car ${vehicle.vehicleBrand} ${vehicle.vehicleModel} ${vehicleInfo} has been registered successfully. Your Reference ID: ${customer.referenceCode}`;
       console.log(message);
       
       res.json({ 
@@ -1466,8 +1469,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           vehicleNumber: vehicle.vehicleNumber,
           vehicleBrand: vehicle.vehicleBrand,
           vehicleModel: vehicle.vehicleModel,
+          customModel: vehicle.customModel,
           yearOfPurchase: vehicle.yearOfPurchase,
           vehiclePhoto: vehicle.vehiclePhoto,
+          isNew: vehicle.isNew,
+          chassisNumber: vehicle.chassisNumber,
+          selectedParts: vehicle.selectedParts,
           createdAt: vehicle.createdAt,
         },
         customer: {
