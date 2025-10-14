@@ -541,10 +541,12 @@ export default function Employees() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Department</p>
-                  <p className="text-sm font-medium">{selectedEmployee.department}</p>
-                </div>
+                {selectedEmployee.department && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Department</p>
+                    <p className="text-sm font-medium">{selectedEmployee.department}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs text-muted-foreground">Contact</p>
                   <p className="text-sm font-medium">{selectedEmployee.contact}</p>
@@ -555,10 +557,12 @@ export default function Employees() {
                     <p className="text-sm font-medium">{selectedEmployee.email}</p>
                   </div>
                 )}
-                <div>
-                  <p className="text-xs text-muted-foreground">Salary</p>
-                  <p className="text-sm font-medium">₹{selectedEmployee.salary.toLocaleString()}</p>
-                </div>
+                {selectedEmployee.salary && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Salary</p>
+                    <p className="text-sm font-medium">₹{selectedEmployee.salary.toLocaleString()}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs text-muted-foreground">Joining Date</p>
                   <p className="text-sm font-medium">{format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</p>
