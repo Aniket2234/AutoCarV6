@@ -6,6 +6,14 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 14, 2025)
+### Employee Management System Updates
+- **Database Cleanup**: All employees, customers, and service visits were cleared from MongoDB for fresh testing
+- **Employee Schema Enhancement**: Added `department` and `salary` fields to the Employee model to match UI requirements
+- **TypeScript Improvements**: Added proper Employee interface with type safety throughout the Employees.tsx component
+- **Bug Fixes**: Fixed critical null-reference errors in edit functionality for employees with missing salary/department data
+- **Test Data**: Added sample employee (John Doe - Service Staff), customer (Rajesh Kumar), and service visit for verification
+
 ## System Architecture
 
 ### Frontend Architecture
