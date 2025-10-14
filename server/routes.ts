@@ -265,6 +265,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/employees", requireAuth, requirePermission('employees', 'create'), async (req, res) => {
     try {
       const employee = await Employee.create(req.body);
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'employee',
+        resourceId: employee._id.toString(),
+        description: `Created employee: ${employee.name}`,
+        details: { role: employee.role, email: employee.email },
+        ipAddress: req.ip,
+      });
+      
       res.json(employee);
     } catch (error) {
       res.status(400).json({ error: "Failed to create employee" });
@@ -277,6 +290,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!employee) {
         return res.status(404).json({ error: "Employee not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'employee',
+        resourceId: employee._id.toString(),
+        description: `Updated employee: ${employee.name}`,
+        details: { role: employee.role },
+        ipAddress: req.ip,
+      });
+      
       res.json(employee);
     } catch (error) {
       res.status(400).json({ error: "Failed to update employee" });
@@ -289,6 +315,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!employee) {
         return res.status(404).json({ error: "Employee not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'employee',
+        resourceId: employee._id.toString(),
+        description: `Deleted employee: ${employee.name}`,
+        ipAddress: req.ip,
+      });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete employee" });
