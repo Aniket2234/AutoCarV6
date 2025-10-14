@@ -138,15 +138,15 @@ export default function Employees() {
     });
   };
 
-  const handleEditEmployee = (employee: any) => {
+  const handleEditEmployee = (employee: Employee) => {
     setSelectedEmployee(employee);
     setFormData({
       name: employee.name,
       email: employee.email || "",
       phone: employee.contact,
       role: employee.role,
-      department: employee.department,
-      salary: employee.salary.toString(),
+      department: employee.department || "",
+      salary: employee.salary ? employee.salary.toString() : "",
       joiningDate: employee.joiningDate.split('T')[0],
     });
     setIsEditDialogOpen(true);
@@ -169,7 +169,7 @@ export default function Employees() {
     });
   };
 
-  const handleViewEmployee = (employee: any) => {
+  const handleViewEmployee = (employee: Employee) => {
     setSelectedEmployee(employee);
     setIsViewDialogOpen(true);
   };
@@ -180,7 +180,7 @@ export default function Employees() {
     }
   };
 
-  const filteredEmployees = employees.filter((emp: any) =>
+  const filteredEmployees = employees.filter((emp: Employee) =>
     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
