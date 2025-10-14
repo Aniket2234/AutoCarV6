@@ -7,7 +7,12 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 14, 2025)
-### Complete Activity Tracking System (Latest)
+### Mongoose Warning Fix (Latest)
+- **Fixed Mongoose Reserved Keyword Issue**: Renamed `isNew` field to `isNewVehicle` throughout the entire codebase to eliminate Mongoose warning about reserved keywords
+- **Files Updated**: RegistrationVehicle model, insertVehicleSchema validation, CustomerRegistration form (including form defaults, watchers, and mutation payload)
+- **Testing**: Verified all references updated correctly with no residual `isNew` usage; application runs without warnings
+
+### Complete Activity Tracking System
 - **ActivityLog Model**: Comprehensive activity logging system to track all user actions with fields for user info, action type, resource, description, and timestamps
 - **Admin Dashboard Integration**: ActivityFeed component in admin dashboard shows real-time activity from all roles (Inventory Manager, Sales Executive, HR Manager, Service Staff)
 - **Complete Activity Logging Implementation**: ALL CRUD operations now logged automatically:
