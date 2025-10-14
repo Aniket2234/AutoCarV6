@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update customer loyalty when visit is completed
       if (req.body.status === 'completed' && previousVisit?.status !== 'completed' && visit.customerId) {
-        const customer = await Customer.findById(visit.customerId._id);
+        const customer = await RegistrationCustomer.findById(visit.customerId._id);
         if (customer) {
           customer.visitCount += 1;
           customer.totalSpent += visit.totalAmount || 0;
@@ -743,7 +743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stats.activeServices = await ServiceVisit.countDocuments({ 
           status: { $in: ['inquired', 'working', 'waiting'] } 
         });
-        stats.totalCustomers = await Customer.countDocuments();
+        stats.totalCustomers = await RegistrationCustomer.countDocuments();
         stats.lowStockProducts = await Product.find({
           $expr: { $lte: ['$stockQty', '$minStockLevel'] }
         }).limit(5);
@@ -780,7 +780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stats.totalOrders = await Order.countDocuments();
         }
         if (permissions.customers?.includes('read')) {
-          stats.totalCustomers = await Customer.countDocuments();
+          stats.totalCustomers = await RegistrationCustomer.countDocuments();
         }
       }
       
@@ -808,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Service Staff: customers (read only) and orders (read/update) per ROLE_PERMISSIONS
       else if (userRole === 'Service Staff') {
         if (permissions.customers?.includes('read')) {
-          stats.totalCustomers = await Customer.countDocuments();
+          stats.totalCustomers = await RegistrationCustomer.countDocuments();
         }
         if (permissions.orders?.includes('read')) {
           const userId = (req as any).session.userId;
