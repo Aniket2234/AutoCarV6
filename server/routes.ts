@@ -1226,6 +1226,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const leave = await Leave.create(req.body);
       await leave.populate('employeeId');
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'leave',
+        resourceId: leave._id.toString(),
+        description: `Created leave request for ${leave.employeeId?.name || 'employee'}`,
+        details: { type: leave.leaveType, status: leave.status },
+        ipAddress: req.ip,
+      });
+      
       res.json(leave);
     } catch (error) {
       res.status(400).json({ error: "Failed to create leave request" });
@@ -1240,6 +1253,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!leave) {
         return res.status(404).json({ error: "Leave request not found" });
       }
+      
+      const action = req.body.status === 'approved' ? 'approve' : req.body.status === 'rejected' ? 'reject' : 'update';
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: action,
+        resource: 'leave',
+        resourceId: leave._id.toString(),
+        description: `${action === 'approve' ? 'Approved' : action === 'reject' ? 'Rejected' : 'Updated'} leave request for ${leave.employeeId?.name || 'employee'}`,
+        details: { status: leave.status, type: leave.leaveType },
+        ipAddress: req.ip,
+      });
+      
       res.json(leave);
     } catch (error) {
       res.status(400).json({ error: "Failed to update leave request" });
@@ -1270,6 +1297,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await Task.create(req.body);
       await task.populate('assignedTo');
       await task.populate('assignedBy');
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'task',
+        resourceId: task._id.toString(),
+        description: `Created task: ${task.title} for ${task.assignedTo?.name || 'employee'}`,
+        details: { priority: task.priority, status: task.status },
+        ipAddress: req.ip,
+      });
+      
       res.json(task);
     } catch (error) {
       res.status(400).json({ error: "Failed to create task" });
@@ -1284,6 +1324,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!task) {
         return res.status(404).json({ error: "Task not found" });
       }
+      
+      const action = req.body.status === 'completed' ? 'complete' : 'update';
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: action,
+        resource: 'task',
+        resourceId: task._id.toString(),
+        description: `${action === 'complete' ? 'Completed' : 'Updated'} task: ${task.title}`,
+        details: { status: task.status, priority: task.priority },
+        ipAddress: req.ip,
+      });
+      
       res.json(task);
     } catch (error) {
       res.status(400).json({ error: "Failed to update task" });
@@ -1570,6 +1624,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       customer.otpExpiresAt = null;
       await customer.save();
       
+      // Log customer creation activity (after verification)
+      await logActivity({
+        userId: customer._id.toString(),
+        userName: customer.fullName,
+        userRole: 'Customer',
+        action: 'create',
+        resource: 'customer',
+        resourceId: customer._id.toString(),
+        description: `New customer registered: ${customer.fullName}`,
+        details: { referenceCode: customer.referenceCode, mobile: customer.mobileNumber },
+        ipAddress: req.ip,
+      });
+      
       res.json({ 
         success: true,
         customer: {
@@ -1828,6 +1895,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await customer.save();
       
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'customer',
+        resourceId: customer._id.toString(),
+        description: `Updated customer: ${customer.fullName}`,
+        details: { referenceCode: customer.referenceCode },
+        ipAddress: req.ip,
+      });
+      
       res.json({
         id: customer._id.toString(),
         referenceCode: customer.referenceCode,
@@ -1862,6 +1941,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Delete the customer
       await RegistrationCustomer.findByIdAndDelete(req.params.id);
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'customer',
+        resourceId: customer._id.toString(),
+        description: `Deleted customer: ${customer.fullName}`,
+        details: { referenceCode: customer.referenceCode },
+        ipAddress: req.ip,
+      });
       
       res.json({ success: true, message: "Customer and associated vehicles deleted successfully" });
     } catch (error) {
