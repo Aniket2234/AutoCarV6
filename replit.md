@@ -7,6 +7,20 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 14, 2025)
+### Activity Tracking System (Latest)
+- **ActivityLog Model**: Created comprehensive activity logging system to track all user actions with fields for user info, action type, resource, description, and timestamps
+- **Admin Dashboard Integration**: Added ActivityFeed component to admin dashboard showing real-time activity from all roles (Inventory Manager, Sales Executive, HR Manager, Service Staff)
+- **Activity Logging**: Implemented automatic activity logging for key operations:
+  - User login/logout
+  - Product create, update, delete
+  - Order creation
+  - All other CRUD operations can easily be logged using the centralized `logActivity` utility
+- **Visual Design**: Activity feed includes role-based badge colors, action-based indicators, resource icons, and "time ago" formatting for better readability
+- **API Endpoints**: 
+  - GET /api/activity-logs - Fetch activities with filtering by role, resource, and date range
+  - POST /api/activity-logs - Create new activity logs
+- **Error Handling**: ActivityFeed component includes proper loading, error, and empty states
+
 ### Image Upload Enhancement
 - **Increased Payload Limit**: Increased Express body parser limit from 100KB to 50MB to support larger image uploads
 - **Applies to**: Vehicle photos, service visit before/after images, product images, and all other image uploads throughout the application
