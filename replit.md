@@ -7,6 +7,11 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 14, 2025)
+### Customer Referral Tracking Feature
+- **Referral Source Field**: Added a new `referralSource` field to the customer registration form to track where customers heard about the business (Facebook, Instagram, WhatsApp, Google Search, Friend/Family Referral, Billboard/Hoarding, Newspaper/Magazine, Radio/TV, Direct Visit, Other)
+- **Database Schema Update**: Updated `RegistrationCustomer` MongoDB model to include optional `referralSource` field
+- **Form Enhancement**: Added dropdown selection in customer registration form with predefined referral sources
+
 ### Employee Management System Updates
 - **Database Cleanup**: All employees, customers, and service visits were cleared from MongoDB for fresh testing
 - **Employee Schema Enhancement**: Added `department` and `salary` fields to the Employee model to match UI requirements

@@ -28,6 +28,20 @@ const INDIAN_STATES = [
 // Vehicle Brands from shared data
 const VEHICLE_BRANDS = getAllBrandNames();
 
+// Referral sources
+const REFERRAL_SOURCES = [
+  "Facebook",
+  "Instagram",
+  "WhatsApp",
+  "Google Search",
+  "Friend/Family Referral",
+  "Billboard/Hoarding",
+  "Newspaper/Magazine",
+  "Radio/TV",
+  "Direct Visit",
+  "Other"
+];
+
 // Customer form schema
 const customerFormSchema = z.object({
   fullName: z.string().min(1, "Name is required"),
@@ -40,6 +54,7 @@ const customerFormSchema = z.object({
   district: z.string().min(1, "District is required"),
   state: z.string().min(1, "State is required"),
   pinCode: z.string().min(6, "Pin code must be 6 digits"),
+  referralSource: z.string().optional(),
 });
 
 // Vehicle form schema
@@ -108,6 +123,7 @@ export default function CustomerRegistration() {
       district: "",
       state: "",
       pinCode: "",
+      referralSource: "",
     },
   });
 
@@ -308,6 +324,31 @@ export default function CustomerRegistration() {
                           <FormControl>
                             <Input {...field} type="email" placeholder="your@email.com" data-testid="input-email" />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={customerForm.control}
+                      name="referralSource"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>How did you hear about us?</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-referral-source">
+                                <SelectValue placeholder="Select referral source" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {REFERRAL_SOURCES.map((source) => (
+                                <SelectItem key={source} value={source}>
+                                  {source}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
