@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle2, Car, User, MapPin } from "lucide-react";
 import { getAllBrandNames, getModelsByBrand, getPartsByBrandAndModel } from "@shared/vehicleData";
+import { ScreenshotProtection } from "@/components/ScreenshotProtection";
 
 // States in India - predefined list
 const INDIAN_STATES = [
@@ -230,16 +231,17 @@ export default function CustomerRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Customer Registration
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Register your vehicle with us for exclusive services and offers
-          </p>
-        </div>
+    <ScreenshotProtection enabled={step !== 'success'}>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              Customer Registration
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+              Register your vehicle with us for exclusive services and offers
+            </p>
+          </div>
 
         {/* Step 1: Customer Information */}
         {step === "customer" && (
@@ -777,7 +779,8 @@ export default function CustomerRegistration() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
-    </div>
+    </ScreenshotProtection>
   );
 }
