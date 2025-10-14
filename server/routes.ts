@@ -15,7 +15,9 @@ import { Leave } from "./models/Leave";
 import { Task } from "./models/Task";
 import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
+import { ActivityLog } from "./models/ActivityLog";
 import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notifyPaymentOverdue, notifyPaymentDue } from "./utils/notifications";
+import { logActivity } from "./utils/activityLogger";
 import { User } from "./models/User";
 import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
@@ -41,6 +43,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session.userRole = user.role;
       (req as any).session.userName = user.name;
       (req as any).session.userEmail = user.email;
+      
+      await logActivity({
+        userId: user._id.toString(),
+        userName: user.name,
+        userRole: user.role,
+        action: 'login',
+        resource: 'user',
+        description: `${user.name} logged in`,
+        ipAddress: req.ip,
+      });
       
       res.json({
         id: user._id,
@@ -172,6 +184,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products", requireAuth, requirePermission('products', 'create'), async (req, res) => {
     try {
       const product = await Product.create(req.body);
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'product',
+        resourceId: product._id.toString(),
+        description: `Created product: ${product.name}`,
+        details: { category: product.category, brand: product.brand },
+        ipAddress: req.ip,
+      });
+      
       res.json(product);
     } catch (error) {
       res.status(400).json({ error: "Failed to create product" });
@@ -184,6 +209,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'update',
+        resource: 'product',
+        resourceId: product._id.toString(),
+        description: `Updated product: ${product.name}`,
+        details: req.body,
+        ipAddress: req.ip,
+      });
+      
       res.json(product);
     } catch (error) {
       res.status(400).json({ error: "Failed to update product" });
@@ -196,6 +234,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'delete',
+        resource: 'product',
+        resourceId: product._id.toString(),
+        description: `Deleted product: ${product.name}`,
+        ipAddress: req.ip,
+      });
+      
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete product" });
@@ -408,6 +458,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Notify about new order
       const customerName = order.customerId?.name || 'Unknown Customer';
       await notifyNewOrder(order, customerName);
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'order',
+        resourceId: order._id.toString(),
+        description: `Created order ${order.invoiceNumber} for ${customerName}`,
+        details: { total: order.total, itemCount: order.items.length },
+        ipAddress: req.ip,
+      });
       
       res.json(order);
     } catch (error) {
@@ -1640,6 +1702,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Customer and associated vehicles deleted successfully" });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete customer" });
+    }
+  });
+
+  app.get("/api/activity-logs", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const { limit = 50, role, resource, startDate, endDate } = req.query;
+      
+      const query: any = {};
+      
+      if (role) {
+        query.userRole = role;
+      }
+      
+      if (resource) {
+        query.resource = resource;
+      }
+      
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+          query.createdAt.$gte = new Date(startDate as string);
+        }
+        if (endDate) {
+          query.createdAt.$lte = new Date(endDate as string);
+        }
+      }
+      
+      const activities = await ActivityLog.find(query)
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit as string))
+        .lean();
+      
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch activity logs" });
+    }
+  });
+
+  app.post("/api/activity-logs", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const { action, resource, resourceId, description, details } = req.body;
+      
+      const activity = await ActivityLog.create({
+        userId,
+        userName,
+        userRole,
+        action,
+        resource,
+        resourceId,
+        description,
+        details,
+        ipAddress: req.ip,
+      });
+      
+      res.json(activity);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create activity log" });
     }
   });
 

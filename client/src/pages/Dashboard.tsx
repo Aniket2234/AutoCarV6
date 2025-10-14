@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { KPICard } from "@/components/KPICard";
 import { ServiceWorkflowCard } from "@/components/ServiceWorkflowCard";
+import { ActivityFeed } from "@/components/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -521,6 +522,10 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      {user?.role === 'Admin' && (
+        <ActivityFeed limit={15} />
+      )}
     </div>
   );
 }
