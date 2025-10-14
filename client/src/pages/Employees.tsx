@@ -13,12 +13,26 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+interface Employee {
+  _id: string;
+  name: string;
+  role: string;
+  contact: string;
+  email?: string;
+  department?: string;
+  salary?: number;
+  joiningDate: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -31,7 +45,7 @@ export default function Employees() {
     joiningDate: "",
   });
 
-  const { data: employees = [], isLoading, error, refetch } = useQuery({
+  const { data: employees = [], isLoading, error, refetch } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
 
