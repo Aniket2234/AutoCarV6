@@ -7,7 +7,7 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'RegistrationCustomer' },
   customerName: { type: String },
   items: [orderItemSchema],
   total: { type: Number, required: true },
