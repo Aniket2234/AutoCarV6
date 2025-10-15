@@ -11,6 +11,7 @@ export const insertCustomerSchema = z.object({
   district: z.string().min(1, "District is required"),
   state: z.string().min(1, "State is required"),
   pinCode: z.string().min(6, "Pin code must be 6 digits"),
+  referralSource: z.string().optional(),
 });
 
 export const insertVehicleSchema = z.object({

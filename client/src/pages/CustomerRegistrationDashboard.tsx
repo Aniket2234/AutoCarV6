@@ -35,6 +35,20 @@ const VEHICLE_BRANDS = [
   "Volkswagen", "Skoda", "MG", "Jeep", "Citroen"
 ];
 
+// Referral sources
+const REFERRAL_SOURCES = [
+  "Facebook",
+  "Instagram",
+  "WhatsApp",
+  "Google Search",
+  "Friend/Family Referral",
+  "Billboard/Hoarding",
+  "Newspaper/Magazine",
+  "Radio/TV",
+  "Direct Visit",
+  "Other"
+];
+
 interface Customer {
   id: string;
   referenceCode: string;
@@ -48,6 +62,7 @@ interface Customer {
   district: string;
   state: string;
   pinCode: string;
+  referralSource?: string | null;
   isVerified: boolean;
   createdAt: Date;
 }
@@ -74,6 +89,7 @@ const editCustomerSchema = z.object({
   district: z.string().min(1, "District is required"),
   state: z.string().min(1, "State is required"),
   pinCode: z.string().min(6, "Pin code must be 6 digits"),
+  referralSource: z.string().optional(),
   isVerified: z.boolean(),
   vehicleNumber: z.string().optional(),
   vehicleBrand: z.string().optional(),
@@ -312,6 +328,7 @@ export default function CustomerRegistrationDashboard() {
       district: "",
       state: "",
       pinCode: "",
+      referralSource: "",
       isVerified: false,
       vehicleNumber: "",
       vehicleBrand: "",
@@ -336,6 +353,7 @@ export default function CustomerRegistrationDashboard() {
         district: editingCustomer.district,
         state: editingCustomer.state,
         pinCode: editingCustomer.pinCode,
+        referralSource: editingCustomer.referralSource || "",
         isVerified: editingCustomer.isVerified,
         vehicleNumber: primaryVehicle?.vehicleNumber || "",
         vehicleBrand: primaryVehicle?.vehicleBrand || "",
@@ -363,6 +381,7 @@ export default function CustomerRegistrationDashboard() {
         district: data.district,
         state: data.state,
         pinCode: data.pinCode,
+        referralSource: data.referralSource,
         isVerified: data.isVerified,
       };
       
@@ -792,6 +811,31 @@ export default function CustomerRegistrationDashboard() {
                     <FormControl>
                       <Input type="email" {...field} data-testid="input-edit-email" />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="referralSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How did you hear about us?</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-referral-source">
+                          <SelectValue placeholder="Select referral source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {REFERRAL_SOURCES.map((source) => (
+                          <SelectItem key={source} value={source}>
+                            {source}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
