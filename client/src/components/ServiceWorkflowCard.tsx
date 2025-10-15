@@ -7,7 +7,7 @@ interface ServiceWorkflowCardProps {
   customerName: string;
   vehicleReg: string;
   status: "inquired" | "working" | "waiting" | "completed";
-  handler: string;
+  handlers: string[];
   startTime: string;
   totalAmount?: number;
   partsCount?: number;
@@ -19,25 +19,27 @@ export function ServiceWorkflowCard({
   customerName,
   vehicleReg,
   status,
-  handler,
+  handlers,
   startTime,
   totalAmount,
   partsCount,
   notes,
   onClick,
 }: ServiceWorkflowCardProps) {
-  const initials = handler
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -52,16 +54,26 @@ export function ServiceWorkflowCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">{handler}</p>
-            <p className="text-xs text-muted-foreground">Handler</p>
-          </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            {handlers.length > 0 ? `Handler${handlers.length > 1 ? 's' : ''}` : 'No handlers assigned'}
+          </p>
+          {handlers.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {handlers.map((handler, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                      {getInitials(handler)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs font-medium">{handler}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">Unassigned</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

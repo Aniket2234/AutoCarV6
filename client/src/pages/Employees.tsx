@@ -23,6 +23,9 @@ interface Employee {
   salary?: number;
   joiningDate: string;
   isActive: boolean;
+  panNumber?: string;
+  aadharNumber?: string;
+  documents?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -43,6 +46,9 @@ export default function Employees() {
     department: "",
     salary: "",
     joiningDate: "",
+    panNumber: "",
+    aadharNumber: "",
+    documents: [] as string[],
   });
 
   const { data: employees = [], isLoading, error, refetch } = useQuery<Employee[]>({
@@ -65,6 +71,9 @@ export default function Employees() {
         department: "",
         salary: "",
         joiningDate: "",
+        panNumber: "",
+        aadharNumber: "",
+        documents: [] as string[],
       });
       toast({
         title: "Success",
@@ -134,6 +143,9 @@ export default function Employees() {
       department: formData.department,
       salary: parseFloat(formData.salary),
       joiningDate: formData.joiningDate,
+      panNumber: formData.panNumber,
+      aadharNumber: formData.aadharNumber,
+      documents: formData.documents,
       isActive: true,
     });
   };
@@ -148,6 +160,9 @@ export default function Employees() {
       department: employee.department || "",
       salary: employee.salary ? employee.salary.toString() : "",
       joiningDate: employee.joiningDate.split('T')[0],
+      panNumber: employee.panNumber || "",
+      aadharNumber: employee.aadharNumber || "",
+      documents: employee.documents || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -165,6 +180,9 @@ export default function Employees() {
         department: formData.department,
         salary: parseFloat(formData.salary),
         joiningDate: formData.joiningDate,
+        panNumber: formData.panNumber,
+        aadharNumber: formData.aadharNumber,
+        documents: formData.documents,
       },
     });
   };
@@ -329,6 +347,40 @@ export default function Employees() {
                   onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
                   required
                   data-testid="input-employee-joiningdate"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="panNumber">PAN Number</Label>
+                  <Input
+                    id="panNumber"
+                    value={formData.panNumber}
+                    onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                    placeholder="ABCDE1234F"
+                    data-testid="input-employee-pan"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="aadharNumber">Aadhar Number</Label>
+                  <Input
+                    id="aadharNumber"
+                    value={formData.aadharNumber}
+                    onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value })}
+                    placeholder="1234 5678 9012"
+                    data-testid="input-employee-aadhar"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="documents">Document URLs (comma-separated)</Label>
+                <Input
+                  id="documents"
+                  value={formData.documents.join(', ')}
+                  onChange={(e) => setFormData({ ...formData, documents: e.target.value.split(',').map(d => d.trim()).filter(d => d) })}
+                  placeholder="https://example.com/doc1.pdf, https://example.com/doc2.pdf"
+                  data-testid="input-employee-documents"
                 />
               </div>
 
@@ -507,6 +559,35 @@ export default function Employees() {
                 required
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-panNumber">PAN Number</Label>
+                <Input
+                  id="edit-panNumber"
+                  value={formData.panNumber}
+                  onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                  placeholder="ABCDE1234F"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-aadharNumber">Aadhar Number</Label>
+                <Input
+                  id="edit-aadharNumber"
+                  value={formData.aadharNumber}
+                  onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value })}
+                  placeholder="1234 5678 9012"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-documents">Document URLs (comma-separated)</Label>
+              <Input
+                id="edit-documents"
+                value={formData.documents.join(', ')}
+                onChange={(e) => setFormData({ ...formData, documents: e.target.value.split(',').map(d => d.trim()).filter(d => d) })}
+                placeholder="https://example.com/doc1.pdf, https://example.com/doc2.pdf"
+              />
+            </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
@@ -575,7 +656,37 @@ export default function Employees() {
                     <Badge variant="secondary">Inactive</Badge>
                   )}
                 </div>
+                {selectedEmployee.panNumber && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">PAN Number</p>
+                    <p className="text-sm font-medium">{selectedEmployee.panNumber}</p>
+                  </div>
+                )}
+                {selectedEmployee.aadharNumber && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Aadhar Number</p>
+                    <p className="text-sm font-medium">{selectedEmployee.aadharNumber}</p>
+                  </div>
+                )}
               </div>
+              {selectedEmployee.documents && selectedEmployee.documents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Documents</p>
+                  <div className="space-y-1">
+                    {selectedEmployee.documents.map((doc, index) => (
+                      <a 
+                        key={index} 
+                        href={doc} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline block"
+                      >
+                        Document {index + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
                   Close

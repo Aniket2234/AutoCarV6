@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,10 +28,12 @@ export default function ServiceVisits() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
   const [afterImages, setAfterImages] = useState<string[]>([]);
+  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
+  const [invoiceDate, setInvoiceDate] = useState<string>("");
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
-    handlerId: "",
+    handlerIds: [] as string[],
     notes: "",
     status: "inquired",
   });
@@ -58,7 +61,7 @@ export default function ServiceVisits() {
       queryClient.invalidateQueries({ queryKey: ['/api/service-visits'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard-stats'] });
       setIsServiceDialogOpen(false);
-      setServiceForm({ customerId: "", vehicleReg: "", handlerId: "", notes: "", status: "inquired" });
+      setServiceForm({ customerId: "", vehicleReg: "", handlerIds: [] as string[], notes: "", status: "inquired" });
       toast({
         title: "Success",
         description: "Service visit created successfully",
@@ -74,8 +77,8 @@ export default function ServiceVisits() {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: async ({ id, status, beforeImages, afterImages }: { id: string; status: string; beforeImages?: string[]; afterImages?: string[] }) => {
-      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status, beforeImages, afterImages });
+    mutationFn: async ({ id, status, beforeImages, afterImages, invoiceNumber, invoiceDate }: { id: string; status: string; beforeImages?: string[]; afterImages?: string[]; invoiceNumber?: string; invoiceDate?: string }) => {
+      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status, beforeImages, afterImages, invoiceNumber, invoiceDate });
       return response.json();
     },
     onSuccess: () => {
@@ -126,10 +129,10 @@ export default function ServiceVisits() {
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!serviceForm.customerId || !serviceForm.vehicleReg || !serviceForm.handlerId) {
+    if (!serviceForm.customerId || !serviceForm.vehicleReg || serviceForm.handlerIds.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields and select at least one service handler",
         variant: "destructive",
       });
       return;
@@ -143,15 +146,29 @@ export default function ServiceVisits() {
     setSelectedStatus(service.status);
     setBeforeImages(service.beforeImages || []);
     setAfterImages(service.afterImages || []);
+    setInvoiceNumber(service.invoiceNumber || "");
+    setInvoiceDate(service.invoiceDate ? new Date(service.invoiceDate).toISOString().split('T')[0] : "");
     setIsEditDialogOpen(true);
   };
 
   const handleStatusUpdate = () => {
     if (!selectedService || !selectedStatus) return;
     
+    // Validate invoice fields when status is completed
+    if (selectedStatus === 'completed' && !invoiceNumber) {
+      toast({
+        title: "Validation Error",
+        description: "Invoice number is required for completed services",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (selectedStatus === selectedService.status && 
         JSON.stringify(beforeImages) === JSON.stringify(selectedService.beforeImages || []) &&
-        JSON.stringify(afterImages) === JSON.stringify(selectedService.afterImages || [])) {
+        JSON.stringify(afterImages) === JSON.stringify(selectedService.afterImages || []) &&
+        invoiceNumber === (selectedService.invoiceNumber || "") &&
+        invoiceDate === (selectedService.invoiceDate ? new Date(selectedService.invoiceDate).toISOString().split('T')[0] : "")) {
       toast({
         title: "No Changes",
         description: "No changes detected",
@@ -165,6 +182,8 @@ export default function ServiceVisits() {
       status: selectedStatus,
       beforeImages,
       afterImages,
+      invoiceNumber: selectedStatus === 'completed' ? invoiceNumber : undefined,
+      invoiceDate: selectedStatus === 'completed' && invoiceDate ? invoiceDate : undefined,
     });
   };
 
@@ -310,23 +329,46 @@ export default function ServiceVisits() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="handler">Service Handler *</Label>
-                <Select 
-                  value={serviceForm.handlerId} 
-                  onValueChange={(value) => setServiceForm({ ...serviceForm, handlerId: value })}
-                  required
-                >
-                  <SelectTrigger id="handler" data-testid="select-handler">
-                    <SelectValue placeholder="Select a service handler" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((employee: any) => (
-                      <SelectItem key={employee._id} value={employee._id}>
-                        {employee.name} - {employee.role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Service Handlers * (Select one or more)</Label>
+                <div className="border rounded-md p-4 space-y-3 max-h-48 overflow-y-auto">
+                  {employees.length > 0 ? (
+                    employees.map((employee: any) => (
+                      <div key={employee._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`handler-${employee._id}`}
+                          checked={serviceForm.handlerIds.includes(employee._id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setServiceForm({ 
+                                ...serviceForm, 
+                                handlerIds: [...serviceForm.handlerIds, employee._id] 
+                              });
+                            } else {
+                              setServiceForm({ 
+                                ...serviceForm, 
+                                handlerIds: serviceForm.handlerIds.filter(id => id !== employee._id) 
+                              });
+                            }
+                          }}
+                          data-testid={`checkbox-handler-${employee._id}`}
+                        />
+                        <label
+                          htmlFor={`handler-${employee._id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {employee.name} - {employee.role}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No service handlers available</p>
+                  )}
+                </div>
+                {serviceForm.handlerIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {serviceForm.handlerIds.length} handler{serviceForm.handlerIds.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -413,7 +455,7 @@ export default function ServiceVisits() {
                       customerName={service.customerId?.name || 'Unknown'}
                       vehicleReg={service.vehicleReg}
                       status={service.status}
-                      handler={service.handlerId?.name || 'Unassigned'}
+                      handlers={service.handlerIds?.map((h: any) => h.name) || []}
                       startTime={formatDistance(new Date(service.createdAt), new Date(), { addSuffix: true })}
                       totalAmount={service.totalAmount}
                       partsCount={service.partsUsed?.length || 0}
@@ -489,6 +531,32 @@ export default function ServiceVisits() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedStatus === 'completed' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="invoiceNumber">Invoice Number *</Label>
+                    <Input
+                      id="invoiceNumber"
+                      value={invoiceNumber}
+                      onChange={(e) => setInvoiceNumber(e.target.value)}
+                      placeholder="INV-2024-001"
+                      required
+                      data-testid="input-invoice-number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="invoiceDate">Invoice Date</Label>
+                    <Input
+                      id="invoiceDate"
+                      type="date"
+                      value={invoiceDate}
+                      onChange={(e) => setInvoiceDate(e.target.value)}
+                      data-testid="input-invoice-date"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label>Before Service Images</Label>

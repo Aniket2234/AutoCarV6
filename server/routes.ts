@@ -351,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const visits = await ServiceVisit.find()
         .populate('customerId')
-        .populate('handlerId')
+        .populate('handlerIds')
         .populate('partsUsed.productId')
         .sort({ createdAt: -1 });
       res.json(visits);
@@ -364,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const visit = await ServiceVisit.create(req.body);
       await visit.populate('customerId');
-      await visit.populate('handlerId');
+      await visit.populate('handlerIds');
       
       // Notify about new service visit
       const customerName = visit.customerId?.name || 'Unknown Customer';
@@ -423,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const visit = await ServiceVisit.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .populate('customerId')
-        .populate('handlerId');
+        .populate('handlerIds');
       if (!visit) {
         return res.status(404).json({ error: "Service visit not found" });
       }

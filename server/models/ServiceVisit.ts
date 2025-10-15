@@ -8,7 +8,7 @@ const serviceVisitSchema = new mongoose.Schema({
     enum: ['inquired', 'working', 'waiting', 'completed'],
     default: 'inquired'
   },
-  handlerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
+  handlerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true }],
   notes: String,
   partsUsed: [{
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
@@ -24,6 +24,8 @@ const serviceVisitSchema = new mongoose.Schema({
   totalAmount: { type: Number, default: 0 },
   beforeImages: [{ type: String }],
   afterImages: [{ type: String }],
+  invoiceNumber: { type: String },
+  invoiceDate: { type: Date },
 }, { timestamps: true });
 
 serviceVisitSchema.pre('save', function(next) {

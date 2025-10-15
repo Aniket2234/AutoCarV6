@@ -13,6 +13,9 @@ const employeeSchema = new mongoose.Schema({
   salary: { type: Number },
   joiningDate: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true },
+  panNumber: { type: String },
+  aadharNumber: { type: String },
+  documents: [{ type: String }],
 }, { timestamps: true });
 
 export const Employee = mongoose.models.Employee || mongoose.model('Employee', employeeSchema);
