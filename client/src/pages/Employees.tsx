@@ -26,6 +26,7 @@ interface Employee {
   isActive: boolean;
   panNumber?: string;
   aadharNumber?: string;
+  photo?: string;
   documents?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -37,6 +38,7 @@ export default function Employees() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -49,6 +51,7 @@ export default function Employees() {
     joiningDate: "",
     panNumber: "",
     aadharNumber: "",
+    photo: "",
     documents: [] as string[],
   });
 
@@ -87,6 +90,24 @@ export default function Employees() {
     });
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData({ ...formData, photo: reader.result as string });
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload photo",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const { data: employees = [], isLoading, error, refetch } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
@@ -109,6 +130,7 @@ export default function Employees() {
         joiningDate: "",
         panNumber: "",
         aadharNumber: "",
+        photo: "",
         documents: [] as string[],
       });
       toast({
@@ -181,6 +203,7 @@ export default function Employees() {
       joiningDate: formData.joiningDate,
       panNumber: formData.panNumber,
       aadharNumber: formData.aadharNumber,
+      photo: formData.photo,
       documents: formData.documents,
       isActive: true,
     });
@@ -198,6 +221,7 @@ export default function Employees() {
       joiningDate: employee.joiningDate.split('T')[0],
       panNumber: employee.panNumber || "",
       aadharNumber: employee.aadharNumber || "",
+      photo: employee.photo || "",
       documents: employee.documents || [],
     });
     setIsEditDialogOpen(true);
@@ -218,6 +242,7 @@ export default function Employees() {
         joiningDate: formData.joiningDate,
         panNumber: formData.panNumber,
         aadharNumber: formData.aadharNumber,
+        photo: formData.photo,
         documents: formData.documents,
       },
     });
@@ -322,6 +347,34 @@ export default function Employees() {
                     data-testid="input-employee-email"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="photo">Employee Photo</Label>
+                <Input
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  data-testid="input-employee-photo"
+                />
+                {formData.photo && (
+                  <div className="flex items-center gap-4 mt-2">
+                    <img 
+                      src={formData.photo} 
+                      alt="Employee preview" 
+                      className="h-20 w-20 rounded-full object-cover border-2"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, photo: "" })}
+                    >
+                      Remove Photo
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -491,7 +544,15 @@ export default function Employees() {
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar>
-                    <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
+                    {employee.photo ? (
+                      <img 
+                        src={employee.photo} 
+                        alt={employee.name} 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
+                    )}
                   </Avatar>
                   <div className="flex-1">
                     <CardTitle className="text-lg">{employee.name}</CardTitle>
@@ -574,6 +635,34 @@ export default function Employees() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-photo">Employee Photo</Label>
+              <Input
+                id="edit-photo"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+              />
+              {formData.photo && (
+                <div className="flex items-center gap-4 mt-2">
+                  <img 
+                    src={formData.photo} 
+                    alt="Employee preview" 
+                    className="h-20 w-20 rounded-full object-cover border-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFormData({ ...formData, photo: "" })}
+                  >
+                    Remove Photo
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-phone">Phone *</Label>
@@ -713,7 +802,15 @@ export default function Employees() {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="text-2xl">{getInitials(selectedEmployee.name)}</AvatarFallback>
+                  {selectedEmployee.photo ? (
+                    <img 
+                      src={selectedEmployee.photo} 
+                      alt={selectedEmployee.name} 
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback className="text-2xl">{getInitials(selectedEmployee.name)}</AvatarFallback>
+                  )}
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-semibold">{selectedEmployee.name}</h3>
@@ -773,15 +870,16 @@ export default function Employees() {
                   <p className="text-xs text-muted-foreground">Documents</p>
                   <div className="space-y-1">
                     {selectedEmployee.documents.map((doc, index) => (
-                      <a 
-                        key={index} 
-                        href={doc} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline block"
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setViewingDocument(doc)}
                       >
+                        <FileText className="h-4 w-4 mr-2" />
                         Document {index + 1}
-                      </a>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -799,6 +897,29 @@ export default function Employees() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Document Viewer</DialogTitle>
+          </DialogHeader>
+          <div className="w-full h-[70vh] overflow-auto">
+            {viewingDocument && (
+              <iframe
+                src={viewingDocument}
+                className="w-full h-full border-0"
+                title="Document Viewer"
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setViewingDocument(null)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

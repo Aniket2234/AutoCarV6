@@ -15,6 +15,7 @@ const employeeSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   panNumber: { type: String },
   aadharNumber: { type: String },
+  photo: { type: String },
   documents: [{ type: String }],
 }, { timestamps: true });
 
