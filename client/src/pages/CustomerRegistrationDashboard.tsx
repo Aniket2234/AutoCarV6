@@ -656,18 +656,14 @@ export default function CustomerRegistrationDashboard() {
                       <span className="text-muted-foreground">Mobile:</span>
                       <p className="font-medium">{selectedCustomer.mobileNumber}</p>
                     </div>
-                    {selectedCustomer.alternativeNumber && (
-                      <div>
-                        <span className="text-muted-foreground">Alt. Number:</span>
-                        <p className="font-medium">{selectedCustomer.alternativeNumber}</p>
-                      </div>
-                    )}
-                    {selectedCustomer.referralSource && (
-                      <div>
-                        <span className="text-muted-foreground">Referral Source:</span>
-                        <p className="font-medium">{selectedCustomer.referralSource}</p>
-                      </div>
-                    )}
+                    <div>
+                      <span className="text-muted-foreground">Alt. Number:</span>
+                      <p className="font-medium">{selectedCustomer.alternativeNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Referral Source:</span>
+                      <p className="font-medium">{selectedCustomer.referralSource || 'N/A'}</p>
+                    </div>
                     <div>
                       <span className="text-muted-foreground">Verification Status:</span>
                       <div className="mt-1">
@@ -754,12 +750,10 @@ export default function CustomerRegistrationDashboard() {
                                     </Badge>
                                   </div>
                                 </div>
-                                {vehicle.vehicleNumber && (
-                                  <div>
-                                    <span className="text-muted-foreground">Number:</span>
-                                    <p className="font-medium">{vehicle.vehicleNumber}</p>
-                                  </div>
-                                )}
+                                <div>
+                                  <span className="text-muted-foreground">Registration Number:</span>
+                                  <p className="font-medium">{vehicle.vehicleNumber || 'N/A'}</p>
+                                </div>
                                 <div>
                                   <span className="text-muted-foreground">Brand:</span>
                                   <p className="font-medium">{vehicle.vehicleBrand}</p>
@@ -768,18 +762,14 @@ export default function CustomerRegistrationDashboard() {
                                   <span className="text-muted-foreground">Model:</span>
                                   <p className="font-medium">{vehicle.vehicleModel}{vehicle.customModel ? ` (${vehicle.customModel})` : ''}</p>
                                 </div>
-                                {vehicle.yearOfPurchase && (
-                                  <div>
-                                    <span className="text-muted-foreground">Year of Purchase:</span>
-                                    <p className="font-medium">{vehicle.yearOfPurchase}</p>
-                                  </div>
-                                )}
-                                {vehicle.isNewVehicle && vehicle.chassisNumber && (
-                                  <div>
-                                    <span className="text-muted-foreground">Chassis Number:</span>
-                                    <p className="font-medium">{vehicle.chassisNumber}</p>
-                                  </div>
-                                )}
+                                <div>
+                                  <span className="text-muted-foreground">Year of Purchase:</span>
+                                  <p className="font-medium">{vehicle.yearOfPurchase || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Chassis Number:</span>
+                                  <p className="font-medium">{vehicle.chassisNumber || 'N/A'}</p>
+                                </div>
                               </div>
                               {vehicle.selectedParts && vehicle.selectedParts.length > 0 && (
                                 <div>
