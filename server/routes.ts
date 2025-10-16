@@ -30,6 +30,33 @@ import { RegistrationVehicle } from "./models/RegistrationVehicle";
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
   
+  // Auto-migrate: Add vehicleId to existing vehicles without it
+  try {
+    const vehiclesWithoutId = await RegistrationVehicle.find({ 
+      $or: [
+        { vehicleId: { $exists: false } },
+        { vehicleId: null },
+        { vehicleId: '' }
+      ]
+    });
+    
+    if (vehiclesWithoutId.length > 0) {
+      console.log(`🔄 Migrating ${vehiclesWithoutId.length} vehicles to add Vehicle IDs...`);
+      for (const vehicle of vehiclesWithoutId) {
+        const vehicleSeq = await getNextSequence('vehicle');
+        const vehicleId = `VEH${String(vehicleSeq).padStart(3, '0')}`;
+        
+        await RegistrationVehicle.updateOne(
+          { _id: vehicle._id },
+          { $set: { vehicleId } }
+        );
+      }
+      console.log(`✅ Migration complete: Added Vehicle IDs to ${vehiclesWithoutId.length} vehicles`);
+    }
+  } catch (error) {
+    console.error('❌ Vehicle ID migration error:', error);
+  }
+  
   app.use(attachUser);
 
   app.post("/api/auth/login", async (req, res) => {
@@ -2180,6 +2207,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(activity);
     } catch (error) {
       res.status(500).json({ error: "Failed to create activity log" });
+    }
+  });
+
+  // Migration endpoint to add vehicleId to existing vehicles
+  app.post("/api/migrate/vehicle-ids", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const vehiclesWithoutId = await RegistrationVehicle.find({ 
+        $or: [
+          { vehicleId: { $exists: false } },
+          { vehicleId: null },
+          { vehicleId: '' }
+        ]
+      });
+      
+      let updated = 0;
+      for (const vehicle of vehiclesWithoutId) {
+        const vehicleSeq = await getNextSequence('vehicle');
+        const vehicleId = `VEH${String(vehicleSeq).padStart(3, '0')}`;
+        
+        await RegistrationVehicle.updateOne(
+          { _id: vehicle._id },
+          { $set: { vehicleId } }
+        );
+        updated++;
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Updated ${updated} vehicles with Vehicle IDs`,
+        updated 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Migration failed" });
     }
   });
 
