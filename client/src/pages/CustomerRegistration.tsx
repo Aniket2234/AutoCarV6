@@ -105,6 +105,7 @@ export default function CustomerRegistration() {
   const [otpInput, setOtpInput] = useState("");
   const [customerData, setCustomerData] = useState<any>(null);
   const [vehicleData, setVehicleData] = useState<any>(null);
+  const [registeredVehicles, setRegisteredVehicles] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -205,13 +206,29 @@ export default function CustomerRegistration() {
       return await response.json();
     },
     onSuccess: (data) => {
+      setRegisteredVehicles(prev => [...prev, data.vehicle]);
       setVehicleData(data.vehicle);
       setCustomerData(data.customer);
-      setStep("success");
       toast({
-        title: "Registration Complete!",
-        description: "Vehicle registered successfully",
+        title: "Vehicle Added!",
+        description: `Vehicle registered successfully. Total vehicles: ${registeredVehicles.length + 1}`,
       });
+      // Reset vehicle form for next vehicle
+      vehicleForm.reset({
+        vehicleNumber: "",
+        vehicleBrand: "",
+        vehicleModel: "",
+        customModel: "",
+        yearOfPurchase: "",
+        vehiclePhoto: "",
+        isNewVehicle: "",
+        chassisNumber: "",
+        selectedParts: [],
+      });
+      setSelectedBrand("");
+      setSelectedModel("");
+      setAvailableModels([]);
+      setAvailableParts([]);
     },
     onError: (error: any) => {
       toast({
@@ -514,7 +531,11 @@ export default function CustomerRegistration() {
                 <Car className="w-6 h-6" />
                 <CardTitle>Vehicle Information</CardTitle>
               </div>
-              <CardDescription>Add your vehicle details</CardDescription>
+              <CardDescription>
+                {registeredVehicles.length > 0 
+                  ? `You have added ${registeredVehicles.length} vehicle${registeredVehicles.length > 1 ? 's' : ''}. Add another vehicle or complete registration.`
+                  : "Add your vehicle details. You can add multiple vehicles."}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...vehicleForm}>
@@ -754,14 +775,27 @@ export default function CustomerRegistration() {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={registerVehicle.isPending}
-                    data-testid="button-submit-vehicle"
-                  >
-                    {registerVehicle.isPending ? "Registering..." : "Complete Registration"}
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={registerVehicle.isPending}
+                      data-testid="button-submit-vehicle"
+                    >
+                      {registerVehicle.isPending ? "Adding Vehicle..." : registeredVehicles.length > 0 ? "Add Another Vehicle" : "Add Vehicle"}
+                    </Button>
+                    {registeredVehicles.length > 0 && (
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full" 
+                        onClick={() => setStep("success")}
+                        data-testid="button-complete-registration"
+                      >
+                        Complete Registration ({registeredVehicles.length} vehicle{registeredVehicles.length > 1 ? 's' : ''} added)
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </CardContent>

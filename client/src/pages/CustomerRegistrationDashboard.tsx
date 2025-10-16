@@ -178,6 +178,11 @@ function CustomerCard({
                 {primaryVehicle.vehicleBrand} {primaryVehicle.vehicleModel}
               </span>
               <span className="text-muted-foreground">• {primaryVehicle.vehicleNumber}</span>
+              {vehicles.length > 1 && (
+                <Badge variant="outline" className="ml-auto" data-testid={`badge-vehicle-count-${customer.id}`}>
+                  +{vehicles.length - 1} more
+                </Badge>
+              )}
             </div>
           )}
 
