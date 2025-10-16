@@ -26,6 +26,9 @@ The system uses **session-based authentication** with Express sessions and secur
 ### UI/UX Decisions
 Global card styling features `border-2 border-orange-300 dark:border-orange-700`. Vehicle images use `border-2 border-orange-300 dark:border-orange-700`, `object-contain`, and gradient backgrounds. Responsive layouts are used for dashboards. Forms feature conditional fields and dynamic dropdowns. Image uploads have live previews, base64 encoding, and validation. Employee photo sizes are increased, and documents are viewed in a dedicated viewer.
 
+### Multi-Vehicle Customer Registration
+The customer registration flow supports adding multiple vehicles per customer. After entering customer information and OTP verification, users can add vehicles one at a time. The form displays the count of registered vehicles and provides options to either "Add Another Vehicle" or "Complete Registration" (shown after at least one vehicle is added). The customer dashboard displays a "+X more" badge on customer cards when they have multiple vehicles, showing additional vehicles beyond the primary one.
+
 ### Complete Activity Tracking System
 A comprehensive activity logging system tracks all user actions (CRUD operations on Employees, Products, Orders, Service Visits, Suppliers, Purchase Orders, and user login/logout) with an `ActivityLog` model. An `ActivityFeed` component in the admin dashboard displays real-time activities with role-based badge colors, action-based indicators, resource icons, and "time ago" formatting. API endpoints for fetching and creating activity logs are provided.
 
