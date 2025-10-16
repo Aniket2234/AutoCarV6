@@ -1,11 +1,14 @@
 import mongoose from 'mongoose';
 
 const registrationVehicleSchema = new mongoose.Schema({
+  vehicleId: { type: String, unique: true, required: true, index: true },
   customerId: { type: String, required: true, index: true },
   vehicleNumber: { type: String, required: false },
   vehicleBrand: { type: String, required: true },
   vehicleModel: { type: String, required: true },
   customModel: { type: String, default: null },
+  variant: { type: String, enum: ['Top', 'Base'], default: null },
+  color: { type: String, default: null },
   yearOfPurchase: { type: Number, default: null },
   vehiclePhoto: { type: String, required: true },
   isNewVehicle: { type: Boolean, default: false },
