@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const employeeSchema = new mongoose.Schema({
+  employeeId: { type: String, unique: true },
   name: { type: String, required: true },
   role: { 
     type: String, 

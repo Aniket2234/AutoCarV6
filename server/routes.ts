@@ -268,7 +268,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/employees", requireAuth, requirePermission('employees', 'create'), async (req, res) => {
     try {
-      const employee = await Employee.create(req.body);
+      const employeeCount = await Employee.countDocuments();
+      const employeeId = `EMP${String(employeeCount + 1).padStart(3, '0')}`;
+      
+      const employee = await Employee.create({
+        ...req.body,
+        employeeId
+      });
       
       await logActivity({
         userId: (req as any).session.userId,
@@ -277,8 +283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'create',
         resource: 'employee',
         resourceId: employee._id.toString(),
-        description: `Created employee: ${employee.name}`,
-        details: { role: employee.role, email: employee.email },
+        description: `Created employee: ${employee.name} (${employeeId})`,
+        details: { role: employee.role, email: employee.email, employeeId },
         ipAddress: req.ip,
       });
       
