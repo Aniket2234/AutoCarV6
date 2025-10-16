@@ -7,7 +7,29 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 16, 2025)
-### Customer Details Dialog Enhancement (Latest)
+### Session Inactivity Timeout (Latest)
+- **Automatic Logout for Inactivity**: Implemented 30-minute inactivity timeout for all roles except Admin
+  - Users (Inventory Manager, Sales Executive, HR Manager, Service Staff) are automatically logged out after 30 minutes of inactivity
+  - Admin users are exempt from inactivity timeout and can stay logged in indefinitely
+  - Activity tracking updates on every API request for non-Admin users
+- **Backend Middleware**: Created `checkInactivityTimeout` middleware that:
+  - Tracks `lastActivity` timestamp in session for non-Admin users
+  - Destroys session and returns 401 with `INACTIVITY_TIMEOUT` code when timeout is exceeded
+  - Skips timeout check entirely for Admin role
+- **Frontend Handling**: Updated API error handler to detect inactivity timeout and:
+  - Clear React Query cache
+  - Redirect to login page
+  - Show appropriate error message
+- **Security**: Enhances security by automatically logging out inactive users, reducing risk of unauthorized access from unattended sessions
+
+### Referral Source Backend Fix
+- **Fixed Missing Referral Source in API Responses**: Referral source field now correctly included in all customer API responses
+  - Updated `/api/registration/verify-otp` endpoint to include referralSource
+  - Updated `/api/registration/customers/:id` endpoint to include referralSource
+  - Updated `/api/registration/customers` (list all) endpoint to include referralSource
+- **Issue Resolved**: Referral source was being saved to database but not returned in API responses, causing "N/A" display even when selected
+
+### Customer Details Dialog Enhancement
 - **Complete Field Display**: Customer details dialog now shows ALL customer and vehicle information
   - **Customer Fields**: Added referral source and verification status badge to customer information section
   - **Vehicle Fields**: Enhanced vehicle details to show:
