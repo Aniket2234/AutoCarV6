@@ -49,3 +49,35 @@ export function attachUser(req: Request, res: Response, next: NextFunction) {
   }
   next();
 }
+
+export function checkInactivityTimeout(req: Request, res: Response, next: NextFunction) {
+  const session = (req as any).session;
+  
+  if (session?.userId) {
+    const userRole = session.userRole;
+    const now = Date.now();
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+    
+    if (userRole !== 'Admin') {
+      if (session.lastActivity) {
+        const inactiveTime = now - session.lastActivity;
+        
+        if (inactiveTime > INACTIVITY_TIMEOUT) {
+          session.destroy((err: any) => {
+            if (err) {
+              console.error('Error destroying session:', err);
+            }
+          });
+          return res.status(401).json({ 
+            error: 'Session expired due to inactivity',
+            code: 'INACTIVITY_TIMEOUT'
+          });
+        }
+      }
+      
+      session.lastActivity = now;
+    }
+  }
+  
+  next();
+}
