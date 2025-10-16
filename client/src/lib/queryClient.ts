@@ -7,6 +7,12 @@ async function throwIfResNotOk(res: Response) {
       // Try to parse as JSON for structured error messages
       try {
         const json = JSON.parse(text);
+        
+        if (json.code === 'INACTIVITY_TIMEOUT') {
+          window.location.href = '/';
+          throw new Error('Session expired due to inactivity. Please login again.');
+        }
+        
         throw new Error(json.error || json.message || text || res.statusText);
       } catch (error: any) {
         // If parsing failed, check if it's a known error message
