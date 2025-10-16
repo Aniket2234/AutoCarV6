@@ -6,8 +6,24 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (October 14, 2025)
-### Mongoose Warning Fix (Latest)
+## Recent Changes (October 16, 2025)
+### Employee Photo Upload and Document Viewing Enhancement (Latest)
+- **Employee Photo Field**: Added `photo` field to Employee schema to store employee profile pictures
+- **Photo Upload UI**: Implemented photo upload functionality with live preview in both create and edit employee forms
+  - Image preview shown as circular thumbnail with remove option
+  - Accepts any image format (jpg, png, etc.)
+  - Base64 encoding for seamless storage
+- **Employee Card Display**: Employee photos now display in employee cards and detail views
+  - Falls back to initials avatar when no photo is uploaded
+- **Document Upload Enhancement**: Multiple PDF document upload already implemented, now verified working correctly
+- **Document Viewing Fix**: Fixed blank screen issue when viewing uploaded PDFs
+  - Created dedicated document viewer dialog with embedded iframe
+  - PDFs now display properly in modal instead of opening blank tabs
+  - Each document accessible via clickable button in employee details view
+- **Role Selection Fix**: Changed role field from free text to dropdown with predefined values to prevent validation errors
+  - Valid roles: Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff
+
+### Mongoose Warning Fix
 - **Fixed Mongoose Reserved Keyword Issue**: Renamed `isNew` field to `isNewVehicle` throughout the entire codebase to eliminate Mongoose warning about reserved keywords
 - **Files Updated**: RegistrationVehicle model, insertVehicleSchema validation, CustomerRegistration form (including form defaults, watchers, and mutation payload)
 - **Testing**: Verified all references updated correctly with no residual `isNew` usage; application runs without warnings
