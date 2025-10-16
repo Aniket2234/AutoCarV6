@@ -1824,7 +1824,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const vehicle = await RegistrationVehicle.create(validatedData);
+      // Generate unique vehicle ID (VEH001, VEH002, etc.)
+      const vehicleSeq = await getNextSequence('vehicle');
+      const vehicleId = `VEH${String(vehicleSeq).padStart(3, '0')}`;
+      
+      const vehicle = await RegistrationVehicle.create({
+        ...validatedData,
+        vehicleId
+      });
       
       // TODO: Send confirmation notification (SMS/WhatsApp/Email)
       const vehicleInfo = vehicle.vehicleNumber ? `(${vehicle.vehicleNumber})` : `(${vehicle.chassisNumber || 'New Vehicle'})`;
@@ -1834,11 +1841,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         vehicle: {
           id: vehicle._id.toString(),
+          vehicleId: vehicle.vehicleId,
           customerId: vehicle.customerId,
           vehicleNumber: vehicle.vehicleNumber,
           vehicleBrand: vehicle.vehicleBrand,
           vehicleModel: vehicle.vehicleModel,
           customModel: vehicle.customModel,
+          variant: vehicle.variant,
+          color: vehicle.color,
           yearOfPurchase: vehicle.yearOfPurchase,
           vehiclePhoto: vehicle.vehiclePhoto,
           isNewVehicle: vehicle.isNewVehicle,
