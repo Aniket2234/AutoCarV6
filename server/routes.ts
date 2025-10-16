@@ -1652,6 +1652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           district: customer.district,
           state: customer.state,
           pinCode: customer.pinCode,
+          referralSource: customer.referralSource,
           isVerified: customer.isVerified,
           createdAt: customer.createdAt,
         },
@@ -1739,6 +1740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           district: customer.district,
           state: customer.state,
           pinCode: customer.pinCode,
+          referralSource: customer.referralSource,
           isVerified: customer.isVerified,
           createdAt: customer.createdAt,
         },
@@ -1784,6 +1786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         district: c.district,
         state: c.state,
         pinCode: c.pinCode,
+        referralSource: c.referralSource,
         isVerified: c.isVerified,
         createdAt: c.createdAt,
       })));
