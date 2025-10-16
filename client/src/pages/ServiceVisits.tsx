@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Wrench } from "lucide-react";
+import { Plus, Wrench, Edit } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistance } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ export default function ServiceVisits() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -141,7 +142,12 @@ export default function ServiceVisits() {
     createServiceMutation.mutate(serviceForm);
   };
 
-  const handleServiceClick = (service: any) => {
+  const handleViewService = (service: any) => {
+    setSelectedService(service);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditService = (service: any) => {
     setSelectedService(service);
     setSelectedStatus(service.status);
     setBeforeImages(service.beforeImages || []);
@@ -460,7 +466,8 @@ export default function ServiceVisits() {
                       totalAmount={service.totalAmount}
                       partsCount={service.partsUsed?.length || 0}
                       notes={service.notes}
-                      onClick={() => handleServiceClick(service)}
+                      onView={() => handleViewService(service)}
+                      onEdit={() => handleEditService(service)}
                     />
                   ))
                 ) : (
@@ -480,6 +487,183 @@ export default function ServiceVisits() {
           <p className="text-muted-foreground">No service visits found. Create your first service visit to get started.</p>
         </div>
       )}
+
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Service Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this service visit
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Customer</Label>
+                  <p className="text-sm font-medium" data-testid="view-customer">
+                    {selectedService.customerId?.name || 'Unknown'}
+                  </p>
+                  {selectedService.customerId?.mobileNumber && (
+                    <p className="text-xs text-muted-foreground">
+                      {selectedService.customerId.mobileNumber}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Vehicle Registration</Label>
+                  <p className="text-sm font-medium font-mono" data-testid="view-vehicle">
+                    {selectedService.vehicleReg}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Badge variant="outline" className="capitalize" data-testid="view-status">
+                    {selectedService.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Service Handlers</Label>
+                  {selectedService.handlerIds && selectedService.handlerIds.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedService.handlerIds.map((handler: any) => (
+                        <div key={handler._id} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {handler.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{handler.name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{handler.role}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No handlers assigned</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Service Timeline</Label>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Started:</span>
+                      <span className="font-medium">{formatDistance(new Date(selectedService.createdAt), new Date(), { addSuffix: true })}</span>
+                    </div>
+                    {selectedService.totalAmount !== undefined && selectedService.totalAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Amount:</span>
+                        <span className="font-medium">
+                          {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(selectedService.totalAmount)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedService.partsUsed && selectedService.partsUsed.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Parts Used:</span>
+                        <span className="font-medium">{selectedService.partsUsed.length}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {selectedService.status === 'completed' && (selectedService.invoiceNumber || selectedService.invoiceDate) && (
+                <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                  <Label className="text-sm font-medium text-green-900 dark:text-green-100">Invoice Details</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    {selectedService.invoiceNumber && (
+                      <div>
+                        <Label className="text-xs text-green-700 dark:text-green-300">Invoice Number</Label>
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">{selectedService.invoiceNumber}</p>
+                      </div>
+                    )}
+                    {selectedService.invoiceDate && (
+                      <div>
+                        <Label className="text-xs text-green-700 dark:text-green-300">Invoice Date</Label>
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                          {new Date(selectedService.invoiceDate).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedService.notes && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Notes</Label>
+                  <p className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg whitespace-pre-wrap">
+                    {selectedService.notes}
+                  </p>
+                </div>
+              )}
+
+              {(selectedService.beforeImages?.length > 0 || selectedService.afterImages?.length > 0) && (
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Before Service Images</Label>
+                    {selectedService.beforeImages && selectedService.beforeImages.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedService.beforeImages.map((img: string, idx: number) => (
+                          <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded overflow-hidden">
+                            <img src={img} alt={`Before ${idx + 1}`} className="w-full h-32 object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No images uploaded</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">After Service Images</Label>
+                    {selectedService.afterImages && selectedService.afterImages.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedService.afterImages.map((img: string, idx: number) => (
+                          <div key={idx} className="relative border-2 border-green-300 dark:border-green-700 rounded overflow-hidden">
+                            <img src={img} alt={`After ${idx + 1}`} className="w-full h-32 object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No images uploaded</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsViewDialogOpen(false)}
+                  data-testid="button-close-view"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsViewDialogOpen(false);
+                    handleEditService(selectedService);
+                  }}
+                  data-testid="button-edit-from-view"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Service
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
