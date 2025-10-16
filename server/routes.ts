@@ -17,6 +17,7 @@ import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
 import { ActivityLog } from "./models/ActivityLog";
 import { PerformanceLog } from "./models/PerformanceLog";
+import { getNextSequence } from "./models/Counter";
 import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notifyPaymentOverdue, notifyPaymentDue } from "./utils/notifications";
 import { logActivity } from "./utils/activityLogger";
 import { User } from "./models/User";
@@ -269,8 +270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/employees", requireAuth, requirePermission('employees', 'create'), async (req, res) => {
     try {
-      const employeeCount = await Employee.countDocuments();
-      const employeeId = `EMP${String(employeeCount + 1).padStart(3, '0')}`;
+      const sequence = await getNextSequence('employee_id');
+      const employeeId = `EMP${String(sequence).padStart(3, '0')}`;
       
       const employee = await Employee.create({
         ...req.body,
