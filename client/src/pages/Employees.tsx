@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, User, X, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,41 @@ export default function Employees() {
     aadharNumber: "",
     documents: [] as string[],
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const filePromises = Array.from(files).map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const base64Files = await Promise.all(filePromises);
+      setFormData({ ...formData, documents: [...formData.documents, ...base64Files] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload files",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    setFormData({
+      ...formData,
+      documents: formData.documents.filter((_, i) => i !== index)
+    });
+  };
 
   const { data: employees = [], isLoading, error, refetch } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
@@ -301,14 +337,22 @@ export default function Employees() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
-                  <Input
-                    id="role"
+                  <Select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, role: value })}
                     required
-                    placeholder="e.g., Mechanic, Manager"
-                    data-testid="input-employee-role"
-                  />
+                  >
+                    <SelectTrigger data-testid="select-employee-role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
+                      <SelectItem value="Sales Executive">Sales Executive</SelectItem>
+                      <SelectItem value="HR Manager">HR Manager</SelectItem>
+                      <SelectItem value="Service Staff">Service Staff</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -374,14 +418,37 @@ export default function Employees() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="documents">Document URLs (comma-separated)</Label>
+                <Label htmlFor="documents">Upload Documents (PDF)</Label>
                 <Input
                   id="documents"
-                  value={formData.documents.join(', ')}
-                  onChange={(e) => setFormData({ ...formData, documents: e.target.value.split(',').map(d => d.trim()).filter(d => d) })}
-                  placeholder="https://example.com/doc1.pdf, https://example.com/doc2.pdf"
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  onChange={handleFileUpload}
                   data-testid="input-employee-documents"
                 />
+                {formData.documents.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    <p className="text-sm text-muted-foreground">Uploaded files ({formData.documents.length}):</p>
+                    <div className="space-y-1">
+                      {formData.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm flex-1">Document {index + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeDocument(index)}
+                            data-testid={`button-remove-document-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -519,12 +586,22 @@ export default function Employees() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-role">Role *</Label>
-                <Input
-                  id="edit-role"
+                <Select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
+                    <SelectItem value="Sales Executive">Sales Executive</SelectItem>
+                    <SelectItem value="HR Manager">HR Manager</SelectItem>
+                    <SelectItem value="Service Staff">Service Staff</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -580,13 +657,35 @@ export default function Employees() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-documents">Document URLs (comma-separated)</Label>
+              <Label htmlFor="edit-documents">Upload Documents (PDF)</Label>
               <Input
                 id="edit-documents"
-                value={formData.documents.join(', ')}
-                onChange={(e) => setFormData({ ...formData, documents: e.target.value.split(',').map(d => d.trim()).filter(d => d) })}
-                placeholder="https://example.com/doc1.pdf, https://example.com/doc2.pdf"
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={handleFileUpload}
               />
+              {formData.documents.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  <p className="text-sm text-muted-foreground">Uploaded files ({formData.documents.length}):</p>
+                  <div className="space-y-1">
+                    {formData.documents.map((doc, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm flex-1">Document {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeDocument(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button
