@@ -3,6 +3,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { checkInactivityTimeout } from "./middleware";
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -25,6 +26,8 @@ app.use(
     },
   })
 );
+
+app.use(checkInactivityTimeout);
 
 app.use((req, res, next) => {
   const start = Date.now();

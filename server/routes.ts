@@ -44,6 +44,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session.userName = user.name;
       (req as any).session.userEmail = user.email;
       
+      if (user.role !== 'Admin') {
+        (req as any).session.lastActivity = Date.now();
+      }
+      
       await logActivity({
         userId: user._id.toString(),
         userName: user.name,
