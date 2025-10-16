@@ -1,30 +1,37 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    const text = await res.text();
+    let json: any;
+    
     try {
-      const text = await res.text();
-      // Try to parse as JSON for structured error messages
-      try {
-        const json = JSON.parse(text);
-        
-        if (json.code === 'INACTIVITY_TIMEOUT') {
-          window.location.href = '/';
-          throw new Error('Session expired due to inactivity. Please login again.');
-        }
-        
-        throw new Error(json.error || json.message || text || res.statusText);
-      } catch (error: any) {
-        // If parsing failed, check if it's a known error message
-        if (error.message && !error.message.startsWith('Unexpected token')) {
-          throw error;
-        }
-        // If not JSON, use the text response
-        throw new Error(text || res.statusText);
-      }
-    } catch (error: any) {
-      throw error;
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(text || res.statusText);
     }
+    
+    if (json.code === 'INACTIVITY_TIMEOUT') {
+      queryClient.clear();
+      window.location.href = '/';
+      throw new Error('Session expired due to inactivity. Please login again.');
+    }
+    
+    throw new Error(json.error || json.message || text || res.statusText);
   }
 }
 
@@ -62,17 +69,8 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
-    },
+queryClient.setDefaultOptions({
+  queries: {
+    queryFn: getQueryFn({ on401: "throw" }),
   },
 });
