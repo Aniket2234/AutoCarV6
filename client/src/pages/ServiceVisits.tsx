@@ -482,7 +482,7 @@ export default function ServiceVisits() {
       )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Update Service Status</DialogTitle>
             <DialogDescription>
@@ -492,48 +492,52 @@ export default function ServiceVisits() {
           
           {selectedService && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Customer</Label>
-                <p className="text-sm text-muted-foreground" data-testid="text-edit-customer">
-                  {selectedService.customerId?.name || 'Unknown'}
-                </p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Customer</Label>
+                  <p className="text-sm text-muted-foreground" data-testid="text-edit-customer">
+                    {selectedService.customerId?.name || 'Unknown'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Vehicle Registration</Label>
+                  <p className="text-sm text-muted-foreground" data-testid="text-edit-vehicle">
+                    {selectedService.vehicleReg}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Current Status</Label>
+                  <p className="text-sm text-muted-foreground capitalize" data-testid="text-edit-current-status">
+                    {selectedService.status}
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Vehicle Registration</Label>
-                <p className="text-sm text-muted-foreground" data-testid="text-edit-vehicle">
-                  {selectedService.vehicleReg}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Current Status</Label>
-                <p className="text-sm text-muted-foreground capitalize" data-testid="text-edit-current-status">
-                  {selectedService.status}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="newStatus">New Status *</Label>
-                <Select 
-                  value={selectedStatus}
-                  onValueChange={setSelectedStatus}
-                  disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
-                >
-                  <SelectTrigger id="newStatus" data-testid="select-new-status">
-                    <SelectValue placeholder="Select new status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key="inquired" value="inquired">Inquired</SelectItem>
-                    <SelectItem key="working" value="working">Working</SelectItem>
-                    <SelectItem key="waiting" value="waiting">Waiting</SelectItem>
-                    <SelectItem key="completed" value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newStatus">New Status *</Label>
+                  <Select 
+                    value={selectedStatus}
+                    onValueChange={setSelectedStatus}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
+                  >
+                    <SelectTrigger id="newStatus" data-testid="select-new-status">
+                      <SelectValue placeholder="Select new status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem key="inquired" value="inquired">Inquired</SelectItem>
+                      <SelectItem key="working" value="working">Working</SelectItem>
+                      <SelectItem key="waiting" value="waiting">Waiting</SelectItem>
+                      <SelectItem key="completed" value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {selectedStatus === 'completed' && (
-                <>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="invoiceNumber">Invoice Number *</Label>
                     <Input
@@ -555,61 +559,63 @@ export default function ServiceVisits() {
                       data-testid="input-invoice-date"
                     />
                   </div>
-                </>
+                </div>
               )}
 
-              <div className="space-y-2">
-                <Label>Before Service Images</Label>
-                <Input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleBeforeImageUpload}
-                  data-testid="input-before-image"
-                />
-                {beforeImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {beforeImages.map((img, idx) => (
-                      <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
-                        <img src={img} alt={`Before ${idx + 1}`} className="w-full h-20 object-cover rounded" />
-                        <button
-                          type="button"
-                          onClick={() => setBeforeImages(beforeImages.filter((_, i) => i !== idx))}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                          data-testid={`button-remove-before-${idx}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Before Service Images</Label>
+                  <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleBeforeImageUpload}
+                    data-testid="input-before-image"
+                  />
+                  {beforeImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {beforeImages.map((img, idx) => (
+                        <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
+                          <img src={img} alt={`Before ${idx + 1}`} className="w-full h-24 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={() => setBeforeImages(beforeImages.filter((_, i) => i !== idx))}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            data-testid={`button-remove-before-${idx}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label>After Service Images</Label>
-                <Input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleAfterImageUpload}
-                  data-testid="input-after-image"
-                />
-                {afterImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {afterImages.map((img, idx) => (
-                      <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
-                        <img src={img} alt={`After ${idx + 1}`} className="w-full h-20 object-cover rounded" />
-                        <button
-                          type="button"
-                          onClick={() => setAfterImages(afterImages.filter((_, i) => i !== idx))}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                          data-testid={`button-remove-after-${idx}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label>After Service Images</Label>
+                  <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleAfterImageUpload}
+                    data-testid="input-after-image"
+                  />
+                  {afterImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {afterImages.map((img, idx) => (
+                        <div key={idx} className="relative border-2 border-orange-300 dark:border-orange-700 rounded p-1">
+                          <img src={img} alt={`After ${idx + 1}`} className="w-full h-24 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={() => setAfterImages(afterImages.filter((_, i) => i !== idx))}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            data-testid={`button-remove-after-${idx}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className={`flex ${canDelete ? 'justify-between' : 'justify-end'} gap-2 pt-4`}>

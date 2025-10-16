@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const previousVisit = await ServiceVisit.findById(req.params.id).populate('customerId');
       
-      // Validate base64 images if present (format and size check - limit to 5MB per image)
+      // Validate base64 images if present (format and size check - limit to 10MB per image)
       const validateImages = (images: string[]) => {
         if (!images || !Array.isArray(images)) return true;
         const dataUriRegex = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/;
@@ -412,17 +412,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const base64Content = img.replace(dataUriRegex, '');
           if (!base64Regex.test(base64Content)) return false;
           
-          // Check size (5MB limit)
+          // Check size (10MB limit)
           const sizeInMB = (base64Content.length * 0.75) / (1024 * 1024);
-          return sizeInMB <= 5;
+          return sizeInMB <= 10;
         });
       };
 
       if (req.body.beforeImages && !validateImages(req.body.beforeImages)) {
-        return res.status(400).json({ error: "Invalid before images: must be valid base64 image data (PNG, JPEG, GIF, WebP) under 5MB per image" });
+        return res.status(400).json({ error: "Invalid before images: must be valid base64 image data (PNG, JPEG, GIF, WebP) under 10MB per image" });
       }
       if (req.body.afterImages && !validateImages(req.body.afterImages)) {
-        return res.status(400).json({ error: "Invalid after images: must be valid base64 image data (PNG, JPEG, GIF, WebP) under 5MB per image" });
+        return res.status(400).json({ error: "Invalid after images: must be valid base64 image data (PNG, JPEG, GIF, WebP) under 10MB per image" });
       }
 
       const visit = await ServiceVisit.findByIdAndUpdate(req.params.id, req.body, { new: true })
