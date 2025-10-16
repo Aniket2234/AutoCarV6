@@ -220,7 +220,7 @@ export default function Orders() {
                     <SelectValue placeholder="Select a customer or leave empty for walk-in" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                    <SelectItem key="walk-in" value="walk-in">Walk-in Customer</SelectItem>
                     {customers.map((customer: any) => (
                       <SelectItem key={customer._id} value={customer._id}>
                         {customer.name} - {customer.phone}
@@ -313,9 +313,9 @@ export default function Orders() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="due">Due</SelectItem>
-                      <SelectItem value="partial">Partial</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem key="due" value="due">Due</SelectItem>
+                      <SelectItem key="partial" value="partial">Partial</SelectItem>
+                      <SelectItem key="paid" value="paid">Paid</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -326,11 +326,11 @@ export default function Orders() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="shipped">Shipped</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem key="pending" value="pending">Pending</SelectItem>
+                      <SelectItem key="processing" value="processing">Processing</SelectItem>
+                      <SelectItem key="shipped" value="shipped">Shipped</SelectItem>
+                      <SelectItem key="delivered" value="delivered">Delivered</SelectItem>
+                      <SelectItem key="cancelled" value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

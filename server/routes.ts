@@ -1987,12 +1987,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vehicles = await RegistrationVehicle.find({ customerId: req.params.id });
       res.json(vehicles.map(v => ({
         id: v._id.toString(),
+        vehicleId: v.vehicleId,
         customerId: v.customerId,
         vehicleNumber: v.vehicleNumber,
         vehicleBrand: v.vehicleBrand,
         vehicleModel: v.vehicleModel,
+        customModel: v.customModel,
+        variant: v.variant,
+        color: v.color,
         yearOfPurchase: v.yearOfPurchase,
         vehiclePhoto: v.vehiclePhoto,
+        isNewVehicle: v.isNewVehicle,
+        chassisNumber: v.chassisNumber,
+        selectedParts: v.selectedParts,
         createdAt: v.createdAt,
       })));
     } catch (error) {
@@ -2009,12 +2016,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({
         id: vehicle._id.toString(),
+        vehicleId: vehicle.vehicleId,
         customerId: vehicle.customerId,
         vehicleNumber: vehicle.vehicleNumber,
         vehicleBrand: vehicle.vehicleBrand,
         vehicleModel: vehicle.vehicleModel,
+        customModel: vehicle.customModel,
+        variant: vehicle.variant,
+        color: vehicle.color,
         yearOfPurchase: vehicle.yearOfPurchase,
         vehiclePhoto: vehicle.vehiclePhoto,
+        isNewVehicle: vehicle.isNewVehicle,
+        chassisNumber: vehicle.chassisNumber,
+        selectedParts: vehicle.selectedParts,
         createdAt: vehicle.createdAt,
       });
     } catch (error) {
