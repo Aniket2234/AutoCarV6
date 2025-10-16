@@ -854,6 +854,9 @@ export default function Employees() {
                 <div>
                   <h3 className="text-xl font-semibold">{selectedEmployee.name}</h3>
                   <p className="text-muted-foreground">{selectedEmployee.role}</p>
+                  {selectedEmployee.employeeId && (
+                    <p className="text-sm text-muted-foreground mt-1" data-testid="text-view-employeeid">ID: {selectedEmployee.employeeId}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
