@@ -3,6 +3,7 @@ import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageCropDialogProps {
   open: boolean;
@@ -70,6 +71,7 @@ export function ImageCropDialog({ open, onOpenChange, imageSrc, onCropComplete }
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const { toast } = useToast();
 
   const onCropCompleteCallback = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -84,8 +86,13 @@ export function ImageCropDialog({ open, onOpenChange, imageSrc, onCropComplete }
       onOpenChange(false);
     } catch (e) {
       console.error("Error cropping image:", e);
+      toast({
+        title: "Error",
+        description: "Failed to crop image. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [croppedAreaPixels, imageSrc, onCropComplete, onOpenChange]);
+  }, [croppedAreaPixels, imageSrc, onCropComplete, onOpenChange, toast]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

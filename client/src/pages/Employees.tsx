@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 interface Employee {
   _id: string;
@@ -39,6 +40,8 @@ export default function Employees() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [viewingDocument, setViewingDocument] = useState<string | null>(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>("");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -96,7 +99,8 @@ export default function Employees() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setFormData({ ...formData, photo: reader.result as string });
+      setImageToCrop(reader.result as string);
+      setIsCropDialogOpen(true);
     };
     reader.onerror = () => {
       toast({
@@ -106,6 +110,10 @@ export default function Employees() {
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setFormData({ ...formData, photo: croppedImage });
   };
 
   const { data: employees = [], isLoading, error, refetch } = useQuery<Employee[]>({
@@ -543,7 +551,7 @@ export default function Employees() {
             <Card key={employee._id} className="hover-elevate" data-testid={`card-employee-${employee._id}`}>
               <CardHeader>
                 <div className="flex items-center gap-4">
-                  <Avatar>
+                  <Avatar className="h-20 w-20">
                     {employee.photo ? (
                       <img 
                         src={employee.photo} 
@@ -551,7 +559,7 @@ export default function Employees() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
+                      <AvatarFallback className="text-2xl">{getInitials(employee.name)}</AvatarFallback>
                     )}
                   </Avatar>
                   <div className="flex-1">
@@ -922,6 +930,14 @@ export default function Employees() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Crop Dialog */}
+      <ImageCropDialog
+        open={isCropDialogOpen}
+        onOpenChange={setIsCropDialogOpen}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
