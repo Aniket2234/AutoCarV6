@@ -56,9 +56,9 @@ export function ServiceWorkflowCard({
       <CardContent className="pt-0 space-y-4">
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            {handlers.length > 0 ? `Handler${handlers.length > 1 ? 's' : ''}` : 'No handlers assigned'}
+            {handlers?.length > 0 ? `Handler${handlers.length > 1 ? 's' : ''}` : 'No handlers assigned'}
           </p>
-          {handlers.length > 0 ? (
+          {handlers?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {handlers.map((handler, index) => (
                 <div key={index} className="flex items-center gap-2">
