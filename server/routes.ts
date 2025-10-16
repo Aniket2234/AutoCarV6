@@ -1898,12 +1898,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         vehicles: vehicles.map(v => ({
           id: v._id.toString(),
+          vehicleId: v.vehicleId,
           customerId: v.customerId,
           vehicleNumber: v.vehicleNumber,
           vehicleBrand: v.vehicleBrand,
           vehicleModel: v.vehicleModel,
+          customModel: v.customModel,
+          variant: v.variant,
+          color: v.color,
           yearOfPurchase: v.yearOfPurchase,
           vehiclePhoto: v.vehiclePhoto,
+          isNewVehicle: v.isNewVehicle,
+          chassisNumber: v.chassisNumber,
+          selectedParts: v.selectedParts,
           createdAt: v.createdAt,
         }))
       });

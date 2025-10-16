@@ -63,6 +63,8 @@ const vehicleFormSchema = z.object({
   vehicleBrand: z.string().min(1, "Vehicle brand is required"),
   vehicleModel: z.string().min(1, "Vehicle model is required"),
   customModel: z.string().optional(),
+  variant: z.enum(['Top', 'Base']).optional(),
+  color: z.string().optional(),
   yearOfPurchase: z.string().optional(),
   vehiclePhoto: z.string().min(1, "Vehicle photo is required"),
   isNewVehicle: z.string().min(1, "Please select vehicle condition"),
@@ -135,6 +137,8 @@ export default function CustomerRegistration() {
       vehicleBrand: "",
       vehicleModel: "",
       customModel: "",
+      variant: undefined,
+      color: "",
       yearOfPurchase: "",
       vehiclePhoto: "",
       isNewVehicle: "",
@@ -219,6 +223,8 @@ export default function CustomerRegistration() {
         vehicleBrand: "",
         vehicleModel: "",
         customModel: "",
+        variant: undefined,
+        color: "",
         yearOfPurchase: "",
         vehiclePhoto: "",
         isNewVehicle: "",
@@ -667,6 +673,42 @@ export default function CustomerRegistration() {
                         )}
                       />
                     )}
+
+                    <FormField
+                      control={vehicleForm.control}
+                      name="variant"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Variant</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-variant">
+                                <SelectValue placeholder="Select variant" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Top">Top</SelectItem>
+                              <SelectItem value="Base">Base</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={vehicleForm.control}
+                      name="color"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Color</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Enter vehicle color" data-testid="input-color" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={vehicleForm.control}
