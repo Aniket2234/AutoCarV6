@@ -73,8 +73,12 @@ interface Vehicle {
   vehicleNumber: string;
   vehicleBrand: string;
   vehicleModel: string;
+  customModel?: string | null;
   yearOfPurchase: number | null;
   vehiclePhoto: string;
+  isNewVehicle: boolean;
+  chassisNumber?: string | null;
+  selectedParts: string[];
   createdAt: Date;
 }
 
@@ -658,6 +662,28 @@ export default function CustomerRegistrationDashboard() {
                         <p className="font-medium">{selectedCustomer.alternativeNumber}</p>
                       </div>
                     )}
+                    {selectedCustomer.referralSource && (
+                      <div>
+                        <span className="text-muted-foreground">Referral Source:</span>
+                        <p className="font-medium">{selectedCustomer.referralSource}</p>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-muted-foreground">Verification Status:</span>
+                      <div className="mt-1">
+                        {selectedCustomer.isVerified ? (
+                          <Badge className="bg-green-600">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Pending Verification
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -718,19 +744,53 @@ export default function CustomerRegistrationDashboard() {
                                 />
                               </div>
                             )}
-                            <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">Number:</span>
-                                <p className="font-medium">{vehicle.vehicleNumber}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Brand & Model:</span>
-                                <p className="font-medium">{vehicle.vehicleBrand} {vehicle.vehicleModel}</p>
-                              </div>
-                              {vehicle.yearOfPurchase && (
+                            <div className="flex-1 space-y-3">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
-                                  <span className="text-muted-foreground">Year:</span>
-                                  <p className="font-medium">{vehicle.yearOfPurchase}</p>
+                                  <span className="text-muted-foreground">Vehicle Type:</span>
+                                  <div className="mt-1">
+                                    <Badge variant={vehicle.isNewVehicle ? "default" : "secondary"}>
+                                      {vehicle.isNewVehicle ? "New Vehicle" : "Used Vehicle"}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                {vehicle.vehicleNumber && (
+                                  <div>
+                                    <span className="text-muted-foreground">Number:</span>
+                                    <p className="font-medium">{vehicle.vehicleNumber}</p>
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="text-muted-foreground">Brand:</span>
+                                  <p className="font-medium">{vehicle.vehicleBrand}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Model:</span>
+                                  <p className="font-medium">{vehicle.vehicleModel}{vehicle.customModel ? ` (${vehicle.customModel})` : ''}</p>
+                                </div>
+                                {vehicle.yearOfPurchase && (
+                                  <div>
+                                    <span className="text-muted-foreground">Year of Purchase:</span>
+                                    <p className="font-medium">{vehicle.yearOfPurchase}</p>
+                                  </div>
+                                )}
+                                {vehicle.isNewVehicle && vehicle.chassisNumber && (
+                                  <div>
+                                    <span className="text-muted-foreground">Chassis Number:</span>
+                                    <p className="font-medium">{vehicle.chassisNumber}</p>
+                                  </div>
+                                )}
+                              </div>
+                              {vehicle.selectedParts && vehicle.selectedParts.length > 0 && (
+                                <div>
+                                  <span className="text-muted-foreground text-sm">Selected Parts:</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {vehicle.selectedParts.map((part, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {part}
+                                      </Badge>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
