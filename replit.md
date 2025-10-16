@@ -6,149 +6,35 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (October 16, 2025)
-### Session Inactivity Timeout (Latest)
-- **Automatic Logout for Inactivity**: Implemented 30-minute inactivity timeout for all roles except Admin
-  - Users (Inventory Manager, Sales Executive, HR Manager, Service Staff) are automatically logged out after 30 minutes of inactivity
-  - Admin users are exempt from inactivity timeout and can stay logged in indefinitely
-  - Activity tracking updates on every API request for non-Admin users
-- **Backend Middleware**: Created `checkInactivityTimeout` middleware that:
-  - Tracks `lastActivity` timestamp in session for non-Admin users
-  - Destroys session and returns 401 with `INACTIVITY_TIMEOUT` code when timeout is exceeded
-  - Skips timeout check entirely for Admin role
-- **Frontend Handling**: Updated API error handler to detect inactivity timeout and:
-  - Clear React Query cache
-  - Redirect to login page
-  - Show appropriate error message
-- **Security**: Enhances security by automatically logging out inactive users, reducing risk of unauthorized access from unattended sessions
-
-### Referral Source Backend Fix
-- **Fixed Missing Referral Source in API Responses**: Referral source field now correctly included in all customer API responses
-  - Updated `/api/registration/verify-otp` endpoint to include referralSource
-  - Updated `/api/registration/customers/:id` endpoint to include referralSource
-  - Updated `/api/registration/customers` (list all) endpoint to include referralSource
-- **Issue Resolved**: Referral source was being saved to database but not returned in API responses, causing "N/A" display even when selected
-
-### Customer Details Dialog Enhancement
-- **Complete Field Display**: Customer details dialog now shows ALL customer and vehicle information
-  - **Customer Fields**: Added referral source and verification status badge to customer information section
-  - **Vehicle Fields**: Enhanced vehicle details to show:
-    - Vehicle Type badge (New Vehicle / Used Vehicle)
-    - Vehicle Number (for used vehicles)
-    - Brand and Model (with custom model name in parentheses if "Other" was selected)
-    - Year of Purchase
-    - Chassis Number (displayed only for new vehicles)
-    - Selected Parts (displayed as badge array when parts are selected)
-- **Conditional Rendering**: All fields properly conditionally rendered - only shown when data exists
-- **Better Organization**: Vehicle details reorganized in clean grid layout with logical grouping
-
-### WhatsApp-Style Image Cropping for Employee Photos
-- **Image Cropping Feature**: Implemented WhatsApp-style image cropping for employee photos using react-easy-crop library
-  - Users can now crop and zoom employee photos before saving
-  - Circular crop shape matches profile photo display
-  - Intuitive zoom slider (1x to 3x) for fine-tuning
-  - Crop confirmation with visual feedback
-  - Error handling with toast notifications for failed crops
-- **Larger Employee Photos**: Increased employee photo size in cards from default to 80px (h-20 w-20)
-  - Improved visibility and professional appearance
-  - Larger initials fallback text (text-2xl) when no photo is uploaded
-- **Enhanced User Experience**: 
-  - Preview cropped image before finalizing
-  - Cancel option to restart crop process
-  - Seamless integration with existing upload flow
-
-### Employee Photo Upload and Document Viewing Enhancement
-- **Employee Photo Field**: Added `photo` field to Employee schema to store employee profile pictures
-- **Photo Upload UI**: Implemented photo upload functionality with live preview in both create and edit employee forms
-  - Image preview shown as circular thumbnail with remove option
-  - Accepts any image format (jpg, png, etc.)
-  - Base64 encoding for seamless storage
-- **Employee Card Display**: Employee photos now display in employee cards and detail views
-  - Falls back to initials avatar when no photo is uploaded
-- **Document Upload Enhancement**: Multiple PDF document upload already implemented, now verified working correctly
-- **Document Viewing Fix**: Fixed blank screen issue when viewing uploaded PDFs
-  - Created dedicated document viewer dialog with embedded iframe
-  - PDFs now display properly in modal instead of opening blank tabs
-  - Each document accessible via clickable button in employee details view
-- **Role Selection Fix**: Changed role field from free text to dropdown with predefined values to prevent validation errors
-  - Valid roles: Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff
-
-### Mongoose Warning Fix
-- **Fixed Mongoose Reserved Keyword Issue**: Renamed `isNew` field to `isNewVehicle` throughout the entire codebase to eliminate Mongoose warning about reserved keywords
-- **Files Updated**: RegistrationVehicle model, insertVehicleSchema validation, CustomerRegistration form (including form defaults, watchers, and mutation payload)
-- **Testing**: Verified all references updated correctly with no residual `isNew` usage; application runs without warnings
-
-### Complete Activity Tracking System
-- **ActivityLog Model**: Comprehensive activity logging system to track all user actions with fields for user info, action type, resource, description, and timestamps
-- **Admin Dashboard Integration**: ActivityFeed component in admin dashboard shows real-time activity from all roles (Inventory Manager, Sales Executive, HR Manager, Service Staff)
-- **Complete Activity Logging Implementation**: ALL CRUD operations now logged automatically:
-  - User login/logout
-  - **Employees**: create, update, delete
-  - **Products**: create, update, delete
-  - **Orders**: create
-  - **Service Visits**: create, update, delete
-  - **Suppliers**: create, update, delete
-  - **Purchase Orders**: create, update
-- **Visual Design**: Activity feed includes role-based badge colors (Admin=purple, HR Manager=orange, Inventory Manager=blue, etc.), action-based indicators (create=green, update=blue, delete=red, login=purple), resource icons, and "time ago" formatting
-- **Error Message Fix**: Login errors now show actual error messages (e.g., "Invalid credentials") instead of misleading "session expired" message
-- **API Endpoints**: 
-  - GET /api/activity-logs - Fetch activities with filtering by role, resource, and date range
-  - POST /api/activity-logs - Create new activity logs
-- **User Experience**: ActivityFeed component includes proper loading, error, and empty states
-
-### Image Upload Enhancement
-- **Increased Payload Limit**: Increased Express body parser limit from 100KB to 50MB to support larger image uploads
-- **Applies to**: Vehicle photos, service visit before/after images, product images, and all other image uploads throughout the application
-- **Fixed**: "PayloadTooLargeError" that was preventing larger images from being uploaded
-
-### Customer Referral Tracking Feature
-- **Referral Source Field**: Added a new `referralSource` field to the customer registration form to track where customers heard about the business (Facebook, Instagram, WhatsApp, Google Search, Friend/Family Referral, Billboard/Hoarding, Newspaper/Magazine, Radio/TV, Direct Visit, Other)
-- **Database Schema Update**: Updated `RegistrationCustomer` MongoDB model to include optional `referralSource` field
-- **Form Enhancement**: Added dropdown selection in customer registration form with predefined referral sources
-
-### Employee Management System Updates
-- **Database Cleanup**: All employees, customers, and service visits were cleared from MongoDB for fresh testing
-- **Employee Schema Enhancement**: Added `department` and `salary` fields to the Employee model to match UI requirements
-- **TypeScript Improvements**: Added proper Employee interface with type safety throughout the Employees.tsx component
-- **Bug Fixes**: 
-  - Fixed critical null-reference errors in edit functionality for employees with missing salary/department data
-  - Fixed React warning about missing keys in Dashboard customer list by using correct field names (`id` instead of `_id`, `fullName` instead of `name`, `mobileNumber` instead of `phone`)
-- **Test Data**: Added sample employee (John Doe - Service Staff), customer (Rajesh Kumar), and service visit for verification
-
 ## System Architecture
 
 ### Frontend Architecture
-The frontend is built with **React (18+)** and **Vite** for a fast SPA experience, utilizing **TypeScript** for type safety and **Wouter** for client-side routing. **TanStack Query** manages server state with caching and optimistic updates. The UI uses **Shadcn/ui** components based on **Radix UI primitives** and styled with **Tailwind CSS**, following a dark-mode-first, information-dense design inspired by professional dashboards. It includes a custom theme provider for light/dark modes and uses custom hooks for shared functionalities. A consistent aesthetic is maintained with thick orange borders and gradient backgrounds for cards and vehicle images, enhancing visibility across both light and dark modes.
+The frontend is built with **React (18+)** and **Vite**, utilizing **TypeScript** for type safety and **Wouter** for client-side routing. **TanStack Query** manages server state. The UI uses **Shadcn/ui** components based on **Radix UI primitives** and styled with **Tailwind CSS**, following a dark-mode-first, information-dense design. It includes a custom theme provider, custom hooks, and maintains a consistent aesthetic with thick orange borders and gradient backgrounds for cards and vehicle images. Features include WhatsApp-style image cropping for employee photos and enhanced customer details displays.
 
 ### Backend Architecture
-The backend is an **Express.js** RESTful API server, written in **TypeScript**. It features a middleware-based request processing system for logging, error handling, and JSON parsing. API endpoints follow resource-based patterns for CRUD operations on all major entities.
+The backend is an **Express.js** RESTful API server, written in **TypeScript**. It features a middleware-based request processing system for logging, error handling, and JSON parsing. API endpoints follow resource-based patterns for CRUD operations. An inactivity timeout system automatically logs out non-admin users after 30 minutes.
 
 ### Database Layer
-The application exclusively uses **MongoDB** as the sole database with **Mongoose ODM** for flexible NoSQL document storage. A singleton pattern is used for connection management. Schema designs incorporate validation, hooks, virtual fields, and reference-based relationships.
+The application exclusively uses **MongoDB** with **Mongoose ODM**. A singleton pattern manages the connection. Schema designs incorporate validation, hooks, virtual fields, and reference-based relationships.
 
 ### Data Models & Schemas
-Core entities include Product (with multi-image support, variants, barcode, compatibility, warranty, and detailed inventory tracking), RegistrationCustomer, RegistrationVehicle, Employee, ServiceVisit (with before/after image support), Order, enhanced InventoryTransaction, ProductReturn, Supplier, PurchaseOrder, Attendance, Leave, Task, CommunicationLog, and Feedback.
-The **Customer Registration System** (MongoDB/Mongoose) includes:
-- **RegistrationCustomer Collection**: Stores comprehensive customer data with personal info, address details, verification status, OTP management, and auto-generated reference codes (CUST-{StateCode}-{Counter}).
-- **RegistrationVehicle Collection**: Stores vehicle details linked to customers, including vehicle number (optional for new vehicles), brand, model (with dynamic selection and "Other" for custom models), year, photo, chassis number (for new vehicles), and `selectedParts` for service planning.
-**Zod** is used for validation schemas for `RegistrationCustomer` and `RegistrationVehicle` to ensure data integrity.
+Core entities include Product (with multi-image support, variants, barcode, compatibility, warranty, and detailed inventory tracking), RegistrationCustomer (with referral source tracking and auto-generated IDs), RegistrationVehicle (linked to customers, with dynamic fields like selected parts and chassis numbers), Employee (with auto-generated IDs, photo upload, status management, and performance logs), ServiceVisit (with before/after image support), Order, InventoryTransaction, ProductReturn, Supplier, PurchaseOrder, Attendance, Leave, Task, CommunicationLog, and Feedback. **Zod** is used for validation schemas for `RegistrationCustomer` and `RegistrationVehicle`. The `isNew` field was renamed to `isNewVehicle` to resolve Mongoose warnings.
 
 ### Authentication & Authorization
-The system uses **session-based authentication** with Express sessions and secure HTTP-only cookies. Password hashing is handled by **bcryptjs**. **Role-Based Access Control (RBAC)** defines five distinct roles: Admin, Inventory Manager, Sales Executive, HR Manager, and Service Staff, each with granular permissions enforced via middleware and frontend checks. Two-step OTP verification is implemented for login, currently using a dummy OTP for development.
+The system uses **session-based authentication** with Express sessions and secure HTTP-only cookies. Password hashing is handled by **bcryptjs**. **Role-Based Access Control (RBAC)** defines five distinct roles: Admin, Inventory Manager, Sales Executive, HR Manager, and Service Staff, each with granular permissions. Two-step OTP verification is implemented for login.
 
 ### UI/UX Decisions
-- **Global Card Styling**: All cards throughout the application feature a consistent `border-2 border-orange-300 dark:border-orange-700` for enhanced visibility and branding.
-- **Vehicle Image Styling**: Vehicle images consistently use `border-2 border-orange-300 dark:border-orange-700`, `object-contain` for full image display, and gradient backgrounds (`from-orange-50 to-yellow-50`) for visual consistency.
-- **Responsive Layouts**: Customer registration dashboard uses a responsive card layout (1/2/3 columns) instead of a table view.
-- **Enhanced Forms**: Conditional form fields (e.g., vehicle number only for used vehicles, custom model field only when "Other" is selected) and dynamic dropdowns (e.g., model selection based on brand) improve user experience.
-- **Image Uploads**: Service visit dialogs and vehicle photo fields support image uploads with live previews, base64 encoding, and strict validation.
+Global card styling features `border-2 border-orange-300 dark:border-orange-700`. Vehicle images use `border-2 border-orange-300 dark:border-orange-700`, `object-contain`, and gradient backgrounds. Responsive layouts are used for dashboards. Forms feature conditional fields and dynamic dropdowns. Image uploads have live previews, base64 encoding, and validation. Employee photo sizes are increased, and documents are viewed in a dedicated viewer.
+
+### Complete Activity Tracking System
+A comprehensive activity logging system tracks all user actions (CRUD operations on Employees, Products, Orders, Service Visits, Suppliers, Purchase Orders, and user login/logout) with an `ActivityLog` model. An `ActivityFeed` component in the admin dashboard displays real-time activities with role-based badge colors, action-based indicators, resource icons, and "time ago" formatting. API endpoints for fetching and creating activity logs are provided.
 
 ## External Dependencies
 
-- **Database**: MongoDB (via Mongoose)
-- **UI Components**: Radix UI, Shadcn/ui, Tailwind CSS, Lucide React (icons)
-- **State & Data Management**: TanStack Query, React Hook Form, Zod
-- **Date & Time**: date-fns
-- **Development Tools**: Vite, esbuild, TypeScript
-- **Deployment**: Vercel
-- **Security**: bcryptjs
+-   **Database**: MongoDB (via Mongoose)
+-   **UI Components**: Radix UI, Shadcn/ui, Tailwind CSS, Lucide React
+-   **State & Data Management**: TanStack Query, React Hook Form, Zod
+-   **Date & Time**: date-fns
+-   **Development Tools**: Vite, esbuild, TypeScript
+-   **Deployment**: Vercel
+-   **Security**: bcryptjs
