@@ -7,7 +7,20 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 16, 2025)
-### WhatsApp-Style Image Cropping for Employee Photos (Latest)
+### Customer Details Dialog Enhancement (Latest)
+- **Complete Field Display**: Customer details dialog now shows ALL customer and vehicle information
+  - **Customer Fields**: Added referral source and verification status badge to customer information section
+  - **Vehicle Fields**: Enhanced vehicle details to show:
+    - Vehicle Type badge (New Vehicle / Used Vehicle)
+    - Vehicle Number (for used vehicles)
+    - Brand and Model (with custom model name in parentheses if "Other" was selected)
+    - Year of Purchase
+    - Chassis Number (displayed only for new vehicles)
+    - Selected Parts (displayed as badge array when parts are selected)
+- **Conditional Rendering**: All fields properly conditionally rendered - only shown when data exists
+- **Better Organization**: Vehicle details reorganized in clean grid layout with logical grouping
+
+### WhatsApp-Style Image Cropping for Employee Photos
 - **Image Cropping Feature**: Implemented WhatsApp-style image cropping for employee photos using react-easy-crop library
   - Users can now crop and zoom employee photos before saving
   - Circular crop shape matches profile photo display
