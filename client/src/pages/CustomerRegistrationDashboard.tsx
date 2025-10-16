@@ -69,11 +69,14 @@ interface Customer {
 
 interface Vehicle {
   id: string;
+  vehicleId: string;
   customerId: string;
   vehicleNumber: string;
   vehicleBrand: string;
   vehicleModel: string;
   customModel?: string | null;
+  variant?: 'Top' | 'Base' | null;
+  color?: string | null;
   yearOfPurchase: number | null;
   vehiclePhoto: string;
   isNewVehicle: boolean;
@@ -748,6 +751,10 @@ export default function CustomerRegistrationDashboard() {
                             <div className="flex-1 space-y-3">
                               <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
+                                  <span className="text-muted-foreground">Vehicle ID:</span>
+                                  <p className="font-medium text-orange-600 dark:text-orange-400" data-testid={`text-vehicle-id-${vehicle.id}`}>{vehicle.vehicleId}</p>
+                                </div>
+                                <div>
                                   <span className="text-muted-foreground">Vehicle Type:</span>
                                   <div className="mt-1">
                                     <Badge variant={vehicle.isNewVehicle ? "default" : "secondary"}>
@@ -766,6 +773,14 @@ export default function CustomerRegistrationDashboard() {
                                 <div>
                                   <span className="text-muted-foreground">Model:</span>
                                   <p className="font-medium">{vehicle.vehicleModel}{vehicle.customModel ? ` (${vehicle.customModel})` : ''}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Variant:</span>
+                                  <p className="font-medium" data-testid={`text-variant-${vehicle.id}`}>{vehicle.variant || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Color:</span>
+                                  <p className="font-medium" data-testid={`text-color-${vehicle.id}`}>{vehicle.color || 'N/A'}</p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Year of Purchase:</span>
