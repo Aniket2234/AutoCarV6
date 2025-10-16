@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Search, User, X, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -17,6 +18,7 @@ import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 interface Employee {
   _id: string;
+  employeeId?: string;
   name: string;
   role: string;
   contact: string;
@@ -265,6 +267,15 @@ export default function Employees() {
     if (confirm('Are you sure you want to delete this employee?')) {
       deleteEmployeeMutation.mutate(id);
     }
+  };
+
+  const handleToggleActive = (employee: Employee) => {
+    updateEmployeeMutation.mutate({
+      id: employee._id,
+      data: {
+        isActive: !employee.isActive
+      }
+    });
   };
 
   const filteredEmployees = employees.filter((emp: Employee) =>
@@ -565,6 +576,9 @@ export default function Employees() {
                   <div className="flex-1">
                     <CardTitle className="text-lg">{employee.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{employee.role}</p>
+                    {employee.employeeId && (
+                      <p className="text-xs text-muted-foreground mt-1" data-testid={`text-employeeid-${employee._id}`}>ID: {employee.employeeId}</p>
+                    )}
                   </div>
                   {employee.isActive ? (
                     <Badge variant="default" data-testid={`status-active-${employee._id}`}>Active</Badge>
@@ -574,6 +588,23 @@ export default function Employees() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <p className="text-sm">{employee.isActive ? 'Active' : 'Inactive'}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`toggle-active-${employee._id}`} className="text-xs">
+                      Mark as {employee.isActive ? 'Inactive' : 'Active'}
+                    </Label>
+                    <Switch
+                      id={`toggle-active-${employee._id}`}
+                      checked={employee.isActive}
+                      onCheckedChange={() => handleToggleActive(employee)}
+                      data-testid={`toggle-active-${employee._id}`}
+                    />
+                  </div>
+                </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Contact</p>
                   <p className="text-sm">{employee.contact}</p>

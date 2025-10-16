@@ -16,6 +16,7 @@ import { Task } from "./models/Task";
 import { CommunicationLog } from "./models/CommunicationLog";
 import { Feedback } from "./models/Feedback";
 import { ActivityLog } from "./models/ActivityLog";
+import { PerformanceLog } from "./models/PerformanceLog";
 import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notifyPaymentOverdue, notifyPaymentDue } from "./utils/notifications";
 import { logActivity } from "./utils/activityLogger";
 import { User } from "./models/User";
@@ -340,6 +341,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to delete employee" });
+    }
+  });
+
+  // Performance Log endpoints
+  app.get("/api/performance-logs", requireAuth, requirePermission('employees', 'read'), async (req, res) => {
+    try {
+      const { employeeId, month, year } = req.query;
+      const filter: any = {};
+      
+      if (employeeId) filter.employeeId = employeeId;
+      if (month) filter.month = parseInt(month as string);
+      if (year) filter.year = parseInt(year as string);
+      
+      const logs = await PerformanceLog.find(filter)
+        .populate('employeeId')
+        .sort({ year: -1, month: -1 });
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch performance logs" });
+    }
+  });
+
+  app.post("/api/performance-logs/generate", requireAuth, requirePermission('employees', 'update'), async (req, res) => {
+    try {
+      const { month, year } = req.body;
+      const targetMonth = month || new Date().getMonth() + 1;
+      const targetYear = year || new Date().getFullYear();
+      
+      const employees = await Employee.find({ isActive: true });
+      const logs = [];
+      
+      for (const employee of employees) {
+        const existingLog = await PerformanceLog.findOne({
+          employeeId: employee._id,
+          month: targetMonth,
+          year: targetYear
+        });
+        
+        if (existingLog) continue;
+        
+        const startDate = new Date(targetYear, targetMonth - 1, 1);
+        const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+        
+        const salesData = await Order.aggregate([
+          { 
+            $match: { 
+              salespersonId: employee._id,
+              createdAt: { $gte: startDate, $lte: endDate }
+            } 
+          },
+          {
+            $group: {
+              _id: null,
+              totalSales: { $sum: '$total' },
+              orderCount: { $sum: 1 },
+              avgOrderValue: { $avg: '$total' }
+            }
+          }
+        ]);
+        
+        const attendanceData = await Attendance.aggregate([
+          {
+            $match: {
+              employeeId: employee._id,
+              date: { $gte: startDate, $lte: endDate }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalDays: { $sum: 1 },
+              presentDays: { 
+                $sum: { 
+                  $cond: [{ $eq: ['$status', 'Present'] }, 1, 0] 
+                } 
+              }
+            }
+          }
+        ]);
+        
+        const tasksData = await Task.countDocuments({
+          assignedTo: employee._id,
+          status: 'Completed',
+          updatedAt: { $gte: startDate, $lte: endDate }
+        });
+        
+        const sales = salesData[0] || { totalSales: 0, orderCount: 0, avgOrderValue: 0 };
+        const attendance = attendanceData[0] || { totalDays: 0, presentDays: 0 };
+        const attendanceRate = attendance.totalDays > 0 ? (attendance.presentDays / attendance.totalDays) * 100 : 0;
+        
+        const performanceScore = Math.round(
+          (sales.totalSales / 100000) * 40 +
+          attendanceRate * 0.3 +
+          (tasksData / 10) * 30
+        );
+        
+        const log = await PerformanceLog.create({
+          employeeId: employee._id,
+          employeeName: employee.name,
+          employeeCode: employee.employeeId,
+          month: targetMonth,
+          year: targetYear,
+          totalSales: sales.totalSales,
+          orderCount: sales.orderCount,
+          avgOrderValue: sales.avgOrderValue,
+          attendanceRate: Math.round(attendanceRate * 100) / 100,
+          tasksCompleted: tasksData,
+          performanceScore: Math.min(performanceScore, 100),
+          createdBy: (req as any).session.userId
+        });
+        
+        logs.push(log);
+      }
+      
+      await logActivity({
+        userId: (req as any).session.userId,
+        userName: (req as any).session.userName,
+        userRole: (req as any).session.userRole,
+        action: 'create',
+        resource: 'employee',
+        description: `Generated ${logs.length} performance logs for ${targetMonth}/${targetYear}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json({ 
+        message: `Generated ${logs.length} performance logs`,
+        logs 
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to generate performance logs" });
     }
   });
 
