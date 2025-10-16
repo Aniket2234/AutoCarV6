@@ -7,7 +7,22 @@ Mauli Car World is a comprehensive full-stack web application for auto repair sh
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 16, 2025)
-### Employee Photo Upload and Document Viewing Enhancement (Latest)
+### WhatsApp-Style Image Cropping for Employee Photos (Latest)
+- **Image Cropping Feature**: Implemented WhatsApp-style image cropping for employee photos using react-easy-crop library
+  - Users can now crop and zoom employee photos before saving
+  - Circular crop shape matches profile photo display
+  - Intuitive zoom slider (1x to 3x) for fine-tuning
+  - Crop confirmation with visual feedback
+  - Error handling with toast notifications for failed crops
+- **Larger Employee Photos**: Increased employee photo size in cards from default to 80px (h-20 w-20)
+  - Improved visibility and professional appearance
+  - Larger initials fallback text (text-2xl) when no photo is uploaded
+- **Enhanced User Experience**: 
+  - Preview cropped image before finalizing
+  - Cancel option to restart crop process
+  - Seamless integration with existing upload flow
+
+### Employee Photo Upload and Document Viewing Enhancement
 - **Employee Photo Field**: Added `photo` field to Employee schema to store employee profile pictures
 - **Photo Upload UI**: Implemented photo upload functionality with live preview in both create and edit employee forms
   - Image preview shown as circular thumbnail with remove option
