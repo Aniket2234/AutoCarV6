@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ServiceWorkflowCard } from "@/components/ServiceWorkflowCard";
+import { InvoiceGenerationDialog } from "@/components/InvoiceGenerationDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Wrench, Edit, X } from "lucide-react";
+import { Plus, Wrench, Edit, X, Receipt } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistance } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ export default function ServiceVisits() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedHandlers, setSelectedHandlers] = useState<string[]>([]);
@@ -210,25 +212,131 @@ export default function ServiceVisits() {
     });
   };
 
-  const handleBeforeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const compressImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a valid image file (PNG, JPEG, GIF, WebP)",
+          variant: "destructive",
+        });
+        reject(new Error('Please select a valid image file'));
+        return;
+      }
+
+      const fileSizeInMB = file.size / (1024 * 1024);
+      
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setBeforeImages([...beforeImages, reader.result as string]);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const maxDimension = fileSizeInMB > 5 ? 1280 : 1920;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height * maxDimension) / width;
+              width = maxDimension;
+            } else {
+              width = (width * maxDimension) / height;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          let quality = 0.8;
+          if (fileSizeInMB > 10) {
+            quality = 0.5;
+          } else if (fileSizeInMB > 5) {
+            quality = 0.6;
+          } else if (fileSizeInMB > 2) {
+            quality = 0.7;
+          }
+          
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          
+          const compressedSizeInMB = (compressedDataUrl.length * 0.75) / (1024 * 1024);
+          
+          if (compressedSizeInMB > 15) {
+            toast({
+              title: "Image still too large",
+              description: "Image is too large even after maximum compression. Please use a smaller image",
+              variant: "destructive",
+            });
+            reject(new Error('Image too large after compression'));
+            return;
+          }
+          
+          const savedSize = fileSizeInMB - compressedSizeInMB;
+          if (savedSize > 1) {
+            toast({
+              title: "Image compressed",
+              description: `Compressed from ${fileSizeInMB.toFixed(1)}MB to ${compressedSizeInMB.toFixed(1)}MB`,
+            });
+          }
+          
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          toast({
+            title: "Failed to load image",
+            description: "Unable to process the image file",
+            variant: "destructive",
+          });
+          reject(new Error('Failed to load image'));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Failed to read file",
+          description: "Unable to read the selected file",
+          variant: "destructive",
+        });
+        reject(new Error('Failed to read file'));
       };
       reader.readAsDataURL(file);
+    });
+  };
+
+  const handleBeforeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedImage = await compressImage(file);
+        setBeforeImages([...beforeImages, compressedImage]);
+        toast({
+          title: "Image added",
+          description: "Before image uploaded successfully",
+        });
+      } catch (error) {
+        console.error('Image upload error:', error);
+      }
+      e.target.value = '';
     }
   };
 
-  const handleAfterImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAfterImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAfterImages([...afterImages, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedImage = await compressImage(file);
+        setAfterImages([...afterImages, compressedImage]);
+        toast({
+          title: "Image added",
+          description: "After image uploaded successfully",
+        });
+      } catch (error) {
+        console.error('Image upload error:', error);
+      }
+      e.target.value = '';
     }
   };
 
@@ -671,24 +779,41 @@ export default function ServiceVisits() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsViewDialogOpen(false)}
-                  data-testid="button-close-view"
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsViewDialogOpen(false);
-                    handleEditService(selectedService);
-                  }}
-                  data-testid="button-edit-from-view"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Service
-                </Button>
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                <div className="flex gap-2">
+                  {selectedService?.status === 'completed' && hasPermission(user, 'invoices', 'create') && (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        setIsViewDialogOpen(false);
+                        setIsInvoiceDialogOpen(true);
+                      }}
+                      data-testid="button-generate-invoice"
+                    >
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Generate Invoice
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsViewDialogOpen(false)}
+                    data-testid="button-close-view"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsViewDialogOpen(false);
+                      handleEditService(selectedService);
+                    }}
+                    data-testid="button-edit-from-view"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Service
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -927,6 +1052,14 @@ export default function ServiceVisits() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {selectedService && (
+        <InvoiceGenerationDialog
+          open={isInvoiceDialogOpen}
+          onOpenChange={setIsInvoiceDialogOpen}
+          serviceVisit={selectedService}
+        />
+      )}
     </div>
   );
 }

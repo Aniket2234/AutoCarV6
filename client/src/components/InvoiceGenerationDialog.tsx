@@ -105,12 +105,14 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
   }, [items, couponValidation, taxRate]);
 
   const validateCouponMutation = useMutation({
-    mutationFn: (code: string) =>
-      apiRequest('/api/coupons/validate', 'POST', {
+    mutationFn: async (code: string) => {
+      const response = await apiRequest('POST', '/api/coupons/validate', {
         code,
         customerId: serviceVisit.customerId._id,
         purchaseAmount: calculatedTotals.subtotal,
-      }),
+      });
+      return response.json();
+    },
     onSuccess: (data: any) => {
       setCouponValidation(data);
       toast({ title: "Coupon applied successfully", description: `Discount: ₹${data.coupon.discountAmount}` });
@@ -122,11 +124,13 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
   });
 
   const createInvoiceMutation = useMutation({
-    mutationFn: (data: InvoiceFormValues) =>
-      apiRequest('/api/invoices/from-service-visit', 'POST', {
+    mutationFn: async (data: InvoiceFormValues) => {
+      const response = await apiRequest('POST', '/api/invoices/from-service-visit', {
         serviceVisitId: serviceVisit._id,
         ...data,
-      }),
+      });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       queryClient.invalidateQueries({ queryKey: ['/api/service-visits'] });
