@@ -41,6 +41,9 @@ export const ROLE_PERMISSIONS = {
     employees: ['read', 'create', 'update', 'delete'],
     customers: ['read', 'create', 'update', 'delete'],
     orders: ['read', 'create', 'update', 'delete'],
+    invoices: ['read', 'create', 'update', 'delete', 'approve', 'reject'],
+    coupons: ['read', 'create', 'update', 'delete'],
+    warranties: ['read', 'create', 'update', 'delete'],
     reports: ['read'],
     notifications: ['read', 'update'],
     users: ['read', 'create', 'update', 'delete'],
@@ -59,6 +62,8 @@ export const ROLE_PERMISSIONS = {
   'Sales Executive': {
     customers: ['read', 'create', 'update', 'delete'],
     orders: ['read', 'create', 'update', 'delete'],
+    invoices: ['read', 'create'],
+    warranties: ['read', 'create'],
   },
   'HR Manager': {
     employees: ['read', 'create', 'update', 'delete'],

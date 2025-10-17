@@ -26,6 +26,10 @@ import { requireAuth, requireRole, attachUser, requirePermission } from "./middl
 import { insertCustomerSchema, insertVehicleSchema } from "./schemas";
 import { RegistrationCustomer } from "./models/RegistrationCustomer";
 import { RegistrationVehicle } from "./models/RegistrationVehicle";
+import { Invoice } from "./models/Invoice";
+import { Coupon } from "./models/Coupon";
+import { Warranty } from "./models/Warranty";
+import { sendInvoiceNotifications } from "./utils/invoiceNotifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
@@ -2254,6 +2258,514 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Migration failed" });
+    }
+  });
+
+  // ==================== INVOICES ====================
+  
+  // Get all invoices
+  app.get("/api/invoices", requireAuth, requirePermission('invoices', 'read'), async (req, res) => {
+    try {
+      const { status, paymentStatus, customerId, fromDate, toDate } = req.query;
+      const userRole = (req as any).session.userRole;
+      const userId = (req as any).session.userId;
+      
+      let query: any = {};
+      
+      // Sales Executive can only see their own invoices
+      if (userRole === 'Sales Executive') {
+        query.createdBy = userId;
+      }
+      
+      if (status) {
+        query.status = status;
+      }
+      
+      if (paymentStatus) {
+        query.paymentStatus = paymentStatus;
+      }
+      
+      if (customerId) {
+        query.customerId = customerId;
+      }
+      
+      if (fromDate || toDate) {
+        query.createdAt = {};
+        if (fromDate) query.createdAt.$gte = new Date(fromDate as string);
+        if (toDate) query.createdAt.$lte = new Date(toDate as string);
+      }
+      
+      const invoices = await Invoice.find(query)
+        .populate('customerId', 'fullName mobileNumber email')
+        .populate('createdBy', 'name email')
+        .populate('salesExecutiveId', 'name')
+        .populate('approvalStatus.approvedBy', 'name')
+        .populate('approvalStatus.rejectedBy', 'name')
+        .sort({ createdAt: -1 })
+        .lean();
+      
+      res.json(invoices);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch invoices" });
+    }
+  });
+  
+  // Get single invoice
+  app.get("/api/invoices/:id", requireAuth, requirePermission('invoices', 'read'), async (req, res) => {
+    try {
+      const invoice = await Invoice.findById(req.params.id)
+        .populate('customerId')
+        .populate('createdBy', 'name email')
+        .populate('salesExecutiveId', 'name')
+        .populate('serviceVisitId')
+        .populate('orderId')
+        .populate('items.productId')
+        .populate('approvalStatus.approvedBy', 'name')
+        .populate('approvalStatus.rejectedBy', 'name')
+        .lean();
+      
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch invoice" });
+    }
+  });
+  
+  // Create invoice from service visit
+  app.post("/api/invoices/from-service-visit", requireAuth, requirePermission('invoices', 'create'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const { 
+        serviceVisitId, 
+        items, 
+        couponCode,
+        taxRate = 18,
+        notes,
+        terms
+      } = req.body;
+      
+      // Fetch service visit
+      const serviceVisit = await ServiceVisit.findById(serviceVisitId).populate('customerId');
+      if (!serviceVisit) {
+        return res.status(404).json({ error: "Service visit not found" });
+      }
+      
+      if (serviceVisit.status !== 'completed') {
+        return res.status(400).json({ error: "Can only generate invoice for completed service visits" });
+      }
+      
+      // Calculate subtotal
+      const subtotal = items.reduce((sum: number, item: any) => sum + item.total, 0);
+      
+      // Apply coupon if provided
+      let discountAmount = 0;
+      let couponId = null;
+      let discountType = 'none';
+      let discountValue = 0;
+      
+      if (couponCode) {
+        const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+        if (coupon) {
+          const validation = coupon.isValid(serviceVisit.customerId._id.toString(), subtotal);
+          if (validation.valid) {
+            discountAmount = coupon.calculateDiscount(subtotal);
+            couponId = coupon._id;
+            discountType = coupon.discountType;
+            discountValue = coupon.discountValue;
+          }
+        }
+      }
+      
+      // Calculate tax and total
+      const amountAfterDiscount = subtotal - discountAmount;
+      const taxAmount = (amountAfterDiscount * taxRate) / 100;
+      const totalAmount = amountAfterDiscount + taxAmount;
+      
+      // Create invoice
+      const invoice = await Invoice.create({
+        serviceVisitId,
+        customerId: serviceVisit.customerId._id,
+        customerName: serviceVisit.customerId.fullName,
+        customerEmail: serviceVisit.customerId.email,
+        customerPhone: serviceVisit.customerId.mobileNumber,
+        items,
+        subtotal,
+        discountType,
+        discountValue,
+        discountAmount,
+        couponCode: couponCode?.toUpperCase(),
+        couponId,
+        taxRate,
+        taxAmount,
+        totalAmount,
+        dueAmount: totalAmount,
+        createdBy: userId,
+        status: 'pending_approval',
+        notes,
+        terms
+      });
+      
+      // Update coupon usage if applicable
+      if (couponId) {
+        await Coupon.findByIdAndUpdate(couponId, {
+          $inc: { usedCount: 1 },
+          $push: {
+            usageHistory: {
+              invoiceId: invoice._id,
+              customerId: serviceVisit.customerId._id,
+              discountApplied: discountAmount
+            }
+          }
+        });
+      }
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'create',
+        resource: 'other',
+        resourceId: invoice._id.toString(),
+        description: `Created invoice ${invoice.invoiceNumber} for ${serviceVisit.customerId.fullName}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(invoice);
+    } catch (error) {
+      console.error('Invoice creation error:', error);
+      res.status(500).json({ error: "Failed to create invoice" });
+    }
+  });
+  
+  // Approve invoice
+  app.post("/api/invoices/:id/approve", requireAuth, requirePermission('invoices', 'approve'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const invoice = await Invoice.findById(req.params.id).populate('customerId');
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      if (invoice.status !== 'pending_approval') {
+        return res.status(400).json({ error: "Invoice is not pending approval" });
+      }
+      
+      invoice.status = 'approved';
+      invoice.approvalStatus = {
+        approvedBy: userId,
+        approvedAt: new Date()
+      } as any;
+      
+      await invoice.save();
+      
+      // Create warranties for items that have warranty enabled
+      const warrantyPromises = invoice.items
+        .filter((item: any) => item.hasWarranty && item.type === 'product')
+        .map(async (item: any) => {
+          const product = await Product.findById(item.productId);
+          if (!product || !product.warranty) return null;
+
+          const durationMonths = parseInt(product.warranty.match(/\d+/)?.[0] || '12');
+          const startDate = new Date();
+          const endDate = new Date(startDate);
+          endDate.setMonth(endDate.getMonth() + durationMonths);
+
+          return Warranty.create({
+            invoiceId: invoice._id,
+            customerId: invoice.customerId,
+            productId: item.productId,
+            productName: item.name,
+            warrantyType: 'manufacturer',
+            durationMonths,
+            startDate,
+            endDate,
+            coverage: product.warranty,
+            status: 'active'
+          });
+        });
+
+      await Promise.all(warrantyPromises);
+      
+      // Send WhatsApp and Email notifications with PDF (stub implementation)
+      await sendInvoiceNotifications(invoice);
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'approve',
+        resource: 'other',
+        resourceId: invoice._id.toString(),
+        description: `Approved invoice ${invoice.invoiceNumber}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve invoice" });
+    }
+  });
+  
+  // Reject invoice
+  app.post("/api/invoices/:id/reject", requireAuth, requirePermission('invoices', 'reject'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      const { reason } = req.body;
+      
+      const invoice = await Invoice.findById(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      if (invoice.status !== 'pending_approval') {
+        return res.status(400).json({ error: "Invoice is not pending approval" });
+      }
+      
+      invoice.status = 'rejected';
+      invoice.approvalStatus = {
+        rejectedBy: userId,
+        rejectedAt: new Date(),
+        rejectionReason: reason
+      } as any;
+      
+      await invoice.save();
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'reject',
+        resource: 'other',
+        resourceId: invoice._id.toString(),
+        description: `Rejected invoice ${invoice.invoiceNumber}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject invoice" });
+    }
+  });
+  
+  // Add payment to invoice
+  app.post("/api/invoices/:id/payments", requireAuth, requirePermission('invoices', 'update'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const { amount, paymentMode, transactionId, notes } = req.body;
+      
+      const invoice = await Invoice.findById(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      if (invoice.status !== 'approved') {
+        return res.status(400).json({ error: "Can only add payments to approved invoices" });
+      }
+      
+      if (amount > invoice.dueAmount) {
+        return res.status(400).json({ error: "Payment amount exceeds due amount" });
+      }
+      
+      const payment = {
+        amount,
+        paymentMode,
+        transactionId,
+        notes,
+        recordedBy: userId,
+        transactionDate: new Date()
+      };
+      
+      invoice.payments.push(payment as any);
+      invoice.paidAmount += amount;
+      invoice.dueAmount -= amount;
+      
+      if (invoice.dueAmount === 0) {
+        invoice.paymentStatus = 'paid';
+      } else if (invoice.paidAmount > 0) {
+        invoice.paymentStatus = 'partial';
+      }
+      
+      await invoice.save();
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'update',
+        resource: 'other',
+        resourceId: invoice._id.toString(),
+        description: `Recorded payment of ₹${amount} for invoice ${invoice.invoiceNumber}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add payment" });
+    }
+  });
+  
+  // ==================== COUPONS ====================
+  
+  // Get all coupons
+  app.get("/api/coupons", requireAuth, requirePermission('coupons', 'read'), async (req, res) => {
+    try {
+      const coupons = await Coupon.find()
+        .populate('createdBy', 'name')
+        .sort({ createdAt: -1 })
+        .lean();
+      
+      res.json(coupons);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch coupons" });
+    }
+  });
+  
+  // Validate coupon
+  app.post("/api/coupons/validate", requireAuth, async (req, res) => {
+    try {
+      const { code, customerId, purchaseAmount } = req.body;
+      
+      const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+      if (!coupon) {
+        return res.status(404).json({ error: "Coupon not found" });
+      }
+      
+      const validation = coupon.isValid(customerId, purchaseAmount);
+      
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.reason });
+      }
+      
+      const discount = coupon.calculateDiscount(purchaseAmount);
+      
+      res.json({
+        valid: true,
+        coupon: {
+          code: coupon.code,
+          discountType: coupon.discountType,
+          discountValue: coupon.discountValue,
+          discountAmount: discount
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to validate coupon" });
+    }
+  });
+  
+  // Create coupon
+  app.post("/api/coupons", requireAuth, requirePermission('coupons', 'create'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const couponData = {
+        ...req.body,
+        code: req.body.code.toUpperCase(),
+        createdBy: userId
+      };
+      
+      const coupon = await Coupon.create(couponData);
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'create',
+        resource: 'other',
+        resourceId: coupon._id.toString(),
+        description: `Created coupon ${coupon.code}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(coupon);
+    } catch (error: any) {
+      if (error.code === 11000) {
+        return res.status(400).json({ error: "Coupon code already exists" });
+      }
+      res.status(500).json({ error: "Failed to create coupon" });
+    }
+  });
+  
+  // Update coupon
+  app.patch("/api/coupons/:id", requireAuth, requirePermission('coupons', 'update'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const coupon = await Coupon.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+      
+      if (!coupon) {
+        return res.status(404).json({ error: "Coupon not found" });
+      }
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'update',
+        resource: 'other',
+        resourceId: coupon._id.toString(),
+        description: `Updated coupon ${coupon.code}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json(coupon);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update coupon" });
+    }
+  });
+  
+  // ==================== WARRANTIES ====================
+  
+  // Get warranties
+  app.get("/api/warranties", requireAuth, requirePermission('warranties', 'read'), async (req, res) => {
+    try {
+      const { status, customerId } = req.query;
+      
+      let query: any = {};
+      if (status) query.status = status;
+      if (customerId) query.customerId = customerId;
+      
+      const warranties = await Warranty.find(query)
+        .populate('customerId', 'fullName mobileNumber')
+        .populate('productId', 'name')
+        .populate('invoiceId', 'invoiceNumber')
+        .sort({ createdAt: -1 })
+        .lean();
+      
+      res.json(warranties);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch warranties" });
+    }
+  });
+  
+  // Create warranty
+  app.post("/api/warranties", requireAuth, requirePermission('warranties', 'create'), async (req, res) => {
+    try {
+      const warranty = await Warranty.create(req.body);
+      res.json(warranty);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create warranty" });
     }
   });
 

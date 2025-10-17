@@ -29,6 +29,7 @@ import Leaves from "@/pages/Leaves";
 import Communications from "@/pages/Communications";
 import CustomerRegistration from "@/pages/CustomerRegistration";
 import CustomerRegistrationDashboard from "@/pages/CustomerRegistrationDashboard";
+import Invoices from "@/pages/Invoices";
 import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const ROUTE_PERMISSIONS: Record<string, { resource: string; action: string } | n
   '/tasks': { resource: 'tasks', action: 'read' },
   '/leaves': { resource: 'leaves', action: 'read' },
   '/communications': { resource: 'communications', action: 'read' },
+  '/invoices': { resource: 'invoices', action: 'read' },
 };
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -149,6 +151,9 @@ function Router() {
       </Route>
       <Route path="/communications">
         {() => <ProtectedRoute component={Communications} />}
+      </Route>
+      <Route path="/invoices">
+        {() => <ProtectedRoute component={Invoices} />}
       </Route>
       <Route path="/register-customer">
         {() => <ProtectedRoute component={CustomerRegistration} />}

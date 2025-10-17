@@ -20,6 +20,7 @@ import {
   MessageSquare,
   UserPlus,
   ListChecks,
+  Receipt,
 } from "lucide-react";
 import logoImage from "@assets/image_1760164042662.png";
 import {
@@ -63,6 +64,7 @@ const mainMenuItems: MenuItem[] = [
   { title: "Inventory", url: "/inventory", icon: Warehouse, permission: { resource: "inventory", action: "read" } },
   { title: "Service Visits", url: "/visits", icon: ClipboardList, permission: { resource: "orders", action: "read" } },
   { title: "Orders", url: "/orders", icon: ShoppingCart, permission: { resource: "orders", action: "read" } },
+  { title: "Invoices", url: "/invoices", icon: Receipt, permission: { resource: "invoices", action: "read" } },
   { title: "Suppliers", url: "/suppliers", icon: Building2, permission: { resource: "suppliers", action: "read" } },
   { title: "Purchase Orders", url: "/purchase-orders", icon: FileText, permission: { resource: "purchaseOrders", action: "read" } },
 ];
