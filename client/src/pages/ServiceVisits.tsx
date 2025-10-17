@@ -32,8 +32,6 @@ export default function ServiceVisits() {
   const [selectedHandlers, setSelectedHandlers] = useState<string[]>([]);
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
   const [afterImages, setAfterImages] = useState<string[]>([]);
-  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
-  const [invoiceDate, setInvoiceDate] = useState<string>("");
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
@@ -81,8 +79,8 @@ export default function ServiceVisits() {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: async ({ id, status, beforeImages, afterImages, invoiceNumber, invoiceDate, handlerIds }: { id: string; status: string; beforeImages?: string[]; afterImages?: string[]; invoiceNumber?: string; invoiceDate?: string; handlerIds?: string[] }) => {
-      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status, beforeImages, afterImages, invoiceNumber, invoiceDate, handlerIds });
+    mutationFn: async ({ id, status, beforeImages, afterImages, handlerIds }: { id: string; status: string; beforeImages?: string[]; afterImages?: string[]; handlerIds?: string[] }) => {
+      const response = await apiRequest('PATCH', `/api/service-visits/${id}`, { status, beforeImages, afterImages, handlerIds });
       return response.json();
     },
     onSuccess: () => {
@@ -156,23 +154,11 @@ export default function ServiceVisits() {
     setSelectedHandlers(service.handlerIds?.map((h: any) => h._id || h) || []);
     setBeforeImages(service.beforeImages || []);
     setAfterImages(service.afterImages || []);
-    setInvoiceNumber(service.invoiceNumber || "");
-    setInvoiceDate(service.invoiceDate ? new Date(service.invoiceDate).toISOString().split('T')[0] : "");
     setIsEditDialogOpen(true);
   };
 
   const handleStatusUpdate = () => {
     if (!selectedService || !selectedStatus) return;
-    
-    // Validate invoice fields when status is completed
-    if (selectedStatus === 'completed' && !invoiceNumber) {
-      toast({
-        title: "Validation Error",
-        description: "Invoice number is required for completed services",
-        variant: "destructive",
-      });
-      return;
-    }
     
     // Validate service handlers
     if (selectedHandlers.length === 0) {
@@ -190,8 +176,6 @@ export default function ServiceVisits() {
     if (selectedStatus === selectedService.status && 
         JSON.stringify(beforeImages) === JSON.stringify(selectedService.beforeImages || []) &&
         JSON.stringify(afterImages) === JSON.stringify(selectedService.afterImages || []) &&
-        invoiceNumber === (selectedService.invoiceNumber || "") &&
-        invoiceDate === (selectedService.invoiceDate ? new Date(selectedService.invoiceDate).toISOString().split('T')[0] : "") &&
         !handlersChanged) {
       toast({
         title: "No Changes",
@@ -206,8 +190,6 @@ export default function ServiceVisits() {
       status: selectedStatus,
       beforeImages,
       afterImages,
-      invoiceNumber: selectedStatus === 'completed' ? invoiceNumber : undefined,
-      invoiceDate: selectedStatus === 'completed' && invoiceDate ? invoiceDate : undefined,
       handlerIds: handlersChanged ? selectedHandlers : undefined,
     });
   };
@@ -912,32 +894,6 @@ export default function ServiceVisits() {
                   </p>
                 )}
               </div>
-
-              {selectedStatus === 'completed' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="invoiceNumber">Invoice Number *</Label>
-                    <Input
-                      id="invoiceNumber"
-                      value={invoiceNumber}
-                      onChange={(e) => setInvoiceNumber(e.target.value)}
-                      placeholder="INV-2024-001"
-                      required
-                      data-testid="input-invoice-number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="invoiceDate">Invoice Date</Label>
-                    <Input
-                      id="invoiceDate"
-                      type="date"
-                      value={invoiceDate}
-                      onChange={(e) => setInvoiceDate(e.target.value)}
-                      data-testid="input-invoice-date"
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">

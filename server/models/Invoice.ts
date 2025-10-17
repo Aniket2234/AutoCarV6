@@ -26,7 +26,7 @@ const paymentEntrySchema = new mongoose.Schema({
 }, { _id: true, timestamps: true });
 
 const invoiceSchema = new mongoose.Schema({
-  invoiceNumber: { type: String, unique: true, required: true },
+  invoiceNumber: { type: String, unique: true },
   
   // Related entities
   serviceVisitId: { type: mongoose.Schema.Types.ObjectId, ref: 'ServiceVisit' },
