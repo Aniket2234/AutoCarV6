@@ -2391,8 +2391,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const taxAmount = (amountAfterDiscount * taxRate) / 100;
       const totalAmount = amountAfterDiscount + taxAmount;
       
-      // Create invoice
-      const invoice = await Invoice.create({
+      // Create invoice (using new + save to trigger pre-save hooks)
+      const invoice = new Invoice({
         serviceVisitId,
         customerId: serviceVisit.customerId._id,
         customerName: serviceVisit.customerId.fullName,
@@ -2414,6 +2414,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes,
         terms
       });
+      
+      await invoice.save();
       
       // Update coupon usage if applicable
       if (couponId) {
