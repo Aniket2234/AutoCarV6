@@ -25,16 +25,49 @@ const paymentEntrySchema = new mongoose.Schema({
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { _id: true, timestamps: true });
 
+const customerDetailsSchema = new mongoose.Schema({
+  referenceCode: { type: String },
+  fullName: { type: String, required: true },
+  mobileNumber: { type: String, required: true },
+  alternativeNumber: { type: String },
+  email: { type: String },
+  address: { type: String },
+  city: { type: String },
+  taluka: { type: String },
+  district: { type: String },
+  state: { type: String },
+  pinCode: { type: String },
+  referralSource: { type: String },
+}, { _id: false });
+
+const vehicleDetailsSchema = new mongoose.Schema({
+  vehicleId: { type: String },
+  vehicleNumber: { type: String },
+  vehicleBrand: { type: String },
+  vehicleModel: { type: String },
+  customModel: { type: String },
+  variant: { type: String },
+  color: { type: String },
+  yearOfPurchase: { type: Number },
+  vehiclePhoto: { type: String },
+  isNewVehicle: { type: Boolean },
+  chassisNumber: { type: String },
+  selectedParts: [{ type: String }],
+}, { _id: false });
+
 const invoiceSchema = new mongoose.Schema({
   invoiceNumber: { type: String, unique: true },
   
-  // Related entities
+  // Related entities (for reference)
   serviceVisitId: { type: mongoose.Schema.Types.ObjectId, ref: 'ServiceVisit' },
   orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'RegistrationCustomer', required: true },
-  customerName: { type: String, required: true },
-  customerEmail: { type: String },
-  customerPhone: { type: String },
+  
+  // Full customer details embedded in invoice
+  customerDetails: { type: customerDetailsSchema, required: true },
+  
+  // Vehicle details (can be single or multiple)
+  vehicleDetails: [vehicleDetailsSchema],
   
   // Items
   items: [invoiceItemSchema],

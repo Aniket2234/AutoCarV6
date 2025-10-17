@@ -2366,6 +2366,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Can only generate invoice for completed service visits" });
       }
       
+      // Fetch all vehicles for this customer
+      const customer = serviceVisit.customerId as any;
+      const vehicles = await RegistrationVehicle.find({ 
+        customerId: customer._id.toString() 
+      }).lean();
+      
+      // Build customer details object
+      const customerDetails = {
+        referenceCode: customer.referenceCode,
+        fullName: customer.fullName,
+        mobileNumber: customer.mobileNumber,
+        alternativeNumber: customer.alternativeNumber,
+        email: customer.email,
+        address: customer.address,
+        city: customer.city,
+        taluka: customer.taluka,
+        district: customer.district,
+        state: customer.state,
+        pinCode: customer.pinCode,
+        referralSource: customer.referralSource,
+      };
+      
+      // Build vehicle details array
+      const vehicleDetails = vehicles.map(vehicle => ({
+        vehicleId: vehicle.vehicleId,
+        vehicleNumber: vehicle.vehicleNumber,
+        vehicleBrand: vehicle.vehicleBrand,
+        vehicleModel: vehicle.vehicleModel,
+        customModel: vehicle.customModel,
+        variant: vehicle.variant,
+        color: vehicle.color,
+        yearOfPurchase: vehicle.yearOfPurchase,
+        vehiclePhoto: vehicle.vehiclePhoto,
+        isNewVehicle: vehicle.isNewVehicle,
+        chassisNumber: vehicle.chassisNumber,
+        selectedParts: vehicle.selectedParts,
+      }));
+      
       // Calculate subtotal
       const subtotal = items.reduce((sum: number, item: any) => sum + item.total, 0);
       
@@ -2378,7 +2416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
         if (coupon) {
-          const validation = coupon.isValid(serviceVisit.customerId._id.toString(), subtotal);
+          const validation = coupon.isValid(customer._id.toString(), subtotal);
           if (validation.valid) {
             discountAmount = coupon.calculateDiscount(subtotal);
             couponId = coupon._id;
@@ -2396,10 +2434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create invoice (using new + save to trigger pre-save hooks)
       const invoice = new Invoice({
         serviceVisitId,
-        customerId: serviceVisit.customerId._id,
-        customerName: serviceVisit.customerId.fullName,
-        customerEmail: serviceVisit.customerId.email,
-        customerPhone: serviceVisit.customerId.mobileNumber,
+        customerId: customer._id,
+        customerDetails,
+        vehicleDetails,
         items,
         subtotal,
         discountType,
@@ -2440,7 +2477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'create',
         resource: 'other',
         resourceId: invoice._id.toString(),
-        description: `Created invoice ${invoice.invoiceNumber} for ${serviceVisit.customerId.fullName}`,
+        description: `Created invoice ${invoice.invoiceNumber} for ${customerDetails.fullName} with ${vehicleDetails.length} vehicle(s)`,
         ipAddress: req.ip,
       });
       
