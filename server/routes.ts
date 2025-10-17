@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import fs from "fs";
 import { connectDB } from "./db";
 import { Product } from "./models/Product";
 import { Employee } from "./models/Employee";
@@ -30,6 +31,7 @@ import { Invoice } from "./models/Invoice";
 import { Coupon } from "./models/Coupon";
 import { Warranty } from "./models/Warranty";
 import { sendInvoiceNotifications } from "./utils/invoiceNotifications";
+import { generateInvoicePDF } from "./utils/generateInvoicePDF";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
@@ -2456,7 +2458,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userName = (req as any).session.userName;
       const userRole = (req as any).session.userRole;
       
-      const invoice = await Invoice.findById(req.params.id).populate('customerId');
+      const invoice = await Invoice.findById(req.params.id)
+        .populate('customerId')
+        .populate('serviceVisitId');
       if (!invoice) {
         return res.status(404).json({ error: "Invoice not found" });
       }
@@ -2472,6 +2476,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } as any;
       
       await invoice.save();
+      
+      // Generate PDF
+      try {
+        const pdfData = {
+          invoiceNumber: invoice.invoiceNumber,
+          createdAt: invoice.createdAt,
+          dueDate: invoice.dueDate,
+          customerName: invoice.customerName,
+          customerEmail: invoice.customerEmail,
+          customerPhone: invoice.customerPhone,
+          vehicleReg: (invoice.serviceVisitId as any)?.vehicleReg,
+          items: invoice.items.map((item: any) => ({
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.total,
+          })),
+          subtotal: invoice.subtotal,
+          discountType: invoice.discountType,
+          discountValue: invoice.discountValue,
+          discountAmount: invoice.discountAmount,
+          taxRate: invoice.taxRate,
+          taxAmount: invoice.taxAmount,
+          totalAmount: invoice.totalAmount,
+          paidAmount: invoice.paidAmount,
+          dueAmount: invoice.dueAmount,
+          notes: invoice.notes,
+          terms: invoice.terms,
+        };
+
+        const pdfPath = await generateInvoicePDF(pdfData);
+        invoice.pdfPath = pdfPath;
+        await invoice.save();
+      } catch (pdfError) {
+        console.error('PDF generation error:', pdfError);
+      }
       
       // Create warranties for items that have warranty enabled
       const warrantyPromises = invoice.items
@@ -2561,6 +2602,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(invoice);
     } catch (error) {
       res.status(500).json({ error: "Failed to reject invoice" });
+    }
+  });
+  
+  // Download invoice PDF
+  app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      const invoice = await Invoice.findById(req.params.id).populate('serviceVisitId');
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      if (invoice.status !== 'approved') {
+        return res.status(400).json({ error: "PDF can only be generated for approved invoices" });
+      }
+      
+      let pdfPath = invoice.pdfPath;
+      
+      if (!pdfPath || !fs.existsSync(pdfPath)) {
+        const pdfData = {
+          invoiceNumber: invoice.invoiceNumber,
+          createdAt: invoice.createdAt,
+          dueDate: invoice.dueDate,
+          customerName: invoice.customerName,
+          customerEmail: invoice.customerEmail,
+          customerPhone: invoice.customerPhone,
+          vehicleReg: (invoice.serviceVisitId as any)?.vehicleReg,
+          items: invoice.items.map((item: any) => ({
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.total,
+          })),
+          subtotal: invoice.subtotal,
+          discountType: invoice.discountType,
+          discountValue: invoice.discountValue,
+          discountAmount: invoice.discountAmount,
+          taxRate: invoice.taxRate,
+          taxAmount: invoice.taxAmount,
+          totalAmount: invoice.totalAmount,
+          paidAmount: invoice.paidAmount,
+          dueAmount: invoice.dueAmount,
+          notes: invoice.notes,
+          terms: invoice.terms,
+        };
+
+        pdfPath = await generateInvoicePDF(pdfData);
+        invoice.pdfPath = pdfPath;
+        await invoice.save();
+      }
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber.replace(/\//g, '_')}.pdf"`);
+      
+      const fileStream = fs.createReadStream(pdfPath);
+      fileStream.on('error', (error) => {
+        console.error('File stream error:', error);
+        res.status(500).json({ error: "Failed to stream PDF" });
+      });
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      res.status(500).json({ error: "Failed to download PDF" });
     }
   });
   

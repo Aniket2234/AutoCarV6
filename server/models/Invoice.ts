@@ -90,6 +90,9 @@ const invoiceSchema = new mongoose.Schema({
     whatsappSentAt: { type: Date },
   },
   
+  // PDF
+  pdfPath: { type: String },
+  
   // Additional
   notes: { type: String },
   terms: { type: String },
