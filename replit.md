@@ -35,7 +35,7 @@ The customer registration flow supports adding multiple vehicles per customer. A
 A comprehensive activity logging system tracks all user actions (CRUD operations on Employees, Products, Orders, Service Visits, Suppliers, Purchase Orders, and user login/logout) with an `ActivityLog` model. An `ActivityFeed` component in the admin dashboard displays real-time activities with role-based badge colors, action-based indicators, resource icons, and "time ago" formatting. API endpoints for fetching and creating activity logs are provided.
 
 ### Invoicing & Billing Module
-A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0001 format), multi-payment tracking (UPI, Cash, Card, Net Banking, Cheque), and approval workflows. **Features**: Invoice generation from service visits, discount/coupon application, tax calculation, admin approval/rejection, payment recording with transaction history, automatic warranty creation on approval, and notification stubs for WhatsApp/Email delivery. **Role-Based Access**: Admin has full control (create, approve, reject, manage coupons), Sales Executive can create invoices and record payments. **Razorpay Integration**: Stub implementation included for future payment gateway integration.
+A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0001 format), multi-payment tracking (UPI, Cash, Card, Net Banking, Cheque), and approval workflows. **Features**: Invoice generation from service visits, discount/coupon application, tax calculation, admin approval/rejection, payment recording with transaction history, automatic warranty creation on approval, and notification stubs for WhatsApp/Email delivery. **PDF Generation**: Automatic professional PDF generation upon invoice approval, including customer details, vehicle information, itemized charges, tax breakdown, and payment details. PDFs are stored and accessible via download endpoint, with on-demand regeneration for legacy invoices. **Role-Based Access**: Admin has full control (create, approve, reject, manage coupons), Sales Executive can create invoices and record payments. **Razorpay Integration**: Stub implementation included for future payment gateway integration.
 
 ## External Dependencies
 
@@ -43,6 +43,7 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
 -   **UI Components**: Radix UI, Shadcn/ui, Tailwind CSS, Lucide React
 -   **State & Data Management**: TanStack Query, React Hook Form, Zod
 -   **Date & Time**: date-fns
+-   **PDF Generation**: PDFKit
 -   **Development Tools**: Vite, esbuild, TypeScript
 -   **Deployment**: Vercel
 -   **Security**: bcryptjs
