@@ -2728,6 +2728,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete invoice
+  app.delete("/api/invoices/:id", requireAuth, requirePermission('invoices', 'delete'), async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const userName = (req as any).session.userName;
+      const userRole = (req as any).session.userRole;
+      
+      const invoice = await Invoice.findById(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      if (invoice.pdfPath && fs.existsSync(invoice.pdfPath)) {
+        const path = await import('path');
+        const invoicesDir = path.resolve(process.cwd(), 'invoices');
+        const resolvedPdfPath = path.resolve(invoice.pdfPath);
+        const relativePath = path.relative(invoicesDir, resolvedPdfPath);
+        
+        if (!relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+          fs.unlinkSync(resolvedPdfPath);
+        }
+      }
+      
+      await Invoice.findByIdAndDelete(req.params.id);
+      
+      await logActivity({
+        userId,
+        userName,
+        userRole,
+        action: 'delete',
+        resource: 'other',
+        resourceId: req.params.id,
+        description: `Deleted invoice ${invoice.invoiceNumber}`,
+        ipAddress: req.ip,
+      });
+      
+      res.json({ message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error('Delete invoice error:', error);
+      res.status(500).json({ error: "Failed to delete invoice" });
+    }
+  });
+  
   // ==================== COUPONS ====================
   
   // Get all coupons

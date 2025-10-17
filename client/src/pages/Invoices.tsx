@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { FileText, DollarSign, CheckCircle, XCircle, Clock, Filter, Eye, CreditCard } from "lucide-react";
+import { FileText, DollarSign, CheckCircle, XCircle, Clock, Filter, Eye, CreditCard, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { PaymentRecordingDialog } from "@/components/PaymentRecordingDialog";
 
@@ -48,6 +48,7 @@ export default function Invoices() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ['/api/invoices', statusFilter, paymentFilter],
@@ -86,6 +87,45 @@ export default function Invoices() {
       toast({ title: "Failed to reject invoice", variant: "destructive" });
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (invoiceId: string) => apiRequest('DELETE', `/api/invoices/${invoiceId}`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      toast({ title: "Invoice deleted successfully" });
+      setShowDeleteDialog(false);
+      setSelectedInvoice(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to delete invoice", variant: "destructive" });
+    },
+  });
+
+  const handleDownloadPDF = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/pdf`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_${invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({ title: "PDF downloaded successfully" });
+    } catch (error) {
+      toast({ title: "Failed to download PDF", variant: "destructive" });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
@@ -252,6 +292,31 @@ export default function Invoices() {
                             Add Payment
                           </Button>
                         )}
+                        {invoice.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadPDF(invoice._id)}
+                            data-testid={`button-download-${invoice._id}`}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        )}
+                        {user?.role === 'Admin' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setSelectedInvoice(invoice);
+                              setShowDeleteDialog(true);
+                            }}
+                            data-testid={`button-delete-${invoice._id}`}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -325,6 +390,31 @@ export default function Invoices() {
           invoice={selectedInvoice}
         />
       )}
+
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent data-testid="dialog-delete-invoice">
+          <DialogHeader>
+            <DialogTitle>Delete Invoice</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete invoice {selectedInvoice?.invoiceNumber}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} data-testid="button-cancel-delete">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedInvoice && deleteMutation.mutate(selectedInvoice._id)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Invoice"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
