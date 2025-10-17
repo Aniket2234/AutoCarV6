@@ -2372,7 +2372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId: customer._id.toString() 
       }).lean();
       
-      // Build customer details object
+      // Build customer details object with ALL fields
       const customerDetails = {
         referenceCode: customer.referenceCode,
         fullName: customer.fullName,
@@ -2386,9 +2386,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         state: customer.state,
         pinCode: customer.pinCode,
         referralSource: customer.referralSource,
+        isVerified: customer.isVerified,
+        registrationDate: customer.createdAt,
       };
       
-      // Build vehicle details array
+      // Build vehicle details array with ALL fields
       const vehicleDetails = vehicles.map(vehicle => ({
         vehicleId: vehicle.vehicleId,
         vehicleNumber: vehicle.vehicleNumber,
@@ -2402,6 +2404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isNewVehicle: vehicle.isNewVehicle,
         chassisNumber: vehicle.chassisNumber,
         selectedParts: vehicle.selectedParts,
+        vehicleRegistrationDate: vehicle.createdAt,
       }));
       
       // Calculate subtotal
@@ -2520,10 +2523,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           invoiceNumber: invoice.invoiceNumber,
           createdAt: invoice.createdAt,
           dueDate: invoice.dueDate,
-          customerName: invoice.customerName,
-          customerEmail: invoice.customerEmail,
-          customerPhone: invoice.customerPhone,
-          vehicleReg: (invoice.serviceVisitId as any)?.vehicleReg,
+          customerDetails: invoice.customerDetails,
+          vehicleDetails: invoice.vehicleDetails || [],
           items: invoice.items.map((item: any) => ({
             name: item.name,
             description: item.description,
@@ -2661,10 +2662,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           invoiceNumber: invoice.invoiceNumber,
           createdAt: invoice.createdAt,
           dueDate: invoice.dueDate,
-          customerName: invoice.customerName,
-          customerEmail: invoice.customerEmail,
-          customerPhone: invoice.customerPhone,
-          vehicleReg: (invoice.serviceVisitId as any)?.vehicleReg,
+          customerDetails: invoice.customerDetails,
+          vehicleDetails: invoice.vehicleDetails || [],
           items: invoice.items.map((item: any) => ({
             name: item.name,
             description: item.description,

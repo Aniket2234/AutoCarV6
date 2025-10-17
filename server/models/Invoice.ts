@@ -38,6 +38,8 @@ const customerDetailsSchema = new mongoose.Schema({
   state: { type: String },
   pinCode: { type: String },
   referralSource: { type: String },
+  isVerified: { type: Boolean },
+  registrationDate: { type: Date },
 }, { _id: false });
 
 const vehicleDetailsSchema = new mongoose.Schema({
@@ -53,6 +55,7 @@ const vehicleDetailsSchema = new mongoose.Schema({
   isNewVehicle: { type: Boolean },
   chassisNumber: { type: String },
   selectedParts: [{ type: String }],
+  vehicleRegistrationDate: { type: Date },
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
