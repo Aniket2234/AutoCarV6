@@ -2356,6 +2356,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Service visit not found" });
       }
       
+      if (!serviceVisit.customerId) {
+        return res.status(400).json({ error: "Service visit has no associated customer" });
+      }
+      
       if (serviceVisit.status !== 'completed') {
         return res.status(400).json({ error: "Can only generate invoice for completed service visits" });
       }
