@@ -59,15 +59,20 @@ export function PaymentRecordingDialog({ open, onOpenChange, invoice }: PaymentR
 
   const recordPaymentMutation = useMutation({
     mutationFn: (data: PaymentFormValues) =>
-      apiRequest(`/api/invoices/${invoice._id}/payments`, 'POST', data),
+      apiRequest('POST', `/api/invoices/${invoice._id}/payments`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({ title: "Payment recorded successfully" });
       onOpenChange(false);
       form.reset();
     },
-    onError: () => {
-      toast({ title: "Failed to record payment", variant: "destructive" });
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to record payment";
+      toast({ 
+        title: "Failed to record payment", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
     },
   });
 
