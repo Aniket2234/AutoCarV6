@@ -60,7 +60,7 @@ export default function Invoices() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (invoiceId: string) => apiRequest(`/api/invoices/${invoiceId}/approve`, 'POST', {}),
+    mutationFn: (invoiceId: string) => apiRequest('POST', `/api/invoices/${invoiceId}/approve`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({ title: "Invoice approved successfully" });
@@ -74,7 +74,7 @@ export default function Invoices() {
 
   const rejectMutation = useMutation({
     mutationFn: ({ invoiceId, reason }: { invoiceId: string; reason: string }) =>
-      apiRequest(`/api/invoices/${invoiceId}/reject`, 'POST', { reason }),
+      apiRequest('POST', `/api/invoices/${invoiceId}/reject`, { reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({ title: "Invoice rejected" });
