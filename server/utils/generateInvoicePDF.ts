@@ -90,52 +90,54 @@ export async function generateInvoicePDF(invoiceData: InvoiceData): Promise<stri
       yPosition += 20;
       
       const customer = invoiceData.customerDetails;
-      doc.fontSize(10).font('Helvetica-Bold').text(customer.fullName, 50, yPosition);
-      yPosition += 15;
+      doc.fontSize(10).font('Helvetica-Bold').text(customer.fullName, 50, yPosition, { width: 280 });
+      yPosition += 18;
       
       if (customer.referenceCode) {
-        doc.font('Helvetica').text(`Ref: ${customer.referenceCode}`, 50, yPosition);
+        doc.fontSize(9).font('Helvetica').text(`Ref: ${customer.referenceCode}`, 50, yPosition, { width: 280 });
         yPosition += 15;
       }
       
-      doc.font('Helvetica').text(`Mobile: ${customer.mobileNumber}`, 50, yPosition);
+      doc.fontSize(9).font('Helvetica').text(`Mobile: ${customer.mobileNumber}`, 50, yPosition, { width: 280 });
       yPosition += 15;
       
       if (customer.alternativeNumber) {
-        doc.text(`Alt Mobile: ${customer.alternativeNumber}`, 50, yPosition);
+        doc.text(`Alt Mobile: ${customer.alternativeNumber}`, 50, yPosition, { width: 280 });
         yPosition += 15;
       }
       
       if (customer.email) {
-        doc.text(customer.email, 50, yPosition);
+        doc.text(customer.email, 50, yPosition, { width: 280 });
         yPosition += 15;
       }
       
       if (customer.address) {
-        doc.text(customer.address, 50, yPosition, { width: 250 });
-        yPosition += 15;
+        const addressHeight = doc.heightOfString(customer.address, { width: 280 });
+        doc.text(customer.address, 50, yPosition, { width: 280 });
+        yPosition += Math.ceil(addressHeight) + 3;
       }
       
       const location = [customer.city, customer.taluka, customer.district, customer.state]
         .filter(Boolean)
         .join(', ');
       if (location) {
-        doc.text(location, 50, yPosition, { width: 250 });
-        yPosition += 15;
+        const locationHeight = doc.heightOfString(location, { width: 280 });
+        doc.text(location, 50, yPosition, { width: 280 });
+        yPosition += Math.ceil(locationHeight) + 3;
       }
       
       if (customer.pinCode) {
-        doc.text(`PIN: ${customer.pinCode}`, 50, yPosition);
+        doc.text(`PIN: ${customer.pinCode}`, 50, yPosition, { width: 280 });
         yPosition += 15;
       }
       
       if (customer.referralSource) {
-        doc.text(`Referral: ${customer.referralSource}`, 50, yPosition);
+        doc.text(`Referral: ${customer.referralSource}`, 50, yPosition, { width: 280 });
         yPosition += 15;
       }
       
       if (customer.isVerified) {
-        doc.fillColor('#0a8754').text('✓ Verified Customer', 50, yPosition);
+        doc.fillColor('#0a8754').text('✓ Verified Customer', 50, yPosition, { width: 280 });
         doc.fillColor('#000');
         yPosition += 15;
       }
@@ -164,53 +166,56 @@ export async function generateInvoicePDF(invoiceData: InvoiceData): Promise<stri
         
         invoiceData.vehicleDetails.forEach((vehicle, index) => {
           if (invoiceData.vehicleDetails.length > 1) {
-            doc.fontSize(10).font('Helvetica-Bold').text(`Vehicle ${index + 1}:`, 50, yPosition);
+            doc.fontSize(10).font('Helvetica-Bold').text(`Vehicle ${index + 1}:`, 50, yPosition, { width: 280 });
             yPosition += 15;
           }
           
           doc.fontSize(9).font('Helvetica');
           
           if (vehicle.vehicleNumber) {
-            doc.text(`Number: ${vehicle.vehicleNumber}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Number: ${vehicle.vehicleNumber}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.vehicleBrand || vehicle.vehicleModel) {
             const brandModel = [vehicle.vehicleBrand, vehicle.vehicleModel, vehicle.customModel]
               .filter(Boolean)
               .join(' - ');
-            doc.text(`Model: ${brandModel}`, 60, yPosition);
-            yPosition += 12;
+            const modelHeight = doc.heightOfString(`Model: ${brandModel}`, { width: 270 });
+            doc.text(`Model: ${brandModel}`, 60, yPosition, { width: 270 });
+            yPosition += Math.ceil(modelHeight) + 2;
           }
           
           if (vehicle.variant) {
-            doc.text(`Variant: ${vehicle.variant}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Variant: ${vehicle.variant}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.color) {
-            doc.text(`Color: ${vehicle.color}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Color: ${vehicle.color}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.yearOfPurchase) {
-            doc.text(`Year: ${vehicle.yearOfPurchase}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Year: ${vehicle.yearOfPurchase}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.chassisNumber) {
-            doc.text(`Chassis: ${vehicle.chassisNumber}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Chassis: ${vehicle.chassisNumber}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.isNewVehicle !== undefined) {
-            doc.text(`Condition: ${vehicle.isNewVehicle ? 'New' : 'Used'}`, 60, yPosition);
-            yPosition += 12;
+            doc.text(`Condition: ${vehicle.isNewVehicle ? 'New' : 'Used'}`, 60, yPosition, { width: 270 });
+            yPosition += 14;
           }
           
           if (vehicle.selectedParts && vehicle.selectedParts.length > 0) {
-            doc.text(`Parts: ${vehicle.selectedParts.join(', ')}`, 60, yPosition, { width: 250 });
-            yPosition += 12;
+            const partsText = `Parts: ${vehicle.selectedParts.join(', ')}`;
+            const partsHeight = doc.heightOfString(partsText, { width: 270 });
+            doc.text(partsText, 60, yPosition, { width: 270 });
+            yPosition += Math.ceil(partsHeight) + 2;
           }
           
           yPosition += 5;
