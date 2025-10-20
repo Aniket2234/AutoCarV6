@@ -2007,6 +2007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isNewVehicle: v.isNewVehicle,
         chassisNumber: v.chassisNumber,
         selectedParts: v.selectedParts,
+        warrantyCard: v.warrantyCard,
         createdAt: v.createdAt,
       })));
     } catch (error) {
@@ -2036,6 +2037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isNewVehicle: vehicle.isNewVehicle,
         chassisNumber: vehicle.chassisNumber,
         selectedParts: vehicle.selectedParts,
+        warrantyCard: vehicle.warrantyCard,
         createdAt: vehicle.createdAt,
       });
     } catch (error) {
