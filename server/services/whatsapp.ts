@@ -138,6 +138,115 @@ export async function sendWhatsAppOTP({
   }
 }
 
+export async function sendRoleOTP({ 
+  to, 
+  otp 
+}: { 
+  to: string; 
+  otp: string;
+}): Promise<WhatsAppResponse> {
+  if (!WHATSAPP_API_KEY) {
+    console.error('❌ WhatsApp API key not configured');
+    return { success: false, error: 'WhatsApp credentials not configured' };
+  }
+
+  const formattedPhone = formatPhoneNumber(to);
+  const url = `${WHATSAPP_BASE_URL}/send-template/${WHATSAPP_PHONE_NUMBER_ID}`;
+  
+  console.log('\n📱 Sending WhatsApp Role OTP Template');
+  console.log('================================');
+  console.log('API URL:', url);
+  console.log('API Key:', WHATSAPP_API_KEY.substring(0, 8) + '...');
+  console.log('Channel Number:', WHATSAPP_PHONE_NUMBER_ID);
+  console.log('Template Name: roleotp');
+  console.log('To (Original):', to);
+  console.log('To (Formatted):', formattedPhone);
+  console.log('OTP:', otp);
+  console.log('================================\n');
+
+  try {
+    const startTime = Date.now();
+    
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: formattedPhone,
+      type: 'template',
+      template: {
+        name: 'roleotp',
+        language: {
+          code: 'en'
+        },
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              {
+                type: 'text',
+                text: otp
+              }
+            ]
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: '0',
+            parameters: [
+              {
+                type: 'text',
+                text: otp
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    console.log('Request Payload:', JSON.stringify(payload, null, 2));
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WHATSAPP_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseTime = Date.now() - startTime;
+    const data = await response.json();
+
+    console.log(`\n✅ WhatsApp Role OTP Response (${responseTime}ms)`);
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(data, null, 2));
+    console.log('================================\n');
+
+    if (data.success) {
+      return { 
+        success: true, 
+        statusDesc: data.statusDesc,
+        data: data.data 
+      };
+    } else {
+      return { 
+        success: false, 
+        error: data.statusDesc || 'Failed to send WhatsApp Role OTP template',
+        statusCode: data.statusCode
+      };
+    }
+  } catch (error) {
+    console.error('❌ WhatsApp Role OTP Template API Error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to send WhatsApp Role OTP template'
+    };
+  }
+}
+
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export async function sendWhatsAppWelcome({ 
   to, 
   templateName,
