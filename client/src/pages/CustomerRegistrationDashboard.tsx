@@ -104,6 +104,7 @@ const editCustomerSchema = z.object({
   vehicleModel: z.string().optional(),
   yearOfPurchase: z.string().optional(),
   vehiclePhoto: z.string().optional(),
+  warrantyCard: z.string().optional(),
 });
 
 // Customer Card Component
