@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
-  DollarSign, 
+  IndianRupee, 
   Package, 
   Users, 
   AlertTriangle, 
@@ -149,7 +149,7 @@ export default function Dashboard() {
           {
             title: "Today's Sales",
             value: formatCurrency(dashboardStats.todaySales || 0),
-            icon: DollarSign,
+            icon: IndianRupee,
             trend: { value: 12.5, isPositive: true },
             color: "blue" as const,
           },
@@ -184,7 +184,7 @@ export default function Dashboard() {
           {
             title: "Inventory Value",
             value: formatCurrency(dashboardStats.totalInventoryValue || 0),
-            icon: DollarSign,
+            icon: IndianRupee,
             color: "blue" as const,
           },
           {
@@ -206,7 +206,7 @@ export default function Dashboard() {
           {
             title: "Today's Sales",
             value: formatCurrency(dashboardStats.todaySales || 0),
-            icon: DollarSign,
+            icon: IndianRupee,
             trend: { value: 12.5, isPositive: true },
             color: "blue" as const,
           },
