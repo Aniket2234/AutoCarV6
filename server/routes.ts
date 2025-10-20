@@ -32,6 +32,7 @@ import { Coupon } from "./models/Coupon";
 import { Warranty } from "./models/Warranty";
 import { sendInvoiceNotifications } from "./utils/invoiceNotifications";
 import { generateInvoicePDF } from "./utils/generateInvoicePDF";
+import { sendWhatsAppOTP, sendWhatsAppWelcome } from "./services/whatsapp";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await connectDB();
@@ -1758,12 +1759,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         otpExpiresAt
       });
       
-      // TODO: Send OTP via SMS/WhatsApp (implement with actual gateway)
+      // Send OTP via WhatsApp
       console.log(`OTP for ${customer.mobileNumber}: ${otp}`);
+      const whatsappResult = await sendWhatsAppOTP({
+        to: customer.mobileNumber,
+        otp
+      });
+      
+      if (!whatsappResult.success) {
+        console.warn('⚠️ WhatsApp OTP send failed:', whatsappResult.error);
+      }
       
       res.json({ 
         customerId: customer._id.toString(),
         message: "OTP sent successfully",
+        whatsappSent: whatsappResult.success,
+        whatsappError: whatsappResult.error,
         // In development, return OTP for testing
         ...(process.env.NODE_ENV === 'development' && { otp })
       });
