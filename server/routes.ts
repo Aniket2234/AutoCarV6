@@ -1887,6 +1887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isNewVehicle: vehicle.isNewVehicle,
           chassisNumber: vehicle.chassisNumber,
           selectedParts: vehicle.selectedParts,
+          warrantyCard: vehicle.warrantyCard,
           createdAt: vehicle.createdAt,
         },
         customer: {
