@@ -25,6 +25,8 @@ Core entities include Product (with multi-image support, variants, barcode, comp
 ### Authentication & Authorization
 The system uses **session-based authentication** with Express sessions and secure HTTP-only cookies. Password hashing is handled by **bcryptjs**. **Role-Based Access Control (RBAC)** defines five distinct roles: Admin, Inventory Manager, Sales Executive, HR Manager, and Service Staff, each with granular permissions. Two-step OTP verification is implemented for login.
 
+**Mobile Number OTP Authentication**: Each user role requires a unique mobile number upon creation. Users can log in using their mobile number to receive a WhatsApp OTP via the `roleotp` template. The OTP model tracks verification attempts (max 3) and expiration (10 minutes). The login flow supports both traditional email/password and mobile OTP methods, with mobile OTP providing seamless WhatsApp-based authentication for all roles.
+
 ### UI/UX Decisions
 Global card styling features `border-2 border-orange-300 dark:border-orange-700`. Vehicle images use `border-2 border-orange-300 dark:border-orange-700`, `object-contain`, and gradient backgrounds. Responsive layouts are used for dashboards. Forms feature conditional fields and dynamic dropdowns. Image uploads have live previews, base64 encoding, and validation. Employee photo sizes are increased, and documents are viewed in a dedicated viewer.
 
@@ -65,6 +67,26 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
    - `otptest` - OTP verification template with button component
    - `crmtestingcustomer` - Welcome message template with customer ID (sent on registration completion)
 8. **Registration Completion Endpoint**: New `/api/registration/complete` endpoint handles final registration completion and welcome message delivery, ensuring the message is sent only once after all vehicles are added
+
+### Role-Based Mobile Number & WhatsApp OTP Login
+1. **Mobile Number Assignment**: All user roles (Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff) now require a unique mobile number during account creation. The mobile number field is mandatory and unique across all users.
+
+2. **WhatsApp OTP Authentication**: Implemented secure OTP login via WhatsApp for all roles:
+   - **OTP Model**: Tracks generated OTPs with 10-minute expiration, verification status, and attempt limits (max 3 attempts)
+   - **WhatsApp Integration**: Uses `roleotp` template via CloudAPI to send OTPs with button component
+   - **Dual Login Methods**: Login page offers both email/password and mobile OTP authentication
+   - **Phone Number Normalization**: Supports 10-digit, 11-digit (with leading 0), and 12-digit (with country code) formats
+
+3. **API Endpoints**:
+   - `/api/auth/send-otp` - Sends OTP to registered mobile number
+   - `/api/auth/verify-otp` - Verifies OTP and establishes session
+   - Both endpoints include comprehensive logging and error handling
+
+4. **User Management Updates**:
+   - Create User form includes mobile number field with validation
+   - Edit User form allows updating mobile numbers with uniqueness check
+   - User list displays mobile numbers for all roles
+   - Mobile numbers shown with 📱 icon in user cards
 
 ### Product Catalog & Inventory Improvements
 1. **Added 10 Products to Database**: Extended the seed script to include 10 car parts products (Engine Oil Filter, Brake Pads, Air Filter, Spark Plugs, Cabin Air Filter, Engine Oil, LED Headlight Bulb, Wiper Blades, Battery, and Coolant/Antifreeze) with complete details including warehouse locations, barcodes, pricing, stock quantities, and warranty information.
