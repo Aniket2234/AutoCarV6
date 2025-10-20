@@ -39,6 +39,21 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
 
 ## Recent Changes (October 20, 2025)
 
+### Customer Registration Progress Bar & Service Phase Indicators
+1. **Progress Bar with Step Indicators**: Added a visual progress bar to the customer registration flow that shows:
+   - Step labels (Step 1, Step 2, Step 3) with titles (Customer Info, OTP Verification, Vehicle Details)
+   - Animated progress bar that fills/empties smoothly based on current step
+   - Step circles with checkmarks for completed steps and dots for current step
+   - Responsive design that works on all screen sizes
+   - Full dark mode support with appropriate color schemes
+   - Progress percentage calculation (33%, 66%, 100%)
+
+2. **Service Status Phase Indicators**: Enhanced the StatusBadge component to display phase information:
+   - Phase 1 label for "Inquired" and "Working" statuses
+   - Phase 2 label for "Waiting for Parts" and "Completed" statuses
+   - Clean flex layout that maintains compatibility with existing badge styling
+   - Proper dark mode support for phase labels
+
 ### WhatsApp Integration for Customer Registration
 1. **OTP Delivery via WhatsApp**: Implemented WhatsApp template message sending for OTP verification during customer registration using CloudAPI integration with template `otptest`
 2. **Welcome Message with Customer ID**: After successful OTP verification, customers receive a WhatsApp message with their Customer ID using template `crmtestingcustomer`
