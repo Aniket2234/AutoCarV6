@@ -358,6 +358,21 @@ export default function CustomerRegistration() {
     }
   };
 
+  // Step configuration for progress bar
+  const steps = [
+    { id: 'customer', label: 'Step 1', title: 'Customer Info' },
+    { id: 'otp', label: 'Step 2', title: 'OTP Verification' },
+    { id: 'vehicle', label: 'Step 3', title: 'Vehicle Details' },
+  ];
+
+  const getCurrentStepIndex = () => {
+    if (step === 'success') return 3;
+    return steps.findIndex(s => s.id === step);
+  };
+
+  const currentStepIndex = getCurrentStepIndex();
+  const progressPercentage = step === 'success' ? 100 : ((currentStepIndex + 1) / steps.length) * 100;
+
   return (
     <ScreenshotProtection enabled={step !== 'success'}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6">
@@ -370,6 +385,68 @@ export default function CustomerRegistration() {
               Register your vehicle with us for exclusive services and offers
             </p>
           </div>
+
+          {/* Progress Bar - Only show if not on success page */}
+          {step !== 'success' && (
+            <div className="mb-8" data-testid="progress-bar-container">
+              {/* Step Labels */}
+              <div className="flex justify-between mb-3">
+                {steps.map((s, index) => (
+                  <div key={s.id} className="flex flex-col items-center flex-1">
+                    <div className={`text-xs sm:text-sm font-semibold mb-1 ${
+                      index <= currentStepIndex 
+                        ? 'text-blue-600 dark:text-blue-400' 
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`} data-testid={`step-label-${index + 1}`}>
+                      {s.label}
+                    </div>
+                    <div className={`text-xs ${
+                      index <= currentStepIndex 
+                        ? 'text-gray-700 dark:text-gray-300' 
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}>
+                      {s.title}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress Bar */}
+              <div className="relative">
+                {/* Background bar */}
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  {/* Filled portion */}
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 transition-all duration-500 ease-in-out"
+                    style={{ width: `${progressPercentage}%` }}
+                    data-testid="progress-bar-fill"
+                  />
+                </div>
+                
+                {/* Step circles */}
+                <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between px-1">
+                  {steps.map((s, index) => (
+                    <div
+                      key={s.id}
+                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                        index <= currentStepIndex
+                          ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500'
+                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                      }`}
+                      data-testid={`step-circle-${index + 1}`}
+                    >
+                      {index < currentStepIndex && (
+                        <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                      )}
+                      {index === currentStepIndex && (
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Step 1: Customer Information */}
         {step === "customer" && (
