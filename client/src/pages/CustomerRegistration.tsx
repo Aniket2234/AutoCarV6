@@ -985,7 +985,26 @@ export default function CustomerRegistration() {
               </div>
 
               <Button 
-                onClick={() => window.location.reload()} 
+                onClick={() => {
+                  // Reset all state
+                  setStep("customer");
+                  setCustomerId("");
+                  setOtp("");
+                  setOtpInput("");
+                  setCustomerData(null);
+                  setVehicleData(null);
+                  setRegisteredVehicles([]);
+                  setSelectedBrand("");
+                  setSelectedModel("");
+                  setAvailableModels([]);
+                  setAvailableParts([]);
+                  
+                  // Reset forms
+                  customerForm.reset();
+                  vehicleForm.reset();
+                  
+                  console.log('✅ Form reset - Ready for new customer registration');
+                }} 
                 variant="outline" 
                 className="w-full"
                 data-testid="button-register-another"
