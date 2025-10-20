@@ -349,6 +349,7 @@ export default function CustomerRegistrationDashboard() {
       vehicleModel: "",
       yearOfPurchase: "",
       vehiclePhoto: "",
+      warrantyCard: "",
     },
   });
 
@@ -374,6 +375,7 @@ export default function CustomerRegistrationDashboard() {
         vehicleModel: primaryVehicle?.vehicleModel || "",
         yearOfPurchase: primaryVehicle?.yearOfPurchase?.toString() || "",
         vehiclePhoto: primaryVehicle?.vehiclePhoto || "",
+        warrantyCard: primaryVehicle?.warrantyCard || "",
       });
       setEditingVehicle(primaryVehicle || null);
     }
