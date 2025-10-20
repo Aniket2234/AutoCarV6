@@ -1150,6 +1150,57 @@ export default function CustomerRegistrationDashboard() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={editForm.control}
+                    name="warrantyCard"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warranty Card (Optional)</FormLabel>
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input {...field} placeholder="https://... or upload below" data-testid="input-edit-warrantyCard" />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('warranty-card-upload-edit')?.click()}
+                              data-testid="button-upload-warranty-card"
+                            >
+                              Upload
+                            </Button>
+                          </div>
+                          <input
+                            id="warranty-card-upload-edit"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  field.onChange(reader.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          {field.value && (
+                            <div className="relative w-full h-32 border-2 border-green-300 dark:border-green-700 rounded-md overflow-hidden bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+                              <img
+                                src={field.value}
+                                alt="Warranty card preview"
+                                className="w-full h-full object-contain p-2"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </>
               )}
 
