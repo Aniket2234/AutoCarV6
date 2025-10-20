@@ -15,6 +15,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  mobileNumber?: string;
   role: string;
   isActive: boolean;
 }
@@ -30,11 +31,13 @@ export default function UserManagement() {
   // Form states for creating user
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserMobile, setNewUserMobile] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('Service Staff');
 
   // Form states for editing user
   const [editUserName, setEditUserName] = useState('');
+  const [editUserMobile, setEditUserMobile] = useState('');
   const [editUserRole, setEditUserRole] = useState('');
   const [editUserIsActive, setEditUserIsActive] = useState(true);
 
@@ -43,7 +46,7 @@ export default function UserManagement() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string; role: string }) => {
+    mutationFn: async (data: { name: string; email: string; mobileNumber: string; password: string; role: string }) => {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,6 +64,7 @@ export default function UserManagement() {
       setIsCreateDialogOpen(false);
       setNewUserName('');
       setNewUserEmail('');
+      setNewUserMobile('');
       setNewUserPassword('');
       setNewUserRole('Service Staff');
       toast({
@@ -78,7 +82,7 @@ export default function UserManagement() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; role: string; isActive: boolean } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; mobileNumber?: string; role: string; isActive: boolean } }) => {
       const response = await fetch(`/api/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -142,6 +146,7 @@ export default function UserManagement() {
     createUserMutation.mutate({
       name: newUserName,
       email: newUserEmail,
+      mobileNumber: newUserMobile,
       password: newUserPassword,
       role: newUserRole,
     });
@@ -154,6 +159,7 @@ export default function UserManagement() {
         id: selectedUser._id,
         data: {
           name: editUserName,
+          mobileNumber: editUserMobile,
           role: editUserRole,
           isActive: editUserIsActive,
         },
@@ -170,6 +176,7 @@ export default function UserManagement() {
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
     setEditUserName(user.name);
+    setEditUserMobile(user.mobileNumber || '');
     setEditUserRole(user.role);
     setEditUserIsActive(user.isActive);
     setIsEditDialogOpen(true);
@@ -239,6 +246,20 @@ export default function UserManagement() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="mobile">Mobile Number</Label>
+                <Input
+                  id="mobile"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={newUserMobile}
+                  onChange={(e) => setNewUserMobile(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  10-digit mobile number for WhatsApp OTP login
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -302,6 +323,9 @@ export default function UserManagement() {
                       {!user.isActive && <Badge variant="outline">Inactive</Badge>}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+                    {user.mobileNumber && (
+                      <p className="text-sm text-muted-foreground">📱 {user.mobileNumber}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -343,6 +367,19 @@ export default function UserManagement() {
                 onChange={(e) => setEditUserName(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-mobile">Mobile Number</Label>
+              <Input
+                id="edit-mobile"
+                type="tel"
+                placeholder="9876543210"
+                value={editUserMobile}
+                onChange={(e) => setEditUserMobile(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                10-digit mobile number for WhatsApp OTP login
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role">Role</Label>

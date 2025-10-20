@@ -7,6 +7,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  mobileNumber?: string;
   permissions?: Record<string, string[]>;
 }
 
@@ -16,6 +17,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
+  sendOTP: (mobileNumber: string) => Promise<void>;
+  verifyOTP: (mobileNumber: string, otp: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,8 +86,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await logoutMutation.mutateAsync();
   };
 
+  const sendOTPMutation = useMutation({
+    mutationFn: async ({ mobileNumber }: { mobileNumber: string }) => {
+      const response = await apiRequest('POST', '/api/auth/send-otp', { mobileNumber });
+      return response.json();
+    },
+  });
+
+  const verifyOTPMutation = useMutation({
+    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
+      const response = await apiRequest('POST', '/api/auth/verify-otp', { mobileNumber, otp });
+      return response.json();
+    },
+    onSuccess: async (data) => {
+      setUser(data);
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
+    },
+  });
+
+  const sendOTP = async (mobileNumber: string) => {
+    await sendOTPMutation.mutateAsync({ mobileNumber });
+  };
+
+  const verifyOTP = async (mobileNumber: string, otp: string) => {
+    await verifyOTPMutation.mutateAsync({ mobileNumber, otp });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, sendOTP, verifyOTP }}>
       {children}
     </AuthContext.Provider>
   );

@@ -11,15 +11,17 @@ import logoImage from '@assets/image_1760164042662.png';
 
 export default function Login() {
   const [location, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { login, sendOTP, verifyOTP } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
   const [otp, setOtp] = useState('');
   const [otpInput, setOtpInput] = useState('');
+  const [loginMethod, setLoginMethod] = useState<'email' | 'mobile'>('email');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,18 +36,26 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Generate dummy OTP (123456)
-      const dummyOtp = '123456';
-      setOtp(dummyOtp);
-      setStep('otp');
-      toast({
-        title: 'OTP Sent',
-        description: `Enter OTP to continue. Development OTP: ${dummyOtp}`,
-      });
+      if (loginMethod === 'mobile') {
+        await sendOTP(mobileNumber);
+        setStep('otp');
+        toast({
+          title: 'OTP Sent',
+          description: `OTP sent to your WhatsApp number ${mobileNumber}`,
+        });
+      } else {
+        const dummyOtp = '123456';
+        setOtp(dummyOtp);
+        setStep('otp');
+        toast({
+          title: 'OTP Sent',
+          description: `Enter OTP to continue. Development OTP: ${dummyOtp}`,
+        });
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Something went wrong',
+        description: error.message || 'Failed to send OTP',
         variant: 'destructive',
       });
     } finally {
@@ -58,16 +68,24 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      if (otpInput !== otp) {
-        throw new Error('Invalid OTP');
+      if (loginMethod === 'mobile') {
+        await verifyOTP(mobileNumber, otpInput);
+        toast({
+          title: 'Login successful',
+          description: 'Welcome back!',
+        });
+        setLocation('/');
+      } else {
+        if (otpInput !== otp) {
+          throw new Error('Invalid OTP');
+        }
+        await login(email, password);
+        toast({
+          title: 'Login successful',
+          description: 'Welcome back!',
+        });
+        setLocation('/');
       }
-
-      await login(email, password);
-      toast({
-        title: 'Login successful',
-        description: 'Welcome back!',
-      });
-      setLocation('/');
     } catch (error: any) {
       toast({
         title: 'Verification failed',
@@ -105,29 +123,71 @@ export default function Login() {
         <CardContent>
           {step === 'credentials' ? (
             <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" data-testid="label-email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@maulicarworld.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-email"
-                />
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={loginMethod === 'email' ? 'default' : 'outline'}
+                  onClick={() => setLoginMethod('email')}
+                  className="flex-1"
+                  data-testid="button-email-method"
+                >
+                  Email Login
+                </Button>
+                <Button
+                  type="button"
+                  variant={loginMethod === 'mobile' ? 'default' : 'outline'}
+                  onClick={() => setLoginMethod('mobile')}
+                  className="flex-1"
+                  data-testid="button-mobile-method"
+                >
+                  Mobile OTP
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" data-testid="label-password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  data-testid="input-password"
-                />
-              </div>
+              
+              {loginMethod === 'email' ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" data-testid="label-email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="admin@maulicarworld.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      data-testid="input-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" data-testid="label-password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      data-testid="input-password"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="mobile" data-testid="label-mobile">Mobile Number</Label>
+                  <Input
+                    id="mobile"
+                    type="tel"
+                    placeholder="9876543210"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    required
+                    data-testid="input-mobile"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter your 10-digit mobile number registered with your role
+                  </p>
+                </div>
+              )}
+              
               <Button
                 type="submit"
                 className="w-full"
@@ -155,7 +215,12 @@ export default function Login() {
                   required
                   data-testid="input-otp-login"
                 />
-                {otp && (
+                <p className="text-sm text-center text-muted-foreground" data-testid="text-otp-info">
+                  {loginMethod === 'mobile' 
+                    ? `OTP sent to your WhatsApp number ${mobileNumber}`
+                    : 'Check your email for OTP (Development mode)'}
+                </p>
+                {otp && loginMethod === 'email' && (
                   <p className="text-sm text-center bg-yellow-100 dark:bg-yellow-900 p-2 rounded" data-testid="text-dev-otp">
                     Development OTP: {otp}
                   </p>
