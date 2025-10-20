@@ -39,6 +39,14 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
 
 ## Recent Changes (October 20, 2025)
 
+### WhatsApp Integration for Customer Registration
+1. **OTP Delivery via WhatsApp**: Implemented WhatsApp message sending for OTP verification during customer registration using CloudAPI integration
+2. **Welcome Message with Customer ID**: After successful OTP verification, customers receive a WhatsApp message with their Customer ID using template `crmtestingcustomer`
+3. **Phone Number Formatting**: Automatic normalization of Indian phone numbers supporting 10-digit (9876543210), 11-digit with leading 0 (09876543210), and 12-digit with country code (919876543210) formats
+4. **Comprehensive Logging**: Detailed console logging in both frontend (browser console) and backend (server logs) for complete debugging visibility of WhatsApp API calls
+5. **Error Handling**: Graceful error handling with user-friendly messages if WhatsApp delivery fails, while still allowing registration to proceed
+6. **Environment Configuration**: Uses `WHATSAPP_API_KEY`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_TEMPLATE_NAME` environment variables for secure credential management
+
 ### Product Catalog & Inventory Improvements
 1. **Added 10 Products to Database**: Extended the seed script to include 10 car parts products (Engine Oil Filter, Brake Pads, Air Filter, Spark Plugs, Cabin Air Filter, Engine Oil, LED Headlight Bulb, Wiper Blades, Battery, and Coolant/Antifreeze) with complete details including warehouse locations, barcodes, pricing, stock quantities, and warranty information.
 
@@ -64,6 +72,7 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
 -   **State & Data Management**: TanStack Query, React Hook Form, Zod
 -   **Date & Time**: date-fns
 -   **PDF Generation**: PDFKit
+-   **WhatsApp Integration**: CloudAPI (https://cloudapi.akst.in/) for OTP and customer notifications
 -   **Development Tools**: Vite, esbuild, TypeScript
 -   **Deployment**: Vercel
 -   **Security**: bcryptjs
