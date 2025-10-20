@@ -410,6 +410,7 @@ export default function CustomerRegistrationDashboard() {
           vehicleModel: data.vehicleModel,
           yearOfPurchase: data.yearOfPurchase ? parseInt(data.yearOfPurchase) : null,
           vehiclePhoto: data.vehiclePhoto,
+          warrantyCard: data.warrantyCard,
         };
         
         await apiRequest("PATCH", `/api/registration/vehicles/${editingVehicle.id}`, vehicleData);
