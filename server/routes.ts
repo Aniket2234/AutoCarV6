@@ -1813,7 +1813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send WhatsApp welcome message with customer ID
       const whatsappResult = await sendWhatsAppWelcome({
         to: customer.mobileNumber,
-        templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'autocrmtest',
+        templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'crmtestingcustomer',
         customerId: customer.referenceCode
       });
       
