@@ -13,8 +13,21 @@ const WHATSAPP_BASE_URL = 'https://cloudapi.akst.in/api/v1.0/messages';
 function formatPhoneNumber(phone: string): string {
   let formattedPhone = phone.replace(/\D/g, '');
   
+  if (formattedPhone.startsWith('0') && formattedPhone.length === 11) {
+    formattedPhone = formattedPhone.substring(1);
+  }
+  
+  if (formattedPhone.startsWith('91') && formattedPhone.length === 12) {
+    return formattedPhone;
+  }
+  
   if (formattedPhone.length === 10) {
     formattedPhone = '91' + formattedPhone;
+  }
+  
+  if (formattedPhone.length !== 12 || !formattedPhone.startsWith('91')) {
+    console.error(`⚠️ Invalid phone number format after normalization: "${formattedPhone}" (original: "${phone}")`);
+    console.error('Expected format: 12 digits starting with 91 (e.g., 919876543210)');
   }
   
   return formattedPhone;
