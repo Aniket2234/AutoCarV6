@@ -615,8 +615,9 @@ export default function Inventory() {
         </div>
       </div>
 
-      <Tabs defaultValue="transactions" className="space-y-4">
+      <Tabs defaultValue="products" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="products" data-testid="tab-products">Products Catalog</TabsTrigger>
           <TabsTrigger value="transactions" data-testid="tab-transactions">Transactions</TabsTrigger>
           <TabsTrigger value="low-stock" data-testid="tab-low-stock">
             Low Stock Alerts
@@ -627,6 +628,85 @@ export default function Inventory() {
           <TabsTrigger value="returns" data-testid="tab-returns">Product Returns</TabsTrigger>
           <TabsTrigger value="purchase-orders" data-testid="tab-purchase-orders">Purchase Orders</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="products" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Product Catalog ({products.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {products.map((product: any) => (
+                  <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`card-product-${product._id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base line-clamp-2">{product.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
+                        </div>
+                        <Badge 
+                          variant={product.status === 'in_stock' ? 'default' : product.status === 'low_stock' ? 'secondary' : 'destructive'}
+                          className="shrink-0"
+                        >
+                          {product.status === 'in_stock' ? 'In Stock' : product.status === 'low_stock' ? 'Low' : 'Out'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Category:</span>
+                        <span className="font-medium">{product.category}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Stock:</span>
+                        <span className={`font-bold ${product.stockQty <= product.minStockLevel ? 'text-red-600' : 'text-green-600'}`}>
+                          {product.stockQty} units
+                        </span>
+                      </div>
+                      <div className="border-t pt-3">
+                        <div className="flex items-baseline justify-between">
+                          <div>
+                            <p className="text-xs text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</p>
+                            <p className="text-lg font-bold text-primary">₹{product.sellingPrice.toLocaleString()}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {product.discount.toFixed(1)}% off
+                          </Badge>
+                        </div>
+                      </div>
+                      {product.warehouseLocation && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                          <Package className="h-3 w-3" />
+                          <span>{product.warehouseLocation}</span>
+                        </div>
+                      )}
+                      {product.barcode && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Barcode className="h-3 w-3" />
+                          <span className="font-mono">{product.barcode}</span>
+                        </div>
+                      )}
+                      {product.warranty && product.warranty !== 'N/A' && (
+                        <div className="text-xs text-muted-foreground">
+                          Warranty: {product.warranty}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {products.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No products found</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="transactions" className="space-y-4">
           <div className="relative">
