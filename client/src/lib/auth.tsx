@@ -18,7 +18,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
   sendOTP: (mobileNumber: string) => Promise<void>;
-  verifyOTP: (mobileNumber: string, otp: string) => Promise<void>;
+  verifyOTP: (otp: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,8 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const verifyOTPMutation = useMutation({
-    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
-      const response = await apiRequest('POST', '/api/auth/verify-otp', { mobileNumber, otp });
+    mutationFn: async ({ otp }: { otp: string }) => {
+      const response = await apiRequest('POST', '/api/auth/verify-otp', { otp });
       return response.json();
     },
     onSuccess: async (data) => {
@@ -109,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendOTPMutation.mutateAsync({ mobileNumber });
   };
 
-  const verifyOTP = async (mobileNumber: string, otp: string) => {
-    await verifyOTPMutation.mutateAsync({ mobileNumber, otp });
+  const verifyOTP = async (otp: string) => {
+    await verifyOTPMutation.mutateAsync({ otp });
   };
 
   return (
