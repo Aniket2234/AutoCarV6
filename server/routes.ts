@@ -1810,6 +1810,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       customer.otpExpiresAt = null;
       await customer.save();
       
+      // Send WhatsApp welcome message with customer ID
+      const whatsappResult = await sendWhatsAppWelcome({
+        to: customer.mobileNumber,
+        templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'autocrmtest',
+        customerId: customer.referenceCode
+      });
+      
+      if (!whatsappResult.success) {
+        console.warn('⚠️ WhatsApp welcome message send failed:', whatsappResult.error);
+      }
+      
       // Log customer creation activity (after verification)
       await logActivity({
         userId: customer._id.toString(),
@@ -1842,6 +1853,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isVerified: customer.isVerified,
           createdAt: customer.createdAt,
         },
+        whatsappSent: whatsappResult.success,
+        whatsappError: whatsappResult.error,
         message: "Customer verified successfully"
       });
     } catch (error) {
