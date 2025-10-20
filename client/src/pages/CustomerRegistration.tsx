@@ -218,10 +218,6 @@ export default function CustomerRegistration() {
       console.log('================================');
       console.log('Verification Success:', result.success ? '✅' : '❌');
       console.log('Customer Reference Code:', result.customer?.referenceCode);
-      console.log('WhatsApp Welcome Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
-      if (result.whatsappError) {
-        console.error('WhatsApp Welcome Error:', result.whatsappError);
-      }
       console.log('Response:', JSON.stringify(result, null, 2));
       console.log('================================\n');
       
@@ -231,22 +227,10 @@ export default function CustomerRegistration() {
       setCustomerData(data.customer);
       setStep("vehicle");
       
-      const description = data.whatsappSent 
-        ? `Welcome message sent to WhatsApp with Customer ID: ${data.customer.referenceCode}` 
-        : "Now add your vehicle details";
-      
       toast({
         title: "Verification Successful",
-        description,
+        description: "Now add your vehicle details",
       });
-      
-      if (data.whatsappError) {
-        toast({
-          title: "WhatsApp Error",
-          description: `Welcome message failed: ${data.whatsappError}`,
-          variant: "destructive",
-        });
-      }
     },
     onError: (error: any) => {
       console.error('❌ OTP VERIFICATION FAILED');
@@ -263,6 +247,11 @@ export default function CustomerRegistration() {
   // Register vehicle mutation
   const registerVehicle = useMutation({
     mutationFn: async (data: VehicleFormData) => {
+      console.log('🚗 VEHICLE REGISTRATION - STARTING');
+      console.log('================================');
+      console.log('Vehicle Data:', data);
+      console.log('================================\n');
+      
       const response = await apiRequest("POST", "/api/registration/vehicles", {
         ...data,
         customerId,
@@ -274,15 +263,36 @@ export default function CustomerRegistration() {
         selectedParts: data.selectedParts || [],
         warrantyCard: data.warrantyCard || undefined,
       });
-      return await response.json();
+      const result = await response.json();
+      
+      console.log('🚗 VEHICLE REGISTRATION - RESPONSE');
+      console.log('================================');
+      console.log('Vehicle ID:', result.vehicle?.vehicleId);
+      console.log('Customer Reference Code:', result.customer?.referenceCode);
+      console.log('WhatsApp Welcome Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
+      if (result.whatsappError) {
+        console.error('WhatsApp Welcome Error:', result.whatsappError);
+      }
+      console.log('Response:', JSON.stringify(result, null, 2));
+      console.log('================================\n');
+      
+      return result;
     },
     onSuccess: (data) => {
       setRegisteredVehicles(prev => [...prev, data.vehicle]);
       setVehicleData(data.vehicle);
       setCustomerData(data.customer);
+      
+      // Show success message with WhatsApp status
+      const whatsappStatus = data.whatsappSent 
+        ? ` WhatsApp confirmation sent with Customer ID: ${data.customer.referenceCode}`
+        : data.whatsappError 
+          ? ` (WhatsApp failed: ${data.whatsappError})`
+          : '';
+      
       toast({
         title: "Vehicle Added!",
-        description: `Vehicle registered successfully. Total vehicles: ${registeredVehicles.length + 1}`,
+        description: `Vehicle registered successfully. Total vehicles: ${registeredVehicles.length + 1}.${whatsappStatus}`,
       });
       // Reset vehicle form for next vehicle
       vehicleForm.reset({
