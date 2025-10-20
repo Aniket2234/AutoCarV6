@@ -22,7 +22,7 @@ import { getNextSequence } from "./models/Counter";
 import { checkAndNotifyLowStock, notifyNewOrder, notifyServiceVisitStatus, notifyPaymentOverdue, notifyPaymentDue } from "./utils/notifications";
 import { logActivity } from "./utils/activityLogger";
 import { User } from "./models/User";
-import { authenticateUser, createUser, ROLE_PERMISSIONS } from "./auth";
+import { authenticateUser, createUser, ROLE_PERMISSIONS, sendOTPToMobile, verifyOTP } from "./auth";
 import { requireAuth, requireRole, attachUser, requirePermission } from "./middleware";
 import { insertCustomerSchema, insertVehicleSchema } from "./schemas";
 import { RegistrationCustomer } from "./models/RegistrationCustomer";
@@ -128,6 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         name: user.name,
         role: user.role,
+        mobileNumber: user.mobileNumber,
         permissions: ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || {},
       });
     } catch (error) {
@@ -135,27 +136,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User management endpoints (Admin only)
-  app.post("/api/users", requireAuth, requireRole('Admin'), async (req, res) => {
+  app.post("/api/auth/send-otp", async (req, res) => {
     try {
-      const { email, password, name, role } = req.body;
+      const { mobileNumber } = req.body;
       
-      if (!email || !password || !name || !role) {
-        return res.status(400).json({ error: "All fields are required" });
+      if (!mobileNumber) {
+        return res.status(400).json({ error: "Mobile number is required" });
       }
       
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ error: "User already exists" });
+      const user = await User.findOne({ mobileNumber, isActive: true });
+      if (!user) {
+        return res.status(404).json({ error: "User not found with this mobile number" });
       }
       
-      const user = await createUser(email, password, name, role);
+      const result = await sendOTPToMobile(mobileNumber);
+      
+      if (result.success) {
+        res.json({ success: true, message: "OTP sent successfully" });
+      } else {
+        res.status(500).json({ error: result.error || "Failed to send OTP" });
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      res.status(500).json({ error: "Failed to send OTP" });
+    }
+  });
+
+  app.post("/api/auth/verify-otp", async (req, res) => {
+    try {
+      const { mobileNumber, otp } = req.body;
+      
+      if (!mobileNumber || !otp) {
+        return res.status(400).json({ error: "Mobile number and OTP are required" });
+      }
+      
+      const result = await verifyOTP(mobileNumber, otp);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.error || "Invalid OTP" });
+      }
+      
+      const user = await User.findOne({ mobileNumber, isActive: true });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      (req as any).session.userId = user._id.toString();
+      (req as any).session.userRole = user.role;
+      (req as any).session.userName = user.name;
+      (req as any).session.userEmail = user.email;
+      
+      if (user.role !== 'Admin') {
+        (req as any).session.lastActivity = Date.now();
+      }
+      
+      await logActivity({
+        userId: user._id.toString(),
+        userName: user.name,
+        userRole: user.role,
+        action: 'login',
+        resource: 'user',
+        description: `${user.name} logged in via OTP`,
+        ipAddress: req.ip,
+      });
       
       res.json({
         id: user._id,
         email: user.email,
         name: user.name,
         role: user.role,
+        mobileNumber: user.mobileNumber,
+      });
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      res.status(500).json({ error: "Failed to verify OTP" });
+    }
+  });
+
+  // User management endpoints (Admin only)
+  app.post("/api/users", requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+      const { email, password, name, role, mobileNumber } = req.body;
+      
+      if (!email || !password || !name || !role || !mobileNumber) {
+        return res.status(400).json({ error: "All fields are required including mobile number" });
+      }
+      
+      const existingUser = await User.findOne({ 
+        $or: [{ email }, { mobileNumber }] 
+      });
+      if (existingUser) {
+        if (existingUser.email === email) {
+          return res.status(400).json({ error: "User with this email already exists" });
+        }
+        if (existingUser.mobileNumber === mobileNumber) {
+          return res.status(400).json({ error: "User with this mobile number already exists" });
+        }
+      }
+      
+      const user = await createUser(email, password, name, role, mobileNumber);
+      
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        mobileNumber: user.mobileNumber,
         isActive: user.isActive,
       });
     } catch (error) {
@@ -174,10 +260,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/users/:id", requireAuth, requireRole('Admin'), async (req, res) => {
     try {
-      const { name, role, isActive } = req.body;
+      const { name, role, isActive, mobileNumber } = req.body;
+      
+      if (mobileNumber) {
+        const existingUser = await User.findOne({ 
+          mobileNumber, 
+          _id: { $ne: req.params.id } 
+        });
+        if (existingUser) {
+          return res.status(400).json({ error: "User with this mobile number already exists" });
+        }
+      }
+      
+      const updateData: any = { name, role, isActive };
+      if (mobileNumber) {
+        updateData.mobileNumber = mobileNumber;
+      }
+      
       const user = await User.findByIdAndUpdate(
         req.params.id,
-        { name, role, isActive },
+        updateData,
         { new: true }
       ).select('-passwordHash');
       

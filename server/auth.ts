@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { User } from './models/User';
+import { OTP } from './models/OTP';
+import { sendRoleOTP, generateOTP } from './services/whatsapp';
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -9,13 +11,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function createUser(email: string, password: string, name: string, role: string) {
+export async function createUser(email: string, password: string, name: string, role: string, mobileNumber: string) {
   const passwordHash = await hashPassword(password);
   return User.create({
     email,
     passwordHash,
     name,
     role,
+    mobileNumber,
     isActive: true
   });
 }
@@ -83,4 +86,64 @@ export function hasPermission(userRole: string, resource: string, action: string
   if (!resourcePermissions) return false;
   
   return resourcePermissions.includes(action);
+}
+
+export async function sendOTPToMobile(mobileNumber: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await OTP.deleteMany({ mobileNumber, verified: false });
+
+    await OTP.create({
+      mobileNumber,
+      otp,
+      expiresAt,
+      verified: false,
+      attempts: 0,
+    });
+
+    const result = await sendRoleOTP({ to: mobileNumber, otp });
+
+    if (result.success) {
+      return { success: true };
+    } else {
+      return { success: false, error: result.error || 'Failed to send OTP' };
+    }
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    return { success: false, error: 'Failed to send OTP' };
+  }
+}
+
+export async function verifyOTP(mobileNumber: string, otp: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const otpRecord = await OTP.findOne({
+      mobileNumber,
+      verified: false,
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
+
+    if (!otpRecord) {
+      return { success: false, error: 'Invalid or expired OTP' };
+    }
+
+    if (otpRecord.attempts >= 3) {
+      return { success: false, error: 'Maximum verification attempts exceeded' };
+    }
+
+    if (otpRecord.otp !== otp) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return { success: false, error: 'Invalid OTP' };
+    }
+
+    otpRecord.verified = true;
+    await otpRecord.save();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    return { success: false, error: 'Failed to verify OTP' };
+  }
 }
