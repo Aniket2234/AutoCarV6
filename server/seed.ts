@@ -18,13 +18,13 @@ async function seed() {
     await Order.deleteMany({});
     await User.deleteMany({});
 
-    // Create users for each role
+    // Create users for each role with mobile numbers
     console.log('Creating users...');
-    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin');
-    const inventoryManager = await createUser('inventory@autoshop.com', 'inventory123', 'Inventory Manager', 'Inventory Manager');
-    const salesExecutive = await createUser('sales@autoshop.com', 'sales123', 'Sales Executive', 'Sales Executive');
-    const hrManager = await createUser('hr@autoshop.com', 'hr123', 'HR Manager', 'HR Manager');
-    const serviceStaff = await createUser('service@autoshop.com', 'service123', 'Service Staff', 'Service Staff');
+    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin', '9876543210');
+    const inventoryManager = await createUser('inventory@autoshop.com', 'inventory123', 'Inventory Manager', 'Inventory Manager', '9876543211');
+    const salesExecutive = await createUser('sales@autoshop.com', 'sales123', 'Sales Executive', 'Sales Executive', '9876543212');
+    const hrManager = await createUser('hr@autoshop.com', 'hr123', 'HR Manager', 'HR Manager', '9876543213');
+    const serviceStaff = await createUser('service@autoshop.com', 'service123', 'Service Staff', 'Service Staff', '9876543214');
     console.log('✅ Created 5 users (Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff)');
 
     const employees = await Employee.insertMany([
