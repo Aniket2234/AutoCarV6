@@ -29,6 +29,7 @@ async function seed() {
 
     const employees = await Employee.insertMany([
       {
+        employeeId: 'EMP001',
         name: 'Amit Sharma',
         role: 'Service Staff',
         contact: '+91 98765-43210',
@@ -36,6 +37,7 @@ async function seed() {
         isActive: true,
       },
       {
+        employeeId: 'EMP002',
         name: 'Priya Patel',
         role: 'Service Staff',
         contact: '+91 98765-43211',
@@ -43,6 +45,7 @@ async function seed() {
         isActive: true,
       },
       {
+        employeeId: 'EMP003',
         name: 'Vikram Singh',
         role: 'Inventory Manager',
         contact: '+91 98765-43212',
@@ -50,6 +53,7 @@ async function seed() {
         isActive: true,
       },
       {
+        employeeId: 'EMP004',
         name: 'Sneha Reddy',
         role: 'Sales Executive',
         contact: '+91 98765-43213',
@@ -57,6 +61,7 @@ async function seed() {
         isActive: true,
       },
       {
+        employeeId: 'EMP005',
         name: 'Rahul Deshmukh',
         role: 'HR Manager',
         contact: '+91 98765-43214',
@@ -79,6 +84,8 @@ async function seed() {
         stockQty: 45,
         minStockLevel: 20,
         status: 'in_stock',
+        warehouseLocation: 'A-12',
+        barcode: 'MF-W712-75',
       },
       {
         name: 'Brake Pads Set - Front',
@@ -92,6 +99,8 @@ async function seed() {
         stockQty: 12,
         minStockLevel: 20,
         status: 'low_stock',
+        warehouseLocation: 'B-08',
+        barcode: 'BRM-FBP-001',
       },
       {
         name: 'Air Filter - K&N 33-2304',
@@ -105,6 +114,8 @@ async function seed() {
         stockQty: 0,
         minStockLevel: 10,
         status: 'out_of_stock',
+        warehouseLocation: 'A-15',
+        barcode: 'KN-33-2304',
       },
       {
         name: 'Spark Plugs Set (4pc)',
@@ -118,6 +129,8 @@ async function seed() {
         stockQty: 28,
         minStockLevel: 15,
         status: 'in_stock',
+        warehouseLocation: 'C-05',
+        barcode: 'NGK-SP-4PC',
       },
       {
         name: 'Cabin Air Filter',
@@ -131,6 +144,8 @@ async function seed() {
         stockQty: 18,
         minStockLevel: 20,
         status: 'low_stock',
+        warehouseLocation: 'A-20',
+        barcode: 'BSH-CAF-001',
       },
       {
         name: 'Engine Oil 5W-30 - Mobil 1',
@@ -144,93 +159,75 @@ async function seed() {
         stockQty: 8,
         minStockLevel: 15,
         status: 'low_stock',
+        warehouseLocation: 'D-03',
+        barcode: 'MOB-5W30-1L',
+      },
+      {
+        name: 'LED Headlight Bulb H4',
+        category: 'Lighting',
+        brand: 'Philips',
+        modelCompatibility: ['Maruti Swift', 'Hyundai i10', 'Honda Jazz'],
+        warranty: '2 years',
+        mrp: 3800,
+        sellingPrice: 3200,
+        discount: 15.79,
+        stockQty: 35,
+        minStockLevel: 15,
+        status: 'in_stock',
+        warehouseLocation: 'E-11',
+        barcode: 'PHL-H4-LED',
+      },
+      {
+        name: 'Wiper Blades Pair',
+        category: 'Accessories',
+        brand: 'Bosch',
+        modelCompatibility: ['All Models'],
+        warranty: '1 year',
+        mrp: 1800,
+        sellingPrice: 1450,
+        discount: 19.44,
+        stockQty: 52,
+        minStockLevel: 25,
+        status: 'in_stock',
+        warehouseLocation: 'F-07',
+        barcode: 'BSH-WPR-PAIR',
+      },
+      {
+        name: 'Battery 12V 65Ah',
+        category: 'Electrical',
+        brand: 'Amaron',
+        modelCompatibility: ['Maruti Swift', 'Hyundai i20', 'Honda City'],
+        warranty: '3 years',
+        mrp: 8500,
+        sellingPrice: 7200,
+        discount: 15.29,
+        stockQty: 15,
+        minStockLevel: 10,
+        status: 'in_stock',
+        warehouseLocation: 'G-02',
+        barcode: 'AMR-BAT-65AH',
+      },
+      {
+        name: 'Coolant/Antifreeze 1L',
+        category: 'Engine Parts',
+        brand: 'Shell',
+        modelCompatibility: ['All Models'],
+        warranty: 'N/A',
+        mrp: 650,
+        sellingPrice: 550,
+        discount: 15.38,
+        stockQty: 95,
+        minStockLevel: 30,
+        status: 'in_stock',
+        warehouseLocation: 'D-08',
+        barcode: 'SHL-CLT-1L',
       },
     ]);
     console.log(`✅ Created ${products.length} products`);
 
     // Customer model removed - using RegistrationCustomer instead
     console.log('✅ Skipped legacy customer seeding (use Customer Registration Dashboard)');
-
-    const serviceVisits = await ServiceVisit.insertMany([
-      {
-        customerId: null,
-        vehicleReg: 'MH-12-AB-1234',
-        status: 'working',
-        handlerId: employees[0]._id,
-        notes: 'Oil change and filter replacement',
-        partsUsed: [
-          {
-            productId: products[0]._id,
-            quantity: 1,
-            price: products[0].sellingPrice,
-          },
-        ],
-        totalAmount: products[0].sellingPrice,
-      },
-      {
-        customerId: null,
-        vehicleReg: 'DL-8C-XY-5678',
-        status: 'waiting',
-        handlerId: employees[1]._id,
-        notes: 'Waiting for brake pads delivery',
-        partsUsed: [],
-        totalAmount: 0,
-      },
-      {
-        customerId: null,
-        vehicleReg: 'KA-03-MN-9012',
-        status: 'inquired',
-        handlerId: employees[0]._id,
-        notes: 'General service inquiry',
-        partsUsed: [],
-        totalAmount: 0,
-      },
-    ]);
-    console.log(`✅ Created ${serviceVisits.length} service visits`);
-
-    const order1 = await Order.create({
-      customerId: null,
-      customerName: 'Walk-in Customer',
-      items: [
-        {
-          productId: products[0]._id,
-          quantity: 2,
-          price: products[0].sellingPrice,
-        },
-        {
-          productId: products[3]._id,
-          quantity: 1,
-          price: products[3].sellingPrice,
-        },
-      ],
-      total: products[0].sellingPrice * 2 + products[3].sellingPrice,
-      paymentStatus: 'paid',
-      paidAmount: products[0].sellingPrice * 2 + products[3].sellingPrice,
-      salespersonId: employees[3]._id,
-    });
-
-    const order2 = await Order.create({
-      customerId: customers[1]._id,
-      customerName: customers[1].name,
-      items: [
-        {
-          productId: products[1]._id,
-          quantity: 1,
-          price: products[1].sellingPrice,
-        },
-        {
-          productId: products[4]._id,
-          quantity: 1,
-          price: products[4].sellingPrice,
-        },
-      ],
-      total: products[1].sellingPrice + products[4].sellingPrice,
-      paymentStatus: 'partial',
-      paidAmount: 5000,
-      salespersonId: employees[3]._id,
-    });
-    
-    console.log(`✅ Created 2 orders`);
+    console.log('✅ Skipped service visits and orders (can be created via UI)');
 
     console.log('🎉 Database seeded successfully!');
     process.exit(0);
