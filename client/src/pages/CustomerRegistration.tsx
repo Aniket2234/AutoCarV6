@@ -152,19 +152,48 @@ export default function CustomerRegistration() {
   // Register customer mutation
   const registerCustomer = useMutation({
     mutationFn: async (data: CustomerFormData) => {
+      console.log('📱 CUSTOMER REGISTRATION - STARTING');
+      console.log('================================');
+      console.log('Customer Data:', data);
+      console.log('================================\n');
+      
       const response = await apiRequest("POST", "/api/registration/customers", data);
-      return await response.json();
+      const result = await response.json();
+      
+      console.log('📱 CUSTOMER REGISTRATION - RESPONSE');
+      console.log('================================');
+      console.log('Customer ID:', result.customerId);
+      console.log('OTP (Dev Mode):', result.otp || 'Not shown in production');
+      console.log('WhatsApp OTP Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
+      if (result.whatsappError) {
+        console.error('WhatsApp Error:', result.whatsappError);
+      }
+      console.log('Response:', JSON.stringify(result, null, 2));
+      console.log('================================\n');
+      
+      return result;
     },
     onSuccess: (data) => {
       setCustomerId(data.customerId);
       if (data.otp) setOtp(data.otp); // For development
       setStep("otp");
+      
+      const description = data.whatsappSent 
+        ? "OTP sent to your WhatsApp" 
+        : data.whatsappError 
+          ? `OTP not sent via WhatsApp: ${data.whatsappError}` 
+          : "Please check your mobile for the OTP";
+      
       toast({
         title: "OTP Sent",
-        description: "Please check your mobile for the OTP",
+        description,
+        variant: data.whatsappSent ? "default" : "destructive",
       });
     },
     onError: (error: any) => {
+      console.error('❌ CUSTOMER REGISTRATION FAILED');
+      console.error('Error:', error);
+      
       toast({
         title: "Registration Failed",
         description: error.message || "Failed to register customer",
@@ -176,18 +205,53 @@ export default function CustomerRegistration() {
   // Verify OTP mutation
   const verifyOTP = useMutation({
     mutationFn: async ({ customerId, otp }: { customerId: string; otp: string }) => {
+      console.log('📱 OTP VERIFICATION - STARTING');
+      console.log('================================');
+      console.log('Customer ID:', customerId);
+      console.log('OTP Entered:', otp);
+      console.log('================================\n');
+      
       const response = await apiRequest("POST", "/api/registration/verify-otp", { customerId, otp });
-      return await response.json();
+      const result = await response.json();
+      
+      console.log('📱 OTP VERIFICATION - RESPONSE');
+      console.log('================================');
+      console.log('Verification Success:', result.success ? '✅' : '❌');
+      console.log('Customer Reference Code:', result.customer?.referenceCode);
+      console.log('WhatsApp Welcome Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
+      if (result.whatsappError) {
+        console.error('WhatsApp Welcome Error:', result.whatsappError);
+      }
+      console.log('Response:', JSON.stringify(result, null, 2));
+      console.log('================================\n');
+      
+      return result;
     },
     onSuccess: (data) => {
       setCustomerData(data.customer);
       setStep("vehicle");
+      
+      const description = data.whatsappSent 
+        ? `Welcome message sent to WhatsApp with Customer ID: ${data.customer.referenceCode}` 
+        : "Now add your vehicle details";
+      
       toast({
         title: "Verification Successful",
-        description: "Now add your vehicle details",
+        description,
       });
+      
+      if (data.whatsappError) {
+        toast({
+          title: "WhatsApp Error",
+          description: `Welcome message failed: ${data.whatsappError}`,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
+      console.error('❌ OTP VERIFICATION FAILED');
+      console.error('Error:', error);
+      
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid OTP",
