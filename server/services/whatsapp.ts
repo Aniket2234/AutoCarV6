@@ -46,39 +46,66 @@ export async function sendWhatsAppOTP({
   }
 
   const formattedPhone = formatPhoneNumber(to);
-  const message = `Following is the otp for mauli car world:- ${otp}`;
-
-  const url = `${WHATSAPP_BASE_URL}/send-text/${WHATSAPP_PHONE_NUMBER_ID}`;
+  const url = `${WHATSAPP_BASE_URL}/send-template/${WHATSAPP_PHONE_NUMBER_ID}`;
   
-  console.log('\n📱 Sending WhatsApp OTP Message');
+  console.log('\n📱 Sending WhatsApp OTP Template');
   console.log('================================');
   console.log('API URL:', url);
   console.log('API Key:', WHATSAPP_API_KEY.substring(0, 8) + '...');
   console.log('Channel Number:', WHATSAPP_PHONE_NUMBER_ID);
+  console.log('Template Name: otptest');
   console.log('To (Original):', to);
   console.log('To (Formatted):', formattedPhone);
-  console.log('Message:', message);
+  console.log('OTP:', otp);
   console.log('================================\n');
 
   try {
     const startTime = Date.now();
     
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: formattedPhone,
+      type: 'template',
+      template: {
+        name: 'otptest',
+        language: {
+          code: 'en'
+        },
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              {
+                type: 'text',
+                text: otp
+              }
+            ]
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: '0',
+            parameters: [
+              {
+                type: 'text',
+                text: otp
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    console.log('Request Payload:', JSON.stringify(payload, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${WHATSAPP_API_KEY}`
       },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: formattedPhone,
-        type: 'text',
-        text: {
-          preview_url: false,
-          body: message
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     const responseTime = Date.now() - startTime;
@@ -98,15 +125,15 @@ export async function sendWhatsAppOTP({
     } else {
       return { 
         success: false, 
-        error: data.statusDesc || 'Failed to send WhatsApp message',
+        error: data.statusDesc || 'Failed to send WhatsApp OTP template',
         statusCode: data.statusCode
       };
     }
   } catch (error) {
-    console.error('❌ WhatsApp API Error:', error);
+    console.error('❌ WhatsApp OTP Template API Error:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Failed to send WhatsApp message'
+      error: error instanceof Error ? error.message : 'Failed to send WhatsApp OTP template'
     };
   }
 }
