@@ -27,7 +27,7 @@ function formatPhoneNumber(phone: string): string {
   
   if (formattedPhone.length !== 12 || !formattedPhone.startsWith('91')) {
     console.error(`⚠️ Invalid phone number format after normalization: "${formattedPhone}" (original: "${phone}")`);
-    console.error('Expected format: 12 digits starting with 91 (e.g., 919876543210)');
+    console.error('Expected format: 12 digits starting with 91 (e.g., 919619523254)');
   }
   
   return formattedPhone;

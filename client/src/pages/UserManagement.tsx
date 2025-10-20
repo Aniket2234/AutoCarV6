@@ -250,7 +250,7 @@ export default function UserManagement() {
                 <Input
                   id="mobile"
                   type="tel"
-                  placeholder="9876543210"
+                  placeholder="9619523254"
                   value={newUserMobile}
                   onChange={(e) => setNewUserMobile(e.target.value)}
                   required
@@ -373,7 +373,7 @@ export default function UserManagement() {
               <Input
                 id="edit-mobile"
                 type="tel"
-                placeholder="9876543210"
+                placeholder="9619523254"
                 value={editUserMobile}
                 onChange={(e) => setEditUserMobile(e.target.value)}
               />

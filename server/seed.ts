@@ -20,7 +20,7 @@ async function seed() {
 
     // Create users for each role with mobile numbers
     console.log('Creating users...');
-    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin', '9876543210');
+    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin', '9619523254');
     const inventoryManager = await createUser('inventory@autoshop.com', 'inventory123', 'Inventory Manager', 'Inventory Manager', '9876543211');
     const salesExecutive = await createUser('sales@autoshop.com', 'sales123', 'Sales Executive', 'Sales Executive', '9876543212');
     const hrManager = await createUser('hr@autoshop.com', 'hr123', 'HR Manager', 'HR Manager', '9876543213');

@@ -59,7 +59,7 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
 ### WhatsApp Integration for Customer Registration
 1. **OTP Delivery via WhatsApp**: Implemented WhatsApp template message sending for OTP verification during customer registration using CloudAPI integration with template `otptest`
 2. **Welcome Message with Customer ID**: After completing the entire registration process (including all vehicles), customers receive a WhatsApp message with their Customer ID using template `crmtestingcustomer`. The message is sent only once when the user clicks "Complete Registration" on the final success screen, not after each individual vehicle registration.
-3. **Phone Number Formatting**: Automatic normalization of Indian phone numbers supporting 10-digit (9876543210), 11-digit with leading 0 (09876543210), and 12-digit with country code (919876543210) formats
+3. **Phone Number Formatting**: Automatic normalization of Indian phone numbers supporting 10-digit (9619523254), 11-digit with leading 0 (09619523254), and 12-digit with country code (919619523254) formats
 4. **Comprehensive Logging**: Detailed console logging in both frontend (browser console) and backend (server logs) for complete debugging visibility of WhatsApp API calls
 5. **Error Handling**: Graceful error handling with user-friendly messages if WhatsApp delivery fails, while still allowing registration to proceed
 6. **Environment Configuration**: Uses `WHATSAPP_API_KEY`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_TEMPLATE_NAME` environment variables for secure credential management
@@ -89,7 +89,7 @@ A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0
    - User list displays mobile numbers for all roles
    - Mobile numbers shown with 📱 icon in user cards
 
-5. **Seed Script**: Creates default users for all roles with unique mobile numbers (9876543210-9876543214)
+5. **Seed Script**: Creates default users for all roles with unique mobile numbers (9619523254-9876543214)
 
 ### Product Catalog & Inventory Improvements
 1. **Added 10 Products to Database**: Extended the seed script to include 10 car parts products (Engine Oil Filter, Brake Pads, Air Filter, Spark Plugs, Cabin Air Filter, Engine Oil, LED Headlight Bulb, Wiper Blades, Battery, and Coolant/Antifreeze) with complete details including warehouse locations, barcodes, pricing, stock quantities, and warranty information.
