@@ -248,7 +248,38 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
                                 name={`items.${index}.name`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <Input {...field} placeholder="Item name" data-testid={`input-item-name-${index}`} />
+                                    {item.type === 'product' ? (
+                                      <Select
+                                        value={field.value}
+                                        onValueChange={(value) => {
+                                          const selectedProduct = products.find((p: any) => p.name === value);
+                                          if (selectedProduct) {
+                                            field.onChange(value);
+                                            form.setValue(`items.${index}.productId`, selectedProduct._id);
+                                            form.setValue(`items.${index}.unitPrice`, selectedProduct.sellingPrice);
+                                            updateItemTotal(index);
+                                          }
+                                        }}
+                                      >
+                                        <SelectTrigger data-testid={`select-product-${index}`}>
+                                          <SelectValue placeholder="Select product from inventory" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {products.filter((p: any) => p.stockQty > 0).map((product: any) => (
+                                            <SelectItem key={product._id} value={product.name}>
+                                              {product.name} - ₹{product.sellingPrice} ({product.stockQty} in stock)
+                                            </SelectItem>
+                                          ))}
+                                          {products.filter((p: any) => p.stockQty > 0).length === 0 && (
+                                            <div className="p-2 text-sm text-muted-foreground text-center">
+                                              No products in stock
+                                            </div>
+                                          )}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Input {...field} placeholder="Service name" data-testid={`input-item-name-${index}`} />
+                                    )}
                                   </FormItem>
                                 )}
                               />
