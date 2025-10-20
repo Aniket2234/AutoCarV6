@@ -81,7 +81,7 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
     },
   });
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [] } = useQuery<any[]>({
     queryKey: ['/api/products'],
   });
 
@@ -250,11 +250,11 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
                                   <FormItem>
                                     {item.type === 'product' ? (
                                       <Select
-                                        value={field.value}
-                                        onValueChange={(value) => {
-                                          const selectedProduct = products.find((p: any) => p.name === value);
+                                        value={form.watch(`items.${index}.productId`) || ''}
+                                        onValueChange={(productId) => {
+                                          const selectedProduct = products.find((p: any) => p._id === productId);
                                           if (selectedProduct) {
-                                            field.onChange(value);
+                                            field.onChange(selectedProduct.name);
                                             form.setValue(`items.${index}.productId`, selectedProduct._id);
                                             form.setValue(`items.${index}.unitPrice`, selectedProduct.sellingPrice);
                                             updateItemTotal(index);
@@ -262,11 +262,13 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
                                         }}
                                       >
                                         <SelectTrigger data-testid={`select-product-${index}`}>
-                                          <SelectValue placeholder="Select product from inventory" />
+                                          <SelectValue placeholder="Select product from inventory">
+                                            {field.value || 'Select product from inventory'}
+                                          </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                           {products.filter((p: any) => p.stockQty > 0).map((product: any) => (
-                                            <SelectItem key={product._id} value={product.name}>
+                                            <SelectItem key={product._id} value={product._id}>
                                               {product.name} - ₹{product.sellingPrice} ({product.stockQty} in stock)
                                             </SelectItem>
                                           ))}

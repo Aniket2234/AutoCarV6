@@ -37,6 +37,26 @@ A comprehensive activity logging system tracks all user actions (CRUD operations
 ### Invoicing & Billing Module
 A comprehensive invoicing system with auto-generated invoice numbers (INV/2025/0001 format), multi-payment tracking (UPI, Cash, Card, Net Banking, Cheque), and approval workflows. **Features**: Invoice generation from service visits, discount/coupon application, tax calculation, admin approval/rejection, payment recording with transaction history, automatic warranty creation on approval, and notification stubs for WhatsApp/Email delivery. **PDF Generation**: Automatic professional PDF generation upon invoice approval, including customer details, vehicle information, itemized charges, tax breakdown, and payment details. PDFs are stored and accessible via download endpoint, with on-demand regeneration for legacy invoices. **Role-Based Access**: Admin has full control (create, approve, reject, manage coupons), Sales Executive can create invoices and record payments. **Razorpay Integration**: Stub implementation included for future payment gateway integration.
 
+## Recent Changes (October 20, 2025)
+
+### Product Catalog & Inventory Improvements
+1. **Added 10 Products to Database**: Extended the seed script to include 10 car parts products (Engine Oil Filter, Brake Pads, Air Filter, Spark Plugs, Cabin Air Filter, Engine Oil, LED Headlight Bulb, Wiper Blades, Battery, and Coolant/Antifreeze) with complete details including warehouse locations, barcodes, pricing, stock quantities, and warranty information.
+
+2. **Enhanced Inventory UI**: Added a new "Products Catalog" tab to the Inventory Management page displaying all products in a responsive grid layout with product cards showing:
+   - Product name, brand, and category
+   - Stock status badges (In Stock/Low Stock/Out of Stock)
+   - Current stock quantity with color-coded indicators
+   - MRP and selling price with discount percentage
+   - Warehouse location and barcode information
+   - Warranty details
+
+3. **Improved Invoice Generation**: Enhanced the InvoiceGenerationDialog component to allow selecting products directly from inventory when adding invoice items:
+   - Product items now show a dropdown selector instead of plain text input
+   - Dropdown displays only in-stock products with their prices and stock levels
+   - Auto-populates productId and unit price when a product is selected
+   - Service items continue to use plain text input
+   - Automatically calculates item totals after product selection
+
 ## External Dependencies
 
 -   **Database**: MongoDB (via Mongoose)
