@@ -75,32 +75,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
-      (req as any).session.userId = user._id.toString();
-      (req as any).session.userRole = user.role;
-      (req as any).session.userName = user.name;
-      (req as any).session.userEmail = user.email;
-      
-      if (user.role !== 'Admin') {
-        (req as any).session.lastActivity = Date.now();
+      if (!user.mobileNumber) {
+        return res.status(400).json({ error: "No mobile number registered for this account. Please contact administrator." });
       }
       
-      await logActivity({
-        userId: user._id.toString(),
-        userName: user.name,
-        userRole: user.role,
-        action: 'login',
-        resource: 'user',
-        description: `${user.name} logged in`,
-        ipAddress: req.ip,
-      });
+      const otpResult = await sendOTPToMobile(user.mobileNumber);
       
-      res.json({
-        id: user._id,
+      if (!otpResult.success) {
+        return res.status(500).json({ error: otpResult.error || "Failed to send OTP" });
+      }
+      
+      (req as any).session.pendingAuth = {
+        userId: user._id.toString(),
         email: user.email,
         name: user.name,
         role: user.role,
+        mobileNumber: user.mobileNumber,
+      };
+      
+      res.json({
+        requireOTP: true,
+        mobileNumber: user.mobileNumber,
+        message: "OTP sent to your registered mobile number",
       });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(400).json({ error: "Login failed" });
     }
   });
@@ -164,48 +163,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/verify-otp", async (req, res) => {
     try {
-      const { mobileNumber, otp } = req.body;
+      const { otp } = req.body;
       
-      if (!mobileNumber || !otp) {
-        return res.status(400).json({ error: "Mobile number and OTP are required" });
+      if (!otp) {
+        return res.status(400).json({ error: "OTP is required" });
       }
       
-      const result = await verifyOTP(mobileNumber, otp);
+      const pendingAuth = (req as any).session.pendingAuth;
+      if (!pendingAuth || !pendingAuth.mobileNumber) {
+        return res.status(400).json({ error: "No pending authentication. Please login again." });
+      }
+      
+      const result = await verifyOTP(pendingAuth.mobileNumber, otp);
       
       if (!result.success) {
         return res.status(400).json({ error: result.error || "Invalid OTP" });
       }
       
-      const user = await User.findOne({ mobileNumber, isActive: true });
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+      (req as any).session.userId = pendingAuth.userId;
+      (req as any).session.userRole = pendingAuth.role;
+      (req as any).session.userName = pendingAuth.name;
+      (req as any).session.userEmail = pendingAuth.email;
       
-      (req as any).session.userId = user._id.toString();
-      (req as any).session.userRole = user.role;
-      (req as any).session.userName = user.name;
-      (req as any).session.userEmail = user.email;
+      delete (req as any).session.pendingAuth;
       
-      if (user.role !== 'Admin') {
+      if (pendingAuth.role !== 'Admin') {
         (req as any).session.lastActivity = Date.now();
       }
       
       await logActivity({
-        userId: user._id.toString(),
-        userName: user.name,
-        userRole: user.role,
+        userId: pendingAuth.userId,
+        userName: pendingAuth.name,
+        userRole: pendingAuth.role,
         action: 'login',
         resource: 'user',
-        description: `${user.name} logged in via OTP`,
+        description: `${pendingAuth.name} logged in`,
         ipAddress: req.ip,
       });
       
       res.json({
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        mobileNumber: user.mobileNumber,
+        id: pendingAuth.userId,
+        email: pendingAuth.email,
+        name: pendingAuth.name,
+        role: pendingAuth.role,
+        mobileNumber: pendingAuth.mobileNumber,
       });
     } catch (error) {
       console.error('Verify OTP error:', error);
