@@ -269,10 +269,6 @@ export default function CustomerRegistration() {
       console.log('================================');
       console.log('Vehicle ID:', result.vehicle?.vehicleId);
       console.log('Customer Reference Code:', result.customer?.referenceCode);
-      console.log('WhatsApp Welcome Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
-      if (result.whatsappError) {
-        console.error('WhatsApp Welcome Error:', result.whatsappError);
-      }
       console.log('Response:', JSON.stringify(result, null, 2));
       console.log('================================\n');
       
@@ -283,16 +279,9 @@ export default function CustomerRegistration() {
       setVehicleData(data.vehicle);
       setCustomerData(data.customer);
       
-      // Show success message with WhatsApp status
-      const whatsappStatus = data.whatsappSent 
-        ? ` WhatsApp confirmation sent with Customer ID: ${data.customer.referenceCode}`
-        : data.whatsappError 
-          ? ` (WhatsApp failed: ${data.whatsappError})`
-          : '';
-      
       toast({
         title: "Vehicle Added!",
-        description: `Vehicle registered successfully. Total vehicles: ${registeredVehicles.length + 1}.${whatsappStatus}`,
+        description: `Vehicle registered successfully. Total vehicles: ${registeredVehicles.length + 1}. Click "Complete Registration" when done adding vehicles.`,
       });
       // Reset vehicle form for next vehicle
       vehicleForm.reset({
@@ -318,6 +307,55 @@ export default function CustomerRegistration() {
       toast({
         title: "Vehicle Registration Failed",
         description: error.message || "Failed to register vehicle",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete registration mutation - sends welcome message
+  const completeRegistration = useMutation({
+    mutationFn: async () => {
+      console.log('✅ COMPLETING REGISTRATION - STARTING');
+      console.log('================================');
+      console.log('Customer ID:', customerId);
+      console.log('================================\n');
+      
+      const response = await apiRequest("POST", "/api/registration/complete", { customerId });
+      const result = await response.json();
+      
+      console.log('✅ COMPLETING REGISTRATION - RESPONSE');
+      console.log('================================');
+      console.log('WhatsApp Welcome Sent:', result.whatsappSent ? '✅ SUCCESS' : '❌ FAILED');
+      if (result.whatsappError) {
+        console.error('WhatsApp Welcome Error:', result.whatsappError);
+      }
+      console.log('Response:', JSON.stringify(result, null, 2));
+      console.log('================================\n');
+      
+      return result;
+    },
+    onSuccess: (data) => {
+      setStep("success");
+      
+      const description = data.whatsappSent 
+        ? `WhatsApp welcome message sent with your Customer ID!`
+        : data.whatsappError 
+          ? `Registration complete! (WhatsApp message failed: ${data.whatsappError})`
+          : 'Registration complete!';
+      
+      toast({
+        title: "Registration Successful!",
+        description,
+        variant: data.whatsappSent ? "default" : "destructive",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ COMPLETE REGISTRATION FAILED');
+      console.error('Error:', error);
+      
+      toast({
+        title: "Failed to Complete",
+        description: error.message || "Failed to complete registration",
         variant: "destructive",
       });
     },
@@ -1017,10 +1055,11 @@ export default function CustomerRegistration() {
                         type="button"
                         variant="outline"
                         className="w-full" 
-                        onClick={() => setStep("success")}
+                        onClick={() => completeRegistration.mutate()}
+                        disabled={completeRegistration.isPending}
                         data-testid="button-complete-registration"
                       >
-                        Complete Registration ({registeredVehicles.length} vehicle{registeredVehicles.length > 1 ? 's' : ''} added)
+                        {completeRegistration.isPending ? "Completing..." : `Complete Registration (${registeredVehicles.length} vehicle${registeredVehicles.length > 1 ? 's' : ''} added)`}
                       </Button>
                     )}
                   </div>

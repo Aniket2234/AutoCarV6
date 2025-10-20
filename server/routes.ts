@@ -1877,19 +1877,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicleId
       });
       
-      // Send WhatsApp welcome message with customer ID after vehicle registration
-      const whatsappResult = await sendWhatsAppWelcome({
-        to: customer.mobileNumber,
-        templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'crmtestingcustomer',
-        customerId: customer.referenceCode
-      });
-      
-      if (!whatsappResult.success) {
-        console.warn('⚠️ WhatsApp welcome message send failed:', whatsappResult.error);
-      } else {
-        console.log('✅ WhatsApp welcome message sent successfully to', customer.mobileNumber);
-      }
-      
       res.json({ 
         vehicle: {
           id: vehicle._id.toString(),
@@ -1914,8 +1901,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceCode: customer.referenceCode,
           fullName: customer.fullName,
         },
-        whatsappSent: whatsappResult.success,
-        whatsappError: whatsappResult.error,
         message: "Vehicle registered successfully"
       });
     } catch (error) {
@@ -1923,6 +1908,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Complete registration - Send welcome message
+  app.post("/api/registration/complete", async (req, res) => {
+    try {
+      const { customerId } = req.body;
+      
+      const customer = await RegistrationCustomer.findById(customerId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Send WhatsApp welcome message with customer ID
+      const whatsappResult = await sendWhatsAppWelcome({
+        to: customer.mobileNumber,
+        templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'crmtestingcustomer',
+        customerId: customer.referenceCode
+      });
+      
+      if (!whatsappResult.success) {
+        console.warn('⚠️ WhatsApp welcome message send failed:', whatsappResult.error);
+      } else {
+        console.log('✅ WhatsApp welcome message sent successfully to', customer.mobileNumber);
+      }
+      
+      res.json({ 
+        success: true,
+        whatsappSent: whatsappResult.success,
+        whatsappError: whatsappResult.error,
+        message: "Registration completed successfully"
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to complete registration" });
+    }
+  });
+
   // Get customer with vehicles
   app.get("/api/registration/customers/:id", async (req, res) => {
     try {
