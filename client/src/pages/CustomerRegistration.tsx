@@ -70,6 +70,7 @@ const vehicleFormSchema = z.object({
   isNewVehicle: z.string().min(1, "Please select vehicle condition"),
   chassisNumber: z.string().optional(),
   selectedParts: z.array(z.string()).default([]),
+  warrantyCard: z.string().optional(),
 }).refine((data) => {
   if (data.isNewVehicle === "true" && !data.chassisNumber) {
     return false;
@@ -144,6 +145,7 @@ export default function CustomerRegistration() {
       isNewVehicle: "",
       chassisNumber: "",
       selectedParts: [],
+      warrantyCard: "",
     },
   });
 
@@ -206,6 +208,7 @@ export default function CustomerRegistration() {
         isNewVehicle: data.isNewVehicle === "true",
         chassisNumber: data.isNewVehicle === "true" ? data.chassisNumber : undefined,
         selectedParts: data.selectedParts || [],
+        warrantyCard: data.warrantyCard || undefined,
       });
       return await response.json();
     },
@@ -230,6 +233,7 @@ export default function CustomerRegistration() {
         isNewVehicle: "",
         chassisNumber: "",
         selectedParts: [],
+        warrantyCard: "",
       });
       setSelectedBrand("");
       setSelectedModel("");
@@ -264,6 +268,17 @@ export default function CustomerRegistration() {
       const reader = new FileReader();
       reader.onloadend = () => {
         vehicleForm.setValue("vehiclePhoto", reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleWarrantyCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        vehicleForm.setValue("warrantyCard", reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -812,6 +827,26 @@ export default function CustomerRegistration() {
                             data-testid="input-vehicle-photo"
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={vehicleForm.control}
+                    name="warrantyCard"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warranty Card (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleWarrantyCardUpload}
+                            data-testid="input-warranty-card"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Upload the warranty card for this vehicle if available</p>
                         <FormMessage />
                       </FormItem>
                     )}

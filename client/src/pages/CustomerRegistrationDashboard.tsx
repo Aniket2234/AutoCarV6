@@ -82,6 +82,7 @@ interface Vehicle {
   isNewVehicle: boolean;
   chassisNumber?: string | null;
   selectedParts: string[];
+  warrantyCard?: string | null;
   createdAt: Date;
 }
 
@@ -805,6 +806,25 @@ export default function CustomerRegistrationDashboard() {
                               )}
                             </div>
                           </div>
+                          {vehicle.warrantyCard && (
+                            <div className="mt-3 pt-3 border-t">
+                              <span className="text-muted-foreground text-sm">Warranty Card:</span>
+                              <div className="mt-2">
+                                <img 
+                                  src={vehicle.warrantyCard} 
+                                  alt="Warranty Card" 
+                                  className="max-w-xs w-full h-auto rounded-md border-2 border-green-300 dark:border-green-700 cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => {
+                                    if (vehicle.warrantyCard) {
+                                      window.open(vehicle.warrantyCard, '_blank');
+                                    }
+                                  }}
+                                  data-testid={`img-warranty-card-${vehicle.id}`}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Click to view full size</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -151,21 +151,25 @@ export default function Dashboard() {
             value: formatCurrency(dashboardStats.todaySales || 0),
             icon: DollarSign,
             trend: { value: 12.5, isPositive: true },
+            color: "blue" as const,
           },
           {
             title: "Active Service Jobs",
             value: dashboardStats.activeServices || 0,
             icon: Package,
+            color: "yellow" as const,
           },
           {
             title: "Low Stock Items",
             value: dashboardStats.lowStockProducts?.length || 0,
             icon: AlertTriangle,
+            color: "orange" as const,
           },
           {
             title: "Total Customers",
             value: dashboardStats.totalCustomers || 0,
             icon: Users,
+            color: "green" as const,
           },
         ];
       
@@ -175,21 +179,25 @@ export default function Dashboard() {
             title: "Total Products",
             value: dashboardStats.totalProducts || 0,
             icon: Package,
+            color: "purple" as const,
           },
           {
             title: "Inventory Value",
             value: formatCurrency(dashboardStats.totalInventoryValue || 0),
             icon: DollarSign,
+            color: "blue" as const,
           },
           {
             title: "Low Stock Items",
             value: dashboardStats.lowStockProducts?.length || 0,
             icon: AlertTriangle,
+            color: "orange" as const,
           },
           {
             title: "Today's Transactions",
             value: dashboardStats.recentTransactions || 0,
             icon: TrendingUp,
+            color: "green" as const,
           },
         ];
       
@@ -200,21 +208,25 @@ export default function Dashboard() {
             value: formatCurrency(dashboardStats.todaySales || 0),
             icon: DollarSign,
             trend: { value: 12.5, isPositive: true },
+            color: "blue" as const,
           },
           {
             title: "Total Customers",
             value: dashboardStats.totalCustomers || 0,
             icon: Users,
+            color: "green" as const,
           },
           {
             title: "Active Orders",
             value: dashboardStats.activeOrders || 0,
             icon: ShoppingCart,
+            color: "yellow" as const,
           },
           {
             title: "Total Orders",
             value: dashboardStats.totalOrders || 0,
             icon: ClipboardCheck,
+            color: "purple" as const,
           },
         ];
       
@@ -224,21 +236,25 @@ export default function Dashboard() {
             title: "Total Employees",
             value: dashboardStats.totalEmployees || 0,
             icon: Users,
+            color: "blue" as const,
           },
           {
             title: "Present Today",
             value: dashboardStats.presentToday || 0,
             icon: UserCheck,
+            color: "green" as const,
           },
           {
             title: "Pending Leaves",
             value: dashboardStats.pendingLeaves || 0,
             icon: FileText,
+            color: "yellow" as const,
           },
           {
             title: "Active Tasks",
             value: dashboardStats.activeTasks || 0,
             icon: ClipboardCheck,
+            color: "purple" as const,
           },
         ];
       
@@ -248,16 +264,19 @@ export default function Dashboard() {
             title: "My Active Orders",
             value: dashboardStats.myActiveOrders || 0,
             icon: Package,
+            color: "yellow" as const,
           },
           {
             title: "Completed Today",
             value: dashboardStats.myCompletedToday || 0,
             icon: CheckCircle,
+            color: "green" as const,
           },
           {
             title: "Total Customers",
             value: dashboardStats.totalCustomers || 0,
             icon: Users,
+            color: "blue" as const,
           },
         ];
       
