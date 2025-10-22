@@ -69,15 +69,17 @@ export default function RoleSelection() {
     >
       <div className="absolute inset-0 bg-black/30" />
       <div className="w-full max-w-4xl relative z-10">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <img src={logoImage} alt="Mauli Car World Logo" className="h-16 w-auto" />
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg" data-testid="text-title">Mauli Car World</h1>
-          </div>
-          <p className="text-lg text-white drop-shadow-md" data-testid="text-subtitle">
-            Select your role to access the system
-          </p>
-        </div>
+        <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-6">
+          <CardContent className="text-center py-6">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <img src={logoImage} alt="Mauli Car World Logo" className="h-14 w-auto" />
+              <h1 className="text-3xl font-bold" data-testid="text-title">Mauli Car World</h1>
+            </div>
+            <p className="text-base text-muted-foreground" data-testid="text-subtitle">
+              Select your role to access the system
+            </p>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {roles.map((role) => (
@@ -110,15 +112,17 @@ export default function RoleSelection() {
           ))}
         </div>
 
-        <Button
-          onClick={handleContinue}
-          disabled={!selectedRole}
-          className="w-full py-6 text-lg"
-          size="lg"
-          data-testid="button-continue"
-        >
-          Continue as {selectedRole ? roles.find(r => r.id === selectedRole)?.name : 'User'}
-        </Button>
+        <div className="flex justify-center">
+          <Button
+            onClick={handleContinue}
+            disabled={!selectedRole}
+            className="px-8"
+            size="default"
+            data-testid="button-continue"
+          >
+            Continue as {selectedRole ? roles.find(r => r.id === selectedRole)?.name : 'User'}
+          </Button>
+        </div>
       </div>
     </div>
   );
