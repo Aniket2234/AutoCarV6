@@ -45,8 +45,23 @@ export function ServiceWorkflowCard({
       .toUpperCase();
   };
 
+  const getPhaseBackgroundColor = (status: string) => {
+    switch (status) {
+      case "inquired":
+        return "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50";
+      case "working":
+        return "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50";
+      case "waiting":
+        return "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/50";
+      case "completed":
+        return "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50";
+      default:
+        return "";
+    }
+  };
+
   return (
-    <Card className="hover-elevate" data-testid={`service-card-${vehicleReg}`}>
+    <Card className={`hover-elevate ${getPhaseBackgroundColor(status)}`} data-testid={`service-card-${vehicleReg}`}>
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">

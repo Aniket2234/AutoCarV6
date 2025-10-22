@@ -21,19 +21,19 @@ const serviceStatusConfig = {
   },
   working: {
     label: "Working",
-    phase: "Phase 1",
+    phase: "Phase 2",
     icon: Loader2,
     className: "bg-status-working/10 text-status-working border-status-working/20",
   },
   waiting: {
     label: "Waiting for Parts",
-    phase: "Phase 2",
+    phase: "Phase 3",
     icon: AlertCircle,
     className: "bg-status-waiting/10 text-status-waiting border-status-waiting/20",
   },
   completed: {
     label: "Completed",
-    phase: "Phase 2",
+    phase: "Phase 4",
     icon: CheckCircle,
     className: "bg-status-completed/10 text-status-completed border-status-completed/20",
   },

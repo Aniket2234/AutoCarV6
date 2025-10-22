@@ -337,10 +337,10 @@ export default function ServiceVisits() {
   };
 
   const stages = [
-    { id: "inquired", label: "Inquired", count: servicesByStage.inquired.length },
-    { id: "working", label: "Working", count: servicesByStage.working.length },
-    { id: "waiting", label: "Waiting", count: servicesByStage.waiting.length },
-    { id: "completed", label: "Completed", count: servicesByStage.completed.length },
+    { id: "inquired", label: "Inquired", phase: "Phase 1", count: servicesByStage.inquired.length, color: "text-blue-700 dark:text-blue-400" },
+    { id: "working", label: "Working", phase: "Phase 2", count: servicesByStage.working.length, color: "text-amber-700 dark:text-amber-400" },
+    { id: "waiting", label: "Waiting", phase: "Phase 3", count: servicesByStage.waiting.length, color: "text-purple-700 dark:text-purple-400" },
+    { id: "completed", label: "Completed", phase: "Phase 4", count: servicesByStage.completed.length, color: "text-green-700 dark:text-green-400" },
   ];
   
   const totalVisits = serviceVisits.length;
@@ -567,11 +567,21 @@ export default function ServiceVisits() {
         <div className="flex gap-6 min-w-max">
           {stages.map((stage) => (
             <Card key={stage.id} className="w-96 flex-shrink-0" data-testid={`card-stage-${stage.id}`}>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Wrench className="h-4 w-4" />
-                  {stage.label}
-                </CardTitle>
+              <CardHeader className="pb-4 border-b">
+                <div className="space-y-2">
+                  <div className={`text-sm font-bold uppercase tracking-wide ${stage.color}`}>
+                    {stage.phase}
+                  </div>
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-5 w-5" />
+                      {stage.label}
+                    </div>
+                    <Badge variant="secondary" className="ml-2">
+                      {stage.count}
+                    </Badge>
+                  </CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {servicesByStage[stage.id as keyof typeof servicesByStage].length > 0 ? (
