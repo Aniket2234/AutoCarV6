@@ -74,4 +74,9 @@ warrantySchema.pre('save', async function(next) {
   next();
 });
 
-export const Warranty = mongoose.models.Warranty || mongoose.model('Warranty', warrantySchema);
+// Delete cached model to ensure schema changes are applied
+if (mongoose.models.Warranty) {
+  delete mongoose.models.Warranty;
+}
+
+export const Warranty = mongoose.model('Warranty', warrantySchema);

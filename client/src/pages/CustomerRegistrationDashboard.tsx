@@ -83,6 +83,11 @@ interface Vehicle {
   chassisNumber?: string | null;
   selectedParts: string[];
   warrantyCard?: string | null;
+  warrantyCards?: Array<{
+    partId: string;
+    partName: string;
+    fileData: string;
+  }>;
   createdAt: Date;
 }
 
@@ -800,24 +805,30 @@ export default function CustomerRegistrationDashboard() {
                                 <div>
                                   <span className="text-muted-foreground text-sm">Selected Parts:</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
-                                    {vehicle.selectedParts.map((part, index) => (
-                                      <Badge 
-                                        key={index} 
-                                        variant="outline" 
-                                        className={`text-xs ${vehicle.warrantyCard ? 'cursor-pointer hover:bg-primary/10 transition-colors' : ''}`}
-                                        onClick={() => {
-                                          if (vehicle.warrantyCard) {
-                                            window.open(vehicle.warrantyCard, '_blank');
-                                          }
-                                        }}
-                                        data-testid={`badge-part-${vehicle.id}-${index}`}
-                                      >
-                                        {part}
-                                      </Badge>
-                                    ))}
+                                    {vehicle.selectedParts.map((part, index) => {
+                                      const warrantyCard = vehicle.warrantyCards?.find(wc => wc.partName === part);
+                                      return (
+                                        <Badge 
+                                          key={index} 
+                                          variant="outline" 
+                                          className={`text-xs ${warrantyCard ? 'cursor-pointer hover:bg-primary/10 transition-colors bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700' : ''}`}
+                                          onClick={() => {
+                                            if (warrantyCard) {
+                                              window.open(warrantyCard.fileData, '_blank');
+                                            }
+                                          }}
+                                          data-testid={`badge-part-${vehicle.id}-${index}`}
+                                          title={warrantyCard ? 'Click to view warranty card' : undefined}
+                                        >
+                                          {part} {warrantyCard && '✓'}
+                                        </Badge>
+                                      );
+                                    })}
                                   </div>
-                                  {vehicle.warrantyCard && (
-                                    <p className="text-xs text-muted-foreground mt-1">Click on any part to view warranty card</p>
+                                  {vehicle.warrantyCards && vehicle.warrantyCards.length > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {vehicle.warrantyCards.length} warranty card{vehicle.warrantyCards.length > 1 ? 's' : ''} uploaded - Click on parts with ✓ to view
+                                    </p>
                                   )}
                                 </div>
                               )}
