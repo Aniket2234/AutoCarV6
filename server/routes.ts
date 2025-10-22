@@ -2141,7 +2141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isNewVehicle: vehicle.isNewVehicle,
           chassisNumber: vehicle.chassisNumber,
           selectedParts: vehicle.selectedParts,
-          warrantyCard: vehicle.warrantyCard,
+          warrantyCards: vehicle.warrantyCards,
           createdAt: vehicle.createdAt,
         },
         customer: {
@@ -2295,7 +2295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isNewVehicle: v.isNewVehicle,
         chassisNumber: v.chassisNumber,
         selectedParts: v.selectedParts,
-        warrantyCard: v.warrantyCard,
+        warrantyCards: v.warrantyCards,
         createdAt: v.createdAt,
       })));
     } catch (error) {
@@ -2325,7 +2325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isNewVehicle: vehicle.isNewVehicle,
         chassisNumber: vehicle.chassisNumber,
         selectedParts: vehicle.selectedParts,
-        warrantyCard: vehicle.warrantyCard,
+        warrantyCards: vehicle.warrantyCards,
         createdAt: vehicle.createdAt,
       });
     } catch (error) {
