@@ -116,7 +116,7 @@ export default function RoleSelection() {
           <Button
             onClick={handleContinue}
             disabled={!selectedRole}
-            className="px-8"
+            className="px-8 disabled:opacity-100"
             size="default"
             data-testid="button-continue"
           >
