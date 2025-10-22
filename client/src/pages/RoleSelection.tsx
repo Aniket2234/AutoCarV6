@@ -87,7 +87,7 @@ export default function RoleSelection() {
               key={role.id}
               className={cn(
                 'cursor-pointer transition-all hover:shadow-md bg-white dark:bg-gray-900',
-                selectedRole === role.id && 'ring-2 ring-primary bg-primary/5 dark:bg-primary/10'
+                selectedRole === role.id && 'ring-2 ring-primary'
               )}
               onClick={() => setSelectedRole(role.id)}
               data-testid={`card-role-${role.id.toLowerCase().replace(/\s+/g, '-')}`}
