@@ -2024,9 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId: customer._id.toString(),
         message: "OTP sent successfully",
         whatsappSent: whatsappResult.success,
-        whatsappError: whatsappResult.error,
-        // In development, return OTP for testing
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        whatsappError: whatsappResult.error
       });
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Failed to register customer" });
@@ -2371,8 +2369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`New OTP for ${customer.mobileNumber}: ${otp}`);
       
       res.json({ 
-        message: "OTP resent successfully",
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        message: "OTP resent successfully"
       });
     } catch (error) {
       res.status(400).json({ error: "Failed to resend OTP" });

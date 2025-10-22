@@ -735,7 +735,6 @@ export default function CustomerRegistration() {
               <CardTitle>OTP Verification</CardTitle>
               <CardDescription>
                 Enter the 6-digit OTP sent to your mobile
-                {otp && <span className="block mt-2 text-sm font-mono bg-yellow-100 dark:bg-yellow-900 p-2 rounded">Development OTP: {otp}</span>}
               </CardDescription>
             </CardHeader>
             <CardContent>
