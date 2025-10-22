@@ -75,6 +75,7 @@ export const ROLE_PERMISSIONS = {
   'Service Staff': {
     customers: ['read'],
     orders: ['read', 'update'],
+    invoices: ['read', 'approve'],
   },
 };
 

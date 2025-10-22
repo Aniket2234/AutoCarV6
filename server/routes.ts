@@ -774,7 +774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/service-handlers", requireAuth, async (req, res) => {
     try {
       const handlers = await User.find({
-        role: { $in: ['Admin', 'Service Staff'] },
+        role: 'Service Staff',
         isActive: true
       }).select('-passwordHash').sort({ name: 1 });
       res.json(handlers);
@@ -1414,12 +1414,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (permissions.orders?.includes('read')) {
           const userId = (req as any).session.userId;
           // Only show their own service visits since they have limited access
-          stats.myActiveOrders = await Order.countDocuments({ 
-            handlerId: userId,
-            status: { $in: ['pending', 'processing'] } 
+          stats.myActiveOrders = await ServiceVisit.countDocuments({ 
+            handlerIds: userId,
+            status: { $in: ['inquired', 'working', 'waiting'] } 
           });
-          stats.myCompletedToday = await Order.countDocuments({
-            handlerId: userId,
+          stats.myCompletedToday = await ServiceVisit.countDocuments({
+            handlerIds: userId,
             status: 'completed',
             updatedAt: { $gte: today }
           });
