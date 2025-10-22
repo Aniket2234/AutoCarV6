@@ -395,11 +395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Employees endpoints with permission checks
+  // Employees endpoints with permission checks (now using User model)
   app.get("/api/employees", requireAuth, requirePermission('employees', 'read'), async (req, res) => {
     try {
-      const employees = await Employee.find().sort({ createdAt: -1 });
-      res.json(employees);
+      const employees = await User.find().select('-passwordHash').sort({ createdAt: -1 });
+      const formattedEmployees = employees.map(emp => ({
+        ...emp.toObject(),
+        contact: emp.mobileNumber,
+      }));
+      res.json(formattedEmployees);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch employees" });
     }
@@ -407,13 +411,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/employees", requireAuth, requirePermission('employees', 'create'), async (req, res) => {
     try {
+      const currentUserRole = (req as any).session.userRole;
+      
+      if (req.body.role === 'Admin' && currentUserRole !== 'Admin') {
+        return res.status(403).json({ error: "Only Admin users can create Admin accounts" });
+      }
+      
       const sequence = await getNextSequence('employee_id');
       const employeeId = `EMP${String(sequence).padStart(3, '0')}`;
       
-      const employee = await Employee.create({
-        ...req.body,
-        employeeId
+      const defaultPassword = `${req.body.name.split(' ')[0].toLowerCase()}123`;
+      
+      const employee = await createUser(
+        req.body.email,
+        defaultPassword,
+        req.body.name,
+        req.body.role,
+        req.body.phone || req.body.contact
+      );
+      
+      await User.findByIdAndUpdate(employee._id, {
+        employeeId,
+        department: req.body.department,
+        salary: req.body.salary,
+        joiningDate: req.body.joiningDate || new Date(),
+        panNumber: req.body.panNumber,
+        aadharNumber: req.body.aadharNumber,
+        photo: req.body.photo,
+        documents: req.body.documents,
       });
+      
+      const updatedEmployee = await User.findById(employee._id).select('-passwordHash');
       
       await logActivity({
         userId: (req as any).session.userId,
@@ -427,18 +455,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipAddress: req.ip,
       });
       
-      res.json(employee);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to create employee" });
+      res.json({ ...updatedEmployee?.toObject(), contact: updatedEmployee?.mobileNumber });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create employee" });
     }
   });
 
   app.patch("/api/employees/:id", requireAuth, requirePermission('employees', 'update'), async (req, res) => {
     try {
-      const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      const currentUserRole = (req as any).session.userRole;
+      const employee = await User.findById(req.params.id);
+      
       if (!employee) {
         return res.status(404).json({ error: "Employee not found" });
       }
+      
+      if (req.body.role === 'Admin' && currentUserRole !== 'Admin') {
+        return res.status(403).json({ error: "Only Admin users can assign Admin role" });
+      }
+      
+      const updateData: any = { ...req.body };
+      if (req.body.phone || req.body.contact) {
+        updateData.mobileNumber = req.body.phone || req.body.contact;
+        delete updateData.phone;
+        delete updateData.contact;
+      }
+      
+      const updatedEmployee = await User.findByIdAndUpdate(req.params.id, updateData, { new: true }).select('-passwordHash');
       
       await logActivity({
         userId: (req as any).session.userId,
@@ -446,13 +489,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userRole: (req as any).session.userRole,
         action: 'update',
         resource: 'employee',
-        resourceId: employee._id.toString(),
-        description: `Updated employee: ${employee.name}`,
-        details: { role: employee.role },
+        resourceId: updatedEmployee!._id.toString(),
+        description: `Updated employee: ${updatedEmployee!.name}`,
+        details: { role: updatedEmployee!.role },
         ipAddress: req.ip,
       });
       
-      res.json(employee);
+      res.json({ ...updatedEmployee?.toObject(), contact: updatedEmployee?.mobileNumber });
     } catch (error) {
       res.status(400).json({ error: "Failed to update employee" });
     }
@@ -460,10 +503,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/employees/:id", requireAuth, requirePermission('employees', 'delete'), async (req, res) => {
     try {
-      const employee = await Employee.findByIdAndDelete(req.params.id);
+      const employee = await User.findById(req.params.id);
       if (!employee) {
         return res.status(404).json({ error: "Employee not found" });
       }
+      
+      if (employee.role === 'Admin') {
+        return res.status(403).json({ error: "Cannot delete Admin users" });
+      }
+      
+      await User.findByIdAndDelete(req.params.id);
       
       await logActivity({
         userId: (req as any).session.userId,

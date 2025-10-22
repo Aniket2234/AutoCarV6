@@ -10,6 +10,7 @@ import { UserPlus, Trash2, Edit, Shield } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { queryClient } from '@/lib/queryClient';
+import { Link } from 'wouter';
 
 interface User {
   _id: string;
@@ -208,97 +209,15 @@ export default function UserManagement() {
             User Management
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage user accounts and permissions
+            Manage user accounts and permissions. All employees have user accounts.
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Create User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Create a new user account with specific role and permissions.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <Input
-                  id="mobile"
-                  type="tel"
-                  placeholder="9619523254"
-                  value={newUserMobile}
-                  onChange={(e) => setNewUserMobile(e.target.value)}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  10-digit mobile number for WhatsApp OTP login
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUserPassword}
-                  onChange={(e) => setNewUserPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUserRole} onValueChange={setNewUserRole}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createUserMutation.isPending}>
-                  {createUserMutation.isPending ? 'Creating...' : 'Create User'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Link href="/employees">
+          <Button data-testid="button-create-user">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Employee / User
+          </Button>
+        </Link>
       </div>
 
       <Card>

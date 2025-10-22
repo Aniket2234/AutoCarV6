@@ -328,7 +328,10 @@ export default function Employees() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Employees</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Employees</h1>
+          <p className="text-muted-foreground mt-1 text-sm">All employees have user accounts for system access</p>
+        </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-employee">
