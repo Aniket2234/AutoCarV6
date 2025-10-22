@@ -41,7 +41,7 @@ const roles: RoleOption[] = [
   },
   {
     id: 'Service Staff',
-    name: 'Support Staff',
+    name: 'Service Staff',
     description: 'Customer support and service',
     icon: <Headphones className="h-6 w-6" />,
   },

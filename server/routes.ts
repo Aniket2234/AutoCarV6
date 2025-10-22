@@ -101,11 +101,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, selectedRole } = req.body;
       
       const user = await authenticateUser(email, password);
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      if (selectedRole && user.role !== selectedRole) {
+        return res.status(403).json({ error: `Invalid role selection. This account is registered as ${user.role}.` });
       }
       
       if (!user.mobileNumber) {
