@@ -1,11 +1,8 @@
 import { connectDB } from './db';
 import { Product } from './models/Product';
-// Customer model removed - using RegistrationCustomer instead
 import { Employee } from './models/Employee';
 import { ServiceVisit } from './models/ServiceVisit';
 import { Order } from './models/Order';
-import { User } from './models/User';
-import { createUser } from './auth';
 
 async function seed() {
   try {
@@ -16,16 +13,8 @@ async function seed() {
     await Employee.deleteMany({});
     await ServiceVisit.deleteMany({});
     await Order.deleteMany({});
-    await User.deleteMany({});
 
-    // Create users for each role with mobile numbers
-    console.log('Creating users...');
-    const adminUser = await createUser('admin@autoshop.com', 'admin123', 'Admin User', 'Admin', '9619523254');
-    const inventoryManager = await createUser('inventory@autoshop.com', 'inventory123', 'Inventory Manager', 'Inventory Manager', '9876543211');
-    const salesExecutive = await createUser('sales@autoshop.com', 'sales123', 'Sales Executive', 'Sales Executive', '9876543212');
-    const hrManager = await createUser('hr@autoshop.com', 'hr123', 'HR Manager', 'HR Manager', '9876543213');
-    const serviceStaff = await createUser('service@autoshop.com', 'service123', 'Service Staff', 'Service Staff', '9876543214');
-    console.log('✅ Created 5 users (Admin, Inventory Manager, Sales Executive, HR Manager, Service Staff)');
+    console.log('ℹ️  Skipped user seeding - users are managed directly in the database');
 
     const employees = await Employee.insertMany([
       {

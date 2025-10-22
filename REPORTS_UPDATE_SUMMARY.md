@@ -137,9 +137,7 @@ All reports show **100% real data** from your MongoDB database:
 
 To test the Reports section:
 
-1. **Login Credentials**:
-   - Admin: `admin@autoshop.com` / `admin123`
-   - HR Manager: `hr@autoshop.com` / `hr123`
+1. **Login**: Use your database-configured admin credentials
 
 2. **Navigate to Reports**:
    - Click on "Reports & Analytics" in the navigation
