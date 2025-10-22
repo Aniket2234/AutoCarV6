@@ -518,11 +518,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sequence = await getNextSequence('employee_id');
       const employeeId = `EMP${String(sequence).padStart(3, '0')}`;
       
-      const defaultPassword = `${req.body.name.split(' ')[0].toLowerCase()}123`;
+      const password = req.body.password || `${req.body.name.split(' ')[0].toLowerCase()}123`;
       
       const employee = await createUser(
         req.body.email,
-        defaultPassword,
+        password,
         req.body.name,
         req.body.role,
         req.body.phone || req.body.contact

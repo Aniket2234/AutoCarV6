@@ -50,6 +50,7 @@ export default function Employees() {
     name: "",
     email: "",
     phone: "",
+    password: "",
     role: "",
     department: "",
     salary: "",
@@ -134,6 +135,7 @@ export default function Employees() {
         name: "",
         email: "",
         phone: "",
+        password: "",
         role: "",
         department: "",
         salary: "",
@@ -207,6 +209,7 @@ export default function Employees() {
       name: formData.name,
       email: formData.email,
       contact: formData.phone,
+      password: formData.password,
       role: formData.role,
       department: formData.department,
       salary: parseFloat(formData.salary),
@@ -225,6 +228,7 @@ export default function Employees() {
       name: employee.name,
       email: employee.email || "",
       phone: employee.contact,
+      password: "",
       role: employee.role,
       department: employee.department || "",
       salary: employee.salary ? employee.salary.toString() : "",
@@ -369,6 +373,20 @@ export default function Employees() {
                     data-testid="input-employee-email"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  placeholder="Enter login password"
+                  data-testid="input-employee-password"
+                />
+                <p className="text-xs text-muted-foreground">This password will be used for employee login</p>
               </div>
 
               <div className="space-y-2">
