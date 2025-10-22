@@ -63,6 +63,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   } catch (error) {
     console.error('❌ Vehicle ID migration error:', error);
   }
+
+  // Auto-migrate: Convert old warrantyCard to new warrantyCards array
+  try {
+    const vehiclesWithOldWarranty = await RegistrationVehicle.find({
+      warrantyCard: { $exists: true, $nin: [null, ''] },
+      $or: [
+        { warrantyCards: { $exists: false } },
+        { warrantyCards: { $size: 0 } }
+      ]
+    });
+    
+    if (vehiclesWithOldWarranty.length > 0) {
+      console.log(`🔄 Migrating ${vehiclesWithOldWarranty.length} vehicles from warrantyCard to warrantyCards...`);
+      for (const vehicle of vehiclesWithOldWarranty) {
+        await RegistrationVehicle.updateOne(
+          { _id: vehicle._id },
+          { 
+            $set: { 
+              warrantyCards: [{
+                partId: 'legacy',
+                partName: 'Vehicle Warranty Card',
+                fileData: (vehicle as any).warrantyCard
+              }]
+            },
+            $unset: { warrantyCard: '' }
+          }
+        );
+      }
+      console.log(`✅ Migration complete: Migrated ${vehiclesWithOldWarranty.length} warranty cards`);
+    }
+  } catch (error) {
+    console.error('❌ Warranty card migration error:', error);
+  }
   
   app.use(attachUser);
 
@@ -132,6 +165,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.get("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const user = await User.findById(userId).select('-passwordHash');
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({
+        name: user.name,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        role: user.role,
+        employeeId: user.employeeId,
+        department: user.department,
+        joiningDate: user.joiningDate,
+        photo: user.photo,
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).session.userId;
+      const { name, email, mobileNumber, department } = req.body;
+      
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+      if (mobileNumber) updateData.mobileNumber = mobileNumber;
+      if (department) updateData.department = department;
+      
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).select('-passwordHash');
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      (req as any).session.userName = user.name;
+      (req as any).session.userEmail = user.email;
+      
+      res.json({
+        name: user.name,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        role: user.role,
+        employeeId: user.employeeId,
+        department: user.department,
+        joiningDate: user.joiningDate,
+        photo: user.photo,
+      });
+    } catch (error) {
+      console.error('Update profile error:', error);
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 

@@ -57,6 +57,13 @@ const customerFormSchema = z.object({
   referralSource: z.string().optional(),
 });
 
+// Warranty card schema
+const warrantyCardSchema = z.object({
+  partId: z.string(),
+  partName: z.string(),
+  fileData: z.string(),
+});
+
 // Vehicle form schema
 const vehicleFormSchema = z.object({
   vehicleNumber: z.string().optional(),
@@ -70,7 +77,7 @@ const vehicleFormSchema = z.object({
   isNewVehicle: z.string().min(1, "Please select vehicle condition"),
   chassisNumber: z.string().optional(),
   selectedParts: z.array(z.string()).default([]),
-  warrantyCard: z.string().optional(),
+  warrantyCards: z.array(warrantyCardSchema).default([]),
 }).refine((data) => {
   if (data.isNewVehicle === "true" && !data.chassisNumber) {
     return false;
@@ -145,7 +152,7 @@ export default function CustomerRegistration() {
       isNewVehicle: "",
       chassisNumber: "",
       selectedParts: [],
-      warrantyCard: "",
+      warrantyCards: [],
     },
   });
 
@@ -261,7 +268,7 @@ export default function CustomerRegistration() {
         isNewVehicle: data.isNewVehicle === "true",
         chassisNumber: data.isNewVehicle === "true" ? data.chassisNumber : undefined,
         selectedParts: data.selectedParts || [],
-        warrantyCard: data.warrantyCard || undefined,
+        warrantyCards: data.warrantyCards || [],
       });
       const result = await response.json();
       
@@ -296,7 +303,7 @@ export default function CustomerRegistration() {
         isNewVehicle: "",
         chassisNumber: "",
         selectedParts: [],
-        warrantyCard: "",
+        warrantyCards: [],
       });
       setSelectedBrand("");
       setSelectedModel("");
@@ -385,15 +392,41 @@ export default function CustomerRegistration() {
     }
   };
 
-  const handleWarrantyCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWarrantyCardUpload = (partId: string, partName: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        vehicleForm.setValue("warrantyCard", reader.result as string);
+        const fileData = reader.result as string;
+        const currentWarrantyCards = vehicleForm.getValues("warrantyCards") || [];
+        const existingIndex = currentWarrantyCards.findIndex(wc => wc.partId === partId);
+        
+        if (existingIndex >= 0) {
+          const updatedCards = [...currentWarrantyCards];
+          updatedCards[existingIndex] = { partId, partName, fileData };
+          vehicleForm.setValue("warrantyCards", updatedCards);
+        } else {
+          vehicleForm.setValue("warrantyCards", [...currentWarrantyCards, { partId, partName, fileData }]);
+        }
+        
+        toast({
+          title: "Warranty Card Uploaded",
+          description: `Warranty card for ${partName} has been uploaded successfully.`,
+        });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const removeWarrantyCard = (partId: string) => {
+    const currentWarrantyCards = vehicleForm.getValues("warrantyCards") || [];
+    const updatedCards = currentWarrantyCards.filter(wc => wc.partId !== partId);
+    vehicleForm.setValue("warrantyCards", updatedCards);
+    
+    toast({
+      title: "Warranty Card Removed",
+      description: "The warranty card has been removed.",
+    });
   };
 
   // Step configuration for progress bar
@@ -954,42 +987,78 @@ export default function CustomerRegistration() {
                           <div className="mb-4">
                             <FormLabel className="text-base">Parts Needed for Service/Replacement</FormLabel>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Select all parts that need service or replacement
+                              Select parts and upload warranty cards for each
                             </p>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto border rounded-lg p-4">
+                          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded-lg p-4">
                             {availableParts.map((part) => (
                               <FormField
                                 key={part.id}
                                 control={vehicleForm.control}
                                 name="selectedParts"
                                 render={({ field }) => {
+                                  const isSelected = field.value?.includes(part.id);
+                                  const hasWarrantyCard = vehicleForm.watch("warrantyCards")?.some(wc => wc.partId === part.id);
                                   return (
                                     <FormItem
                                       key={part.id}
-                                      className="flex flex-row items-start space-x-3 space-y-0"
+                                      className="flex flex-col space-y-2 p-3 border rounded-md bg-muted/30"
                                     >
-                                      <FormControl>
-                                        <Checkbox
-                                          checked={field.value?.includes(part.id)}
-                                          onCheckedChange={(checked) => {
-                                            return checked
-                                              ? field.onChange([...field.value, part.id])
-                                              : field.onChange(
-                                                  field.value?.filter(
-                                                    (value) => value !== part.id
-                                                  )
-                                                );
-                                          }}
-                                          data-testid={`checkbox-part-${part.id}`}
-                                        />
-                                      </FormControl>
-                                      <FormLabel className="text-sm font-normal cursor-pointer">
-                                        {part.name}
-                                        <span className="text-xs text-gray-500 dark:text-gray-400 block">
-                                          {part.category}
-                                        </span>
-                                      </FormLabel>
+                                      <div className="flex items-start space-x-3">
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                field.onChange([...field.value, part.id]);
+                                              } else {
+                                                field.onChange(field.value?.filter((value) => value !== part.id));
+                                                removeWarrantyCard(part.id);
+                                              }
+                                            }}
+                                            data-testid={`checkbox-part-${part.id}`}
+                                          />
+                                        </FormControl>
+                                        <div className="flex-1">
+                                          <FormLabel className="text-sm font-normal cursor-pointer">
+                                            {part.name}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                                              {part.category}
+                                            </span>
+                                          </FormLabel>
+                                        </div>
+                                      </div>
+                                      {isSelected && (
+                                        <div className="ml-9 flex items-center gap-2">
+                                          <label 
+                                            className={`text-xs px-3 py-1.5 rounded cursor-pointer transition-colors ${
+                                              hasWarrantyCard 
+                                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' 
+                                                : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                                            }`}
+                                            data-testid={`label-warranty-upload-${part.id}`}
+                                          >
+                                            {hasWarrantyCard ? '✓ Warranty Card Uploaded' : '+ Upload Warranty Card'}
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={handleWarrantyCardUpload(part.id, part.name)}
+                                              data-testid={`input-warranty-${part.id}`}
+                                            />
+                                          </label>
+                                          {hasWarrantyCard && (
+                                            <button
+                                              type="button"
+                                              onClick={() => removeWarrantyCard(part.id)}
+                                              className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                                              data-testid={`button-remove-warranty-${part.id}`}
+                                            >
+                                              Remove
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
                                     </FormItem>
                                   );
                                 }}
@@ -1021,25 +1090,34 @@ export default function CustomerRegistration() {
                     )}
                   />
 
-                  <FormField
-                    control={vehicleForm.control}
-                    name="warrantyCard"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Warranty Card (Optional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={handleWarrantyCardUpload}
-                            data-testid="input-warranty-card"
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">Upload the warranty card for this vehicle if available</p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {vehicleForm.watch("warrantyCards")?.length > 0 && (
+                    <div className="border rounded-lg p-4 bg-muted/20">
+                      <h3 className="text-sm font-semibold mb-3">Uploaded Warranty Cards ({vehicleForm.watch("warrantyCards").length})</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {vehicleForm.watch("warrantyCards").map((wc) => (
+                          <div key={wc.partId} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border" data-testid={`warranty-card-${wc.partId}`}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded flex items-center justify-center">
+                                <span className="text-green-600 dark:text-green-400 text-xs">✓</span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">{wc.partName}</p>
+                                <p className="text-xs text-muted-foreground">Warranty card uploaded</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeWarrantyCard(wc.partId)}
+                              className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                              data-testid={`button-remove-warranty-display-${wc.partId}`}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-3">
                     <Button 

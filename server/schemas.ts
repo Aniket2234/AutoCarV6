@@ -14,6 +14,12 @@ export const insertCustomerSchema = z.object({
   referralSource: z.string().optional(),
 });
 
+const warrantyCardSchema = z.object({
+  partId: z.string(),
+  partName: z.string(),
+  fileData: z.string(),
+});
+
 export const insertVehicleSchema = z.object({
   customerId: z.string().min(1, "Customer ID is required"),
   vehicleNumber: z.string().optional(),
@@ -27,7 +33,7 @@ export const insertVehicleSchema = z.object({
   isNewVehicle: z.boolean().optional(),
   chassisNumber: z.string().optional(),
   selectedParts: z.array(z.string()).optional(),
-  warrantyCard: z.string().optional(),
+  warrantyCards: z.array(warrantyCardSchema).optional(),
 });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;

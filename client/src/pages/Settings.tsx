@@ -5,9 +5,31 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, Bell, Lock, Palette } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Settings as SettingsIcon, User, Bell, Lock, Palette, Loader2 } from 'lucide-react';
+
+const profileSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  mobileNumber: z.string().min(10, 'Mobile number must be at least 10 digits'),
+  department: z.string().optional(),
+});
+
+type ProfileData = z.infer<typeof profileSchema>;
+
+interface ProfileResponse extends ProfileData {
+  role: string;
+  employeeId?: string;
+  joiningDate?: string;
+  photo?: string;
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -17,11 +39,44 @@ export default function Settings() {
   const [orderAlerts, setOrderAlerts] = useState(true);
   const [stockAlerts, setStockAlerts] = useState(true);
 
-  const handleSaveProfile = () => {
-    toast({
-      title: 'Settings saved',
-      description: 'Your profile settings have been updated.',
-    });
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery<ProfileResponse>({
+    queryKey: ['/api/profile'],
+  });
+
+  const form = useForm<ProfileData>({
+    resolver: zodResolver(profileSchema),
+    values: profileData ? {
+      name: profileData.name || '',
+      email: profileData.email || '',
+      mobileNumber: profileData.mobileNumber || '',
+      department: profileData.department || '',
+    } : undefined,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileData) => {
+      const response = await apiRequest('PUT', '/api/profile', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile settings have been updated successfully.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSaveProfile = (data: ProfileData) => {
+    updateProfileMutation.mutate(data);
   };
 
   const handleSaveNotifications = () => {
@@ -67,27 +122,86 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" data-testid="label-name">Full Name</Label>
-                  <Input id="name" defaultValue={user?.name} data-testid="input-name" />
+              {isLoadingProfile ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" data-testid="label-email">Email</Label>
-                  <Input id="email" type="email" defaultValue={user?.email} data-testid="input-email" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" data-testid="label-phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" data-testid="input-phone" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role" data-testid="label-role">Role</Label>
-                  <Input id="role" value={user?.role} disabled className="bg-muted" data-testid="input-role" />
-                </div>
-              </div>
-              <Button onClick={handleSaveProfile} data-testid="button-save-profile">
-                Save Changes
-              </Button>
+              ) : (
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel data-testid="label-name">Full Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} data-testid="input-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel data-testid="label-email">Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" data-testid="input-email" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="mobileNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel data-testid="label-phone">Phone Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="tel" data-testid="input-phone" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="role" data-testid="label-role">Role</Label>
+                        <Input id="role" value={profileData?.role || user?.role || ''} disabled className="bg-muted" data-testid="input-role" />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="department"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel data-testid="label-department">Department</FormLabel>
+                            <FormControl>
+                              <Input {...field} data-testid="input-department" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="employeeId" data-testid="label-employee-id">Employee ID</Label>
+                        <Input id="employeeId" value={profileData?.employeeId || 'N/A'} disabled className="bg-muted" data-testid="input-employee-id" />
+                      </div>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      disabled={updateProfileMutation.isPending}
+                      data-testid="button-save-profile"
+                    >
+                      {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Changes
+                    </Button>
+                  </form>
+                </Form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

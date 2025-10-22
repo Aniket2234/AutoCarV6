@@ -40,6 +40,9 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<string>
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
 
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   ctx.drawImage(
     image,
     pixelCrop.x,
