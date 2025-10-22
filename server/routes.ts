@@ -773,10 +773,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Service handlers endpoint - accessible to all authenticated users
   app.get("/api/service-handlers", requireAuth, async (req, res) => {
     try {
-      const handlers = await Employee.find({
+      const handlers = await User.find({
         role: { $in: ['Admin', 'Service Staff'] },
         isActive: true
-      }).sort({ name: 1 });
+      }).select('-passwordHash').sort({ name: 1 });
       res.json(handlers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch service handlers" });
