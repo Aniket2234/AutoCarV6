@@ -2701,7 +2701,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (invoice.status !== 'pending_approval') {
-        return res.status(400).json({ error: "Invoice is not pending approval" });
+        console.log(`Invoice approval failed: Invoice ${req.params.id} has status "${invoice.status}", expected "pending_approval"`);
+        return res.status(400).json({ 
+          error: "Invoice is not pending approval", 
+          currentStatus: invoice.status 
+        });
       }
       
       invoice.status = 'approved';
@@ -2791,7 +2795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(invoice);
     } catch (error) {
-      res.status(500).json({ error: "Failed to approve invoice" });
+      console.error('Invoice approval error:', error);
+      res.status(500).json({ error: "Failed to approve invoice", details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
   

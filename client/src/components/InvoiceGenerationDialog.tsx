@@ -25,6 +25,11 @@ const invoiceItemSchema = z.object({
   unitPrice: z.number().min(0, "Price must be positive"),
   total: z.number(),
   hasWarranty: z.boolean().default(false),
+  warrantyCards: z.array(z.object({
+    url: z.string(),
+    filename: z.string(),
+    uploadedAt: z.string(),
+  })).optional().default([]),
 });
 
 const invoiceFormSchema = z.object({
@@ -65,6 +70,7 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
             unitPrice: part.price || 0,
             total: (part.quantity || 1) * (part.price || 0),
             hasWarranty: false,
+            warrantyCards: [],
           }))
         : [{
             type: 'service' as const,
@@ -73,6 +79,7 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
             unitPrice: 0,
             total: 0,
             hasWarranty: false,
+            warrantyCards: [],
           }],
       taxRate: 18,
       couponCode: '',
@@ -154,6 +161,7 @@ export function InvoiceGenerationDialog({ open, onOpenChange, serviceVisit }: In
         unitPrice: 0,
         total: 0,
         hasWarranty: false,
+        warrantyCards: [],
       },
     ]);
   };

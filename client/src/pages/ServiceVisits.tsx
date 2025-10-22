@@ -32,6 +32,8 @@ export default function ServiceVisits() {
   const [selectedHandlers, setSelectedHandlers] = useState<string[]>([]);
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
   const [afterImages, setAfterImages] = useState<string[]>([]);
+  const [customerVehicles, setCustomerVehicles] = useState<any[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     customerId: "",
     vehicleReg: "",
@@ -127,6 +129,39 @@ export default function ServiceVisits() {
       });
     },
   });
+
+  const handleCustomerChange = async (customerId: string) => {
+    setServiceForm({ ...serviceForm, customerId, vehicleReg: "" });
+    setCustomerVehicles([]);
+    
+    if (!customerId) return;
+    
+    setIsLoadingVehicles(true);
+    try {
+      const response = await fetch(`/api/registration/customers/${customerId}/vehicles`);
+      if (response.ok) {
+        const vehicles = await response.json();
+        setCustomerVehicles(vehicles);
+        if (vehicles.length === 1) {
+          setServiceForm(prev => ({ ...prev, vehicleReg: vehicles[0].vehicleNumber || vehicles[0].vehicleId }));
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load customer vehicles",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load customer vehicles",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
 
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
@@ -401,7 +436,7 @@ export default function ServiceVisits() {
                 <Label htmlFor="customer">Customer *</Label>
                 <Select 
                   value={serviceForm.customerId} 
-                  onValueChange={(value) => setServiceForm({ ...serviceForm, customerId: value })}
+                  onValueChange={handleCustomerChange}
                   required
                   disabled={isLoadingCustomers}
                 >
@@ -430,28 +465,35 @@ export default function ServiceVisits() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="vehicleReg">Vehicle Registration *</Label>
-                <div className="relative">
-                  <Input
-                    id="vehicleReg"
-                    value={serviceForm.vehicleReg}
-                    onChange={(e) => setServiceForm({ ...serviceForm, vehicleReg: e.target.value })}
-                    placeholder="Enter vehicle registration number"
-                    required
-                    data-testid="input-vehicle-reg"
-                    className="pr-8"
-                  />
-                  {serviceForm.vehicleReg && (
-                    <button
-                      type="button"
-                      onClick={() => setServiceForm({ ...serviceForm, vehicleReg: "" })}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      data-testid="button-clear-vehicle-reg"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
+                <Label htmlFor="vehicleReg">Vehicle *</Label>
+                <Select 
+                  value={serviceForm.vehicleReg} 
+                  onValueChange={(value) => setServiceForm({ ...serviceForm, vehicleReg: value })}
+                  required
+                  disabled={!serviceForm.customerId || isLoadingVehicles}
+                >
+                  <SelectTrigger id="vehicleReg" data-testid="select-vehicle">
+                    <SelectValue placeholder={
+                      !serviceForm.customerId
+                        ? "Select a customer first"
+                        : isLoadingVehicles 
+                        ? "Loading vehicles..." 
+                        : customerVehicles.length === 0 
+                        ? "No vehicles registered for this customer" 
+                        : "Select a vehicle"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customerVehicles.map((vehicle: any) => (
+                      <SelectItem key={vehicle.id} value={vehicle.vehicleNumber || vehicle.vehicleId}>
+                        {vehicle.vehicleNumber || vehicle.vehicleId} - {vehicle.vehicleBrand} {vehicle.vehicleModel} {vehicle.variant ? `(${vehicle.variant})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {serviceForm.customerId && customerVehicles.length === 0 && !isLoadingVehicles && (
+                  <p className="text-sm text-muted-foreground">This customer has no registered vehicles.</p>
+                )}
               </div>
 
               <div className="space-y-2">
