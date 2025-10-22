@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Trash2, Edit, Shield } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Shield, X, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 interface User {
   _id: string;
@@ -28,6 +30,8 @@ export default function UserManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>("");
 
   // Form states for creating user
   const [newUserName, setNewUserName] = useState('');
@@ -37,10 +41,78 @@ export default function UserManagement() {
   const [newUserRole, setNewUserRole] = useState('Service Staff');
 
   // Form states for editing user
-  const [editUserName, setEditUserName] = useState('');
-  const [editUserMobile, setEditUserMobile] = useState('');
-  const [editUserRole, setEditUserRole] = useState('');
-  const [editUserIsActive, setEditUserIsActive] = useState(true);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+    department: "",
+    salary: "",
+    joiningDate: "",
+    panNumber: "",
+    aadharNumber: "",
+    photo: "",
+    documents: [] as string[],
+    isActive: true,
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const filePromises = Array.from(files).map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const base64Files = await Promise.all(filePromises);
+      setFormData({ ...formData, documents: [...formData.documents, ...base64Files] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload files",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    setFormData({
+      ...formData,
+      documents: formData.documents.filter((_, i) => i !== index)
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageToCrop(reader.result as string);
+      setIsCropDialogOpen(true);
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload photo",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setFormData({ ...formData, photo: croppedImage });
+  };
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
@@ -83,7 +155,7 @@ export default function UserManagement() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; mobileNumber?: string; role: string; isActive: boolean } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const response = await fetch(`/api/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -159,10 +231,10 @@ export default function UserManagement() {
       updateUserMutation.mutate({
         id: selectedUser._id,
         data: {
-          name: editUserName,
-          mobileNumber: editUserMobile,
-          role: editUserRole,
-          isActive: editUserIsActive,
+          name: formData.name,
+          mobileNumber: formData.phone,
+          role: formData.role,
+          isActive: formData.isActive,
         },
       });
     }
@@ -176,10 +248,20 @@ export default function UserManagement() {
 
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
-    setEditUserName(user.name);
-    setEditUserMobile(user.mobileNumber || '');
-    setEditUserRole(user.role);
-    setEditUserIsActive(user.isActive);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.mobileNumber || '',
+      role: user.role,
+      department: "",
+      salary: "",
+      joiningDate: "",
+      panNumber: "",
+      aadharNumber: "",
+      photo: "",
+      documents: [],
+      isActive: user.isActive,
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -270,7 +352,7 @@ export default function UserManagement() {
       </Card>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -278,68 +360,220 @@ export default function UserManagement() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditUser} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  data-testid="input-edit-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  data-testid="input-edit-email"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Full Name</Label>
+              <Label htmlFor="edit-photo">User Photo</Label>
               <Input
-                id="edit-name"
-                value={editUserName}
-                onChange={(e) => setEditUserName(e.target.value)}
-                required
+                id="edit-photo"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                data-testid="input-edit-photo"
+              />
+              {formData.photo && (
+                <div className="flex items-center gap-4 mt-2">
+                  <img 
+                    src={formData.photo} 
+                    alt="User preview" 
+                    className="h-20 w-20 rounded-full object-cover border-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFormData({ ...formData, photo: "" })}
+                    data-testid="button-remove-photo"
+                  >
+                    Remove Photo
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone *</Label>
+                <Input
+                  id="edit-phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                  placeholder="9619523254"
+                  data-testid="input-edit-phone"
+                />
+                <p className="text-xs text-muted-foreground">
+                  10-digit mobile number for WhatsApp OTP login
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role *</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  required
+                >
+                  <SelectTrigger data-testid="select-edit-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Department</Label>
+                <Input
+                  id="edit-department"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  placeholder="e.g., Service, Sales"
+                  data-testid="input-edit-department"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-salary">Salary</Label>
+                <Input
+                  id="edit-salary"
+                  type="number"
+                  step="0.01"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  data-testid="input-edit-salary"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-joiningDate">Joining Date</Label>
+              <Input
+                id="edit-joiningDate"
+                type="date"
+                value={formData.joiningDate}
+                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                data-testid="input-edit-joiningdate"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-panNumber">PAN Number</Label>
+                <Input
+                  id="edit-panNumber"
+                  value={formData.panNumber}
+                  onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                  placeholder="ABCDE1234F"
+                  data-testid="input-edit-pan"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-aadharNumber">Aadhar Number</Label>
+                <Input
+                  id="edit-aadharNumber"
+                  value={formData.aadharNumber}
+                  onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value })}
+                  placeholder="1234 5678 9012"
+                  data-testid="input-edit-aadhar"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-mobile">Mobile Number</Label>
+              <Label htmlFor="edit-documents">Upload Documents (PDF)</Label>
               <Input
-                id="edit-mobile"
-                type="tel"
-                placeholder="9619523254"
-                value={editUserMobile}
-                onChange={(e) => setEditUserMobile(e.target.value)}
+                id="edit-documents"
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={handleFileUpload}
+                data-testid="input-edit-documents"
               />
-              <p className="text-xs text-muted-foreground">
-                10-digit mobile number for WhatsApp OTP login
-              </p>
+              {formData.documents.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  <p className="text-sm text-muted-foreground">Uploaded files ({formData.documents.length}):</p>
+                  <div className="space-y-1">
+                    {formData.documents.map((doc, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm flex-1">Document {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeDocument(index)}
+                          data-testid={`button-remove-document-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-role">Role</Label>
-              <Select value={editUserRole} onValueChange={setEditUserRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Switch
                 id="is-active"
-                checked={editUserIsActive}
-                onChange={(e) => setEditUserIsActive(e.target.checked)}
-                className="h-4 w-4"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                data-testid="switch-active"
               />
               <Label htmlFor="is-active">Active</Label>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
+                data-testid="button-cancel"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateUserMutation.isPending}>
+              <Button type="submit" disabled={updateUserMutation.isPending} data-testid="button-update">
                 {updateUserMutation.isPending ? 'Updating...' : 'Update User'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      <ImageCropDialog
+        open={isCropDialogOpen}
+        onOpenChange={setIsCropDialogOpen}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
