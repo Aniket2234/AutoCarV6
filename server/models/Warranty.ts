@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const warrantySchema = new mongoose.Schema({
-  warrantyNumber: { type: String, unique: true, required: true },
+  warrantyNumber: { type: String, unique: true },
   
   // Related entities
   invoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice', required: true },

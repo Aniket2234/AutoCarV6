@@ -801,11 +801,24 @@ export default function CustomerRegistrationDashboard() {
                                   <span className="text-muted-foreground text-sm">Selected Parts:</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {vehicle.selectedParts.map((part, index) => (
-                                      <Badge key={index} variant="outline" className="text-xs">
+                                      <Badge 
+                                        key={index} 
+                                        variant="outline" 
+                                        className={`text-xs ${vehicle.warrantyCard ? 'cursor-pointer hover:bg-primary/10 transition-colors' : ''}`}
+                                        onClick={() => {
+                                          if (vehicle.warrantyCard) {
+                                            window.open(vehicle.warrantyCard, '_blank');
+                                          }
+                                        }}
+                                        data-testid={`badge-part-${vehicle.id}-${index}`}
+                                      >
                                         {part}
                                       </Badge>
                                     ))}
                                   </div>
+                                  {vehicle.warrantyCard && (
+                                    <p className="text-xs text-muted-foreground mt-1">Click on any part to view warranty card</p>
+                                  )}
                                 </div>
                               )}
                             </div>
