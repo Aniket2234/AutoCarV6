@@ -601,13 +601,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/employees/:id", requireAuth, requirePermission('employees', 'delete'), async (req, res) => {
     try {
+      const currentUserRole = (req as any).session.userRole;
+      const currentUserId = (req as any).session.userId;
+      
       const employee = await User.findById(req.params.id);
       if (!employee) {
         return res.status(404).json({ error: "Employee not found" });
       }
       
-      if (employee.role === 'Admin') {
-        return res.status(403).json({ error: "Cannot delete Admin users" });
+      if (req.params.id === currentUserId) {
+        return res.status(403).json({ error: "Cannot delete your own account" });
+      }
+      
+      if (employee.role === 'Admin' && currentUserRole !== 'Admin') {
+        return res.status(403).json({ error: "Only Admin users can delete Admin accounts" });
       }
       
       await User.findByIdAndDelete(req.params.id);
