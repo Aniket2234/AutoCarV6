@@ -409,9 +409,10 @@ export default function CustomerRegistration() {
           vehicleForm.setValue("warrantyCards", [...currentWarrantyCards, { partId, partName, fileData }]);
         }
         
+        const fileType = file.type.includes('pdf') ? 'PDF' : 'Image';
         toast({
           title: "Warranty Card Uploaded",
-          description: `Warranty card for ${partName} has been uploaded successfully.`,
+          description: `${fileType} warranty card for ${partName} has been uploaded successfully.`,
         });
       };
       reader.readAsDataURL(file);
@@ -1040,7 +1041,7 @@ export default function CustomerRegistration() {
                                             {hasWarrantyCard ? '✓ Warranty Card Uploaded' : '+ Upload Warranty Card'}
                                             <input
                                               type="file"
-                                              accept="image/*"
+                                              accept="image/*,application/pdf"
                                               className="hidden"
                                               onChange={handleWarrantyCardUpload(part.id, part.name)}
                                               data-testid={`input-warranty-${part.id}`}

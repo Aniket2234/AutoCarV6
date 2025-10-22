@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { COMMON_VEHICLE_PARTS } from "@shared/vehicleData";
 
 // Vehicle Brands
 const VEHICLE_BRANDS = [
@@ -803,33 +804,51 @@ export default function CustomerRegistrationDashboard() {
                               </div>
                               {vehicle.selectedParts && vehicle.selectedParts.length > 0 && (
                                 <div>
-                                  <span className="text-muted-foreground text-sm">Selected Parts:</span>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {vehicle.selectedParts.map((part, index) => {
-                                      const warrantyCard = vehicle.warrantyCards?.find(wc => wc.partName === part);
+                                  <span className="text-muted-foreground text-sm font-medium">Selected Parts & Warranty Status:</span>
+                                  <div className="space-y-2 mt-2">
+                                    {vehicle.selectedParts.map((partId, index) => {
+                                      const warrantyCard = vehicle.warrantyCards?.find(wc => wc.partId === partId);
+                                      const partInfo = COMMON_VEHICLE_PARTS.find(p => p.id === partId);
+                                      const partName = warrantyCard?.partName || partInfo?.name || partId;
+                                      const hasWarranty = !!warrantyCard;
+                                      
                                       return (
-                                        <Badge 
-                                          key={index} 
-                                          variant="outline" 
-                                          className={`text-xs ${warrantyCard ? 'cursor-pointer hover:bg-primary/10 transition-colors bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700' : ''}`}
-                                          onClick={() => {
-                                            if (warrantyCard) {
-                                              window.open(warrantyCard.fileData, '_blank');
-                                            }
-                                          }}
-                                          data-testid={`badge-part-${vehicle.id}-${index}`}
-                                          title={warrantyCard ? 'Click to view warranty card' : undefined}
+                                        <div 
+                                          key={index}
+                                          className="flex items-center justify-between p-2 rounded-md border bg-muted/30"
+                                          data-testid={`part-item-${vehicle.id}-${index}`}
                                         >
-                                          {part} {warrantyCard && '✓'}
-                                        </Badge>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium text-sm">{partName}</span>
+                                            <span className="text-xs">-</span>
+                                            <Badge 
+                                              variant={hasWarranty ? "default" : "secondary"}
+                                              className={hasWarranty ? "bg-green-600 dark:bg-green-700" : ""}
+                                            >
+                                              {hasWarranty ? "Warranty card uploaded" : "Not uploaded"}
+                                            </Badge>
+                                          </div>
+                                          {hasWarranty && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => {
+                                                if (warrantyCard.fileData.startsWith('data:application/pdf')) {
+                                                  window.open(warrantyCard.fileData, '_blank');
+                                                } else {
+                                                  window.open(warrantyCard.fileData, '_blank');
+                                                }
+                                              }}
+                                              data-testid={`button-view-warranty-${vehicle.id}-${index}`}
+                                              className="text-xs"
+                                            >
+                                              View
+                                            </Button>
+                                          )}
+                                        </div>
                                       );
                                     })}
                                   </div>
-                                  {vehicle.warrantyCards && vehicle.warrantyCards.length > 0 && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {vehicle.warrantyCards.length} warranty card{vehicle.warrantyCards.length > 1 ? 's' : ''} uploaded - Click on parts with ✓ to view
-                                    </p>
-                                  )}
                                 </div>
                               )}
                             </div>
