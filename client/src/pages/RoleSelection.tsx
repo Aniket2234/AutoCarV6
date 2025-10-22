@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Package, Warehouse, ShoppingCart, Users, Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logoImage from '@assets/image_1760164042662.png';
+import bgImage from '@assets/bg_1761112040031.jpg';
 
 interface RoleOption {
   id: string;
@@ -57,14 +58,23 @@ export default function RoleSelection() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-4xl">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="w-full max-w-4xl relative z-10">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img src={logoImage} alt="Mauli Car World Logo" className="h-16 w-auto" />
-            <h1 className="text-4xl font-bold" data-testid="text-title">Mauli Car World</h1>
+            <h1 className="text-4xl font-bold text-white drop-shadow-lg" data-testid="text-title">Mauli Car World</h1>
           </div>
-          <p className="text-lg text-muted-foreground" data-testid="text-subtitle">
+          <p className="text-lg text-white drop-shadow-md" data-testid="text-subtitle">
             Select your role to access the system
           </p>
         </div>
@@ -74,8 +84,8 @@ export default function RoleSelection() {
             <Card
               key={role.id}
               className={cn(
-                'cursor-pointer transition-all hover:shadow-md',
-                selectedRole === role.id && 'ring-2 ring-primary bg-primary/5'
+                'cursor-pointer transition-all hover:shadow-md bg-white dark:bg-gray-900',
+                selectedRole === role.id && 'ring-2 ring-primary bg-primary/5 dark:bg-primary/10'
               )}
               onClick={() => setSelectedRole(role.id)}
               data-testid={`card-role-${role.id.toLowerCase().replace(/\s+/g, '-')}`}
