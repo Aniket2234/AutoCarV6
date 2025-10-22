@@ -833,11 +833,19 @@ export default function CustomerRegistrationDashboard() {
                                               size="sm"
                                               variant="outline"
                                               onClick={() => {
-                                                if (warrantyCard.fileData.startsWith('data:application/pdf')) {
-                                                  window.open(warrantyCard.fileData, '_blank');
-                                                } else {
-                                                  window.open(warrantyCard.fileData, '_blank');
+                                                // Convert data URL to blob URL for safe viewing
+                                                const byteString = atob(warrantyCard.fileData.split(',')[1]);
+                                                const mimeString = warrantyCard.fileData.split(',')[0].split(':')[1].split(';')[0];
+                                                const ab = new ArrayBuffer(byteString.length);
+                                                const ia = new Uint8Array(ab);
+                                                for (let i = 0; i < byteString.length; i++) {
+                                                  ia[i] = byteString.charCodeAt(i);
                                                 }
+                                                const blob = new Blob([ab], { type: mimeString });
+                                                const blobUrl = URL.createObjectURL(blob);
+                                                window.open(blobUrl, '_blank');
+                                                // Clean up the blob URL after a delay
+                                                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
                                               }}
                                               data-testid={`button-view-warranty-${vehicle.id}-${index}`}
                                               className="text-xs"
@@ -863,7 +871,18 @@ export default function CustomerRegistrationDashboard() {
                                   className="max-w-xs w-full h-auto rounded-md border-2 border-green-300 dark:border-green-700 cursor-pointer hover:scale-105 transition-transform"
                                   onClick={() => {
                                     if (vehicle.warrantyCard) {
-                                      window.open(vehicle.warrantyCard, '_blank');
+                                      // Convert data URL to blob URL for safe viewing
+                                      const byteString = atob(vehicle.warrantyCard.split(',')[1]);
+                                      const mimeString = vehicle.warrantyCard.split(',')[0].split(':')[1].split(';')[0];
+                                      const ab = new ArrayBuffer(byteString.length);
+                                      const ia = new Uint8Array(ab);
+                                      for (let i = 0; i < byteString.length; i++) {
+                                        ia[i] = byteString.charCodeAt(i);
+                                      }
+                                      const blob = new Blob([ab], { type: mimeString });
+                                      const blobUrl = URL.createObjectURL(blob);
+                                      window.open(blobUrl, '_blank');
+                                      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
                                     }
                                   }}
                                   data-testid={`img-warranty-card-${vehicle.id}`}
