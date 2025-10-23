@@ -519,8 +519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Only Admin users can create Admin accounts" });
       }
       
-      const sequence = await getNextSequence('employee_id');
-      const employeeId = `EMP${String(sequence).padStart(3, '0')}`;
+      const isAdmin = req.body.role === 'Admin';
+      const sequence = await getNextSequence(isAdmin ? 'admin_id' : 'employee_id');
+      const employeeId = isAdmin ? `ADM${String(sequence).padStart(3, '0')}` : `EMP${String(sequence).padStart(3, '0')}`;
       
       const password = req.body.password || `${req.body.name.split(' ')[0].toLowerCase()}123`;
       
@@ -532,16 +533,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.phone || req.body.contact
       );
       
-      await User.findByIdAndUpdate(employee._id, {
+      const updateData: any = {
         employeeId,
         department: req.body.department,
-        salary: req.body.salary,
-        joiningDate: req.body.joiningDate || new Date(),
         panNumber: req.body.panNumber,
         aadharNumber: req.body.aadharNumber,
         photo: req.body.photo,
         documents: req.body.documents,
-      });
+      };
+      
+      if (!isAdmin) {
+        updateData.salary = req.body.salary;
+        updateData.joiningDate = req.body.joiningDate || new Date();
+      }
+      
+      await User.findByIdAndUpdate(employee._id, updateData);
       
       const updatedEmployee = await User.findById(employee._id).select('-passwordHash');
       
@@ -2175,6 +2181,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customer = await RegistrationCustomer.findById(customerId);
       if (!customer) {
         return res.status(404).json({ error: "Customer not found" });
+      }
+      
+      // Get customer's vehicles
+      const vehicles = await RegistrationVehicle.find({ customerId: customer._id });
+      
+      // Create service visit in "inquired" status for each vehicle
+      for (const vehicle of vehicles) {
+        const existingVisit = await ServiceVisit.findOne({
+          customerId: customer._id,
+          vehicleReg: vehicle.vehicleNumber || vehicle.vehicleId,
+          status: 'inquired'
+        });
+        
+        if (!existingVisit) {
+          await ServiceVisit.create({
+            customerId: customer._id,
+            vehicleReg: vehicle.vehicleNumber || vehicle.vehicleId,
+            status: 'inquired',
+            handlerIds: [],
+            notes: 'Auto-created from customer registration'
+          });
+        }
       }
       
       // Send WhatsApp welcome message with customer ID

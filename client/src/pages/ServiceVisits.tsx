@@ -166,10 +166,19 @@ export default function ServiceVisits() {
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!serviceForm.customerId || !serviceForm.vehicleReg || serviceForm.handlerIds.length === 0) {
+    if (!serviceForm.customerId || !serviceForm.vehicleReg) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields and select at least one service handler",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (serviceForm.status !== 'inquired' && serviceForm.handlerIds.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one service handler",
         variant: "destructive",
       });
       return;
@@ -195,11 +204,11 @@ export default function ServiceVisits() {
   const handleStatusUpdate = () => {
     if (!selectedService || !selectedStatus) return;
     
-    // Validate service handlers
-    if (selectedHandlers.length === 0) {
+    // Validate service handlers - only required for non-inquired statuses
+    if (selectedStatus !== 'inquired' && selectedHandlers.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Please select at least one service handler",
+        description: "Please select at least one service handler for this phase",
         variant: "destructive",
       });
       return;

@@ -8,7 +8,7 @@ const serviceVisitSchema = new mongoose.Schema({
     enum: ['inquired', 'working', 'waiting', 'completed'],
     default: 'inquired'
   },
-  handlerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true }],
+  handlerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Employee' }],
   notes: String,
   partsUsed: [{
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },

@@ -205,21 +205,26 @@ export default function Employees() {
 
   const handleCreateEmployee = (e: React.FormEvent) => {
     e.preventDefault();
-    createEmployeeMutation.mutate({
+    const payload: any = {
       name: formData.name,
       email: formData.email,
       contact: formData.phone,
       password: formData.password,
       role: formData.role,
       department: formData.department,
-      salary: parseFloat(formData.salary),
-      joiningDate: formData.joiningDate,
       panNumber: formData.panNumber,
       aadharNumber: formData.aadharNumber,
       photo: formData.photo,
       documents: formData.documents,
       isActive: true,
-    });
+    };
+    
+    if (formData.role !== 'Admin') {
+      payload.salary = parseFloat(formData.salary);
+      payload.joiningDate = formData.joiningDate;
+    }
+    
+    createEmployeeMutation.mutate(payload);
   };
 
   const handleEditEmployee = (employee: Employee) => {
@@ -232,7 +237,7 @@ export default function Employees() {
       role: employee.role,
       department: employee.department || "",
       salary: employee.salary ? employee.salary.toString() : "",
-      joiningDate: employee.joiningDate.split('T')[0],
+      joiningDate: employee.joiningDate ? employee.joiningDate.split('T')[0] : "",
       panNumber: employee.panNumber || "",
       aadharNumber: employee.aadharNumber || "",
       photo: employee.photo || "",
@@ -244,21 +249,27 @@ export default function Employees() {
   const handleUpdateEmployee = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) return;
+    
+    const updateData: any = {
+      name: formData.name,
+      email: formData.email,
+      contact: formData.phone,
+      role: formData.role,
+      department: formData.department,
+      panNumber: formData.panNumber,
+      aadharNumber: formData.aadharNumber,
+      photo: formData.photo,
+      documents: formData.documents,
+    };
+    
+    if (formData.role !== 'Admin') {
+      updateData.salary = parseFloat(formData.salary);
+      updateData.joiningDate = formData.joiningDate;
+    }
+    
     updateEmployeeMutation.mutate({
       id: selectedEmployee._id,
-      data: {
-        name: formData.name,
-        email: formData.email,
-        contact: formData.phone,
-        role: formData.role,
-        department: formData.department,
-        salary: parseFloat(formData.salary),
-        joiningDate: formData.joiningDate,
-        panNumber: formData.panNumber,
-        aadharNumber: formData.aadharNumber,
-        photo: formData.photo,
-        documents: formData.documents,
-      },
+      data: updateData,
     });
   };
 
@@ -449,43 +460,46 @@ export default function Employees() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department *</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    required
-                    placeholder="e.g., Service, Sales"
-                    data-testid="input-employee-department"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="salary">Salary *</Label>
-                  <Input
-                    id="salary"
-                    type="number"
-                    step="0.01"
-                    value={formData.salary}
-                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                    required
-                    data-testid="input-employee-salary"
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="joiningDate">Joining Date *</Label>
+                <Label htmlFor="department">Department *</Label>
                 <Input
-                  id="joiningDate"
-                  type="date"
-                  value={formData.joiningDate}
-                  onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                  id="department"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   required
-                  data-testid="input-employee-joiningdate"
+                  placeholder="e.g., Service, Sales"
+                  data-testid="input-employee-department"
                 />
               </div>
+
+              {formData.role !== 'Admin' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="salary">Salary *</Label>
+                    <Input
+                      id="salary"
+                      type="number"
+                      step="0.01"
+                      value={formData.salary}
+                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                      required
+                      data-testid="input-employee-salary"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="joiningDate">Joining Date *</Label>
+                    <Input
+                      id="joiningDate"
+                      type="date"
+                      value={formData.joiningDate}
+                      onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                      required
+                      data-testid="input-employee-joiningdate"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -753,38 +767,41 @@ export default function Employees() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-department">Department *</Label>
-                <Input
-                  id="edit-department"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-salary">Salary *</Label>
-                <Input
-                  id="edit-salary"
-                  type="number"
-                  step="0.01"
-                  value={formData.salary}
-                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-joiningDate">Joining Date *</Label>
+              <Label htmlFor="edit-department">Department *</Label>
               <Input
-                id="edit-joiningDate"
-                type="date"
-                value={formData.joiningDate}
-                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                id="edit-department"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 required
               />
             </div>
+
+            {formData.role !== 'Admin' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-salary">Salary *</Label>
+                  <Input
+                    id="edit-salary"
+                    type="number"
+                    step="0.01"
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-joiningDate">Joining Date *</Label>
+                  <Input
+                    id="edit-joiningDate"
+                    type="date"
+                    value={formData.joiningDate}
+                    onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-panNumber">PAN Number</Label>
