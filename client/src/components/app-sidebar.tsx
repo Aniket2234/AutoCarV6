@@ -99,17 +99,17 @@ export function AppSidebar() {
   // Helper function to get group background color
   const getGroupBgColor = (group?: string) => {
     const groupColors: Record<string, string> = {
-      dashboard: "hover:bg-blue-50 dark:hover:bg-blue-950/20 data-[active=true]:bg-blue-50 dark:data-[active=true]:bg-blue-950/20",
-      customer: "hover:bg-green-50 dark:hover:bg-green-950/20 data-[active=true]:bg-green-50 dark:data-[active=true]:bg-green-950/20",
-      service: "hover:bg-purple-50 dark:hover:bg-purple-950/20 data-[active=true]:bg-purple-50 dark:data-[active=true]:bg-purple-950/20",
-      invoice: "hover:bg-orange-50 dark:hover:bg-orange-950/20 data-[active=true]:bg-orange-50 dark:data-[active=true]:bg-orange-950/20",
-      inventory: "hover:bg-cyan-50 dark:hover:bg-cyan-950/20 data-[active=true]:bg-cyan-50 dark:data-[active=true]:bg-cyan-950/20",
-      hr: "hover:bg-indigo-50 dark:hover:bg-indigo-950/20 data-[active=true]:bg-indigo-50 dark:data-[active=true]:bg-indigo-950/20",
-      attendance: "hover:bg-yellow-50 dark:hover:bg-yellow-950/20 data-[active=true]:bg-yellow-50 dark:data-[active=true]:bg-yellow-950/20",
-      tasks: "hover:bg-pink-50 dark:hover:bg-pink-950/20 data-[active=true]:bg-pink-50 dark:data-[active=true]:bg-pink-950/20",
-      communication: "hover:bg-teal-50 dark:hover:bg-teal-950/20 data-[active=true]:bg-teal-50 dark:data-[active=true]:bg-teal-950/20",
-      reports: "hover:bg-amber-50 dark:hover:bg-amber-950/20 data-[active=true]:bg-amber-50 dark:data-[active=true]:bg-amber-950/20",
-      admin: "hover:bg-red-50 dark:hover:bg-red-950/20 data-[active=true]:bg-red-50 dark:data-[active=true]:bg-red-950/20",
+      dashboard: "bg-blue-50 dark:bg-blue-950/20 data-[active=true]:bg-blue-100 dark:data-[active=true]:bg-blue-900/30",
+      customer: "bg-green-50 dark:bg-green-950/20 data-[active=true]:bg-green-100 dark:data-[active=true]:bg-green-900/30",
+      service: "bg-purple-50 dark:bg-purple-950/20 data-[active=true]:bg-purple-100 dark:data-[active=true]:bg-purple-900/30",
+      invoice: "bg-orange-50 dark:bg-orange-950/20 data-[active=true]:bg-orange-100 dark:data-[active=true]:bg-orange-900/30",
+      inventory: "bg-cyan-50 dark:bg-cyan-950/20 data-[active=true]:bg-cyan-100 dark:data-[active=true]:bg-cyan-900/30",
+      hr: "bg-indigo-50 dark:bg-indigo-950/20 data-[active=true]:bg-indigo-100 dark:data-[active=true]:bg-indigo-900/30",
+      attendance: "bg-yellow-50 dark:bg-yellow-950/20 data-[active=true]:bg-yellow-100 dark:data-[active=true]:bg-yellow-900/30",
+      tasks: "bg-pink-50 dark:bg-pink-950/20 data-[active=true]:bg-pink-100 dark:data-[active=true]:bg-pink-900/30",
+      communication: "bg-teal-50 dark:bg-teal-950/20 data-[active=true]:bg-teal-100 dark:data-[active=true]:bg-teal-900/30",
+      reports: "bg-amber-50 dark:bg-amber-950/20 data-[active=true]:bg-amber-100 dark:data-[active=true]:bg-amber-900/30",
+      admin: "bg-red-50 dark:bg-red-950/20 data-[active=true]:bg-red-100 dark:data-[active=true]:bg-red-900/30",
     };
     return group ? groupColors[group] || "" : "";
   };
